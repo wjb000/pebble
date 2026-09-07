@@ -11,10 +11,9 @@ export function Layout() {
         <nav className="nav-links">
           <NavLink to="/" end>Home</NavLink>
           <NavLink to="/sim">Sim</NavLink>
-          <NavLink to="/bom">BOM / Specs</NavLink>
+          <NavLink to="/bom">BOM</NavLink>
           <NavLink to="/docs">Docs</NavLink>
         </nav>
-        <NavLink to="/sim" className="nav-cta">Try the sim</NavLink>
       </header>
       <main className="app-main">
         <Outlet />

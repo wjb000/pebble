@@ -36,15 +36,10 @@ export function SimPage() {
             <button type="button" className="splash" onClick={() => setShowSplash(false)}>
               <div className="splash-inner">
                 <div className="splash-brand">PEBBLE</div>
-                <div className="splash-title">SANDBOX</div>
-                <p className="splash-sub">
-                  Imported Microduck + SO-101 CAD meshes. Auto seeker heads for the ball.
-                  Meshes: microduck_rl (CC BY-SA-NC) + TheRobotStudio/SO-ARM100.
-                </p>
-                <div className="splash-cta">WALK IN</div>
-                <div className="splash-enter">PRESS ENTER</div>
+                <p className="splash-sub">Tap / Enter to walk · WASD · C camera</p>
+                <div className="splash-cta">WALK</div>
                 <div className="splash-keys">
-                  WASD / ARROWS MOVE · C CAMERA · R SIT · SPACE RESET · DRAG ORBIT · SCROLL ZOOM
+                  Meshes: microduck_rl (CC BY-SA-NC) + TheRobotStudio/SO-ARM100
                 </div>
               </div>
             </button>

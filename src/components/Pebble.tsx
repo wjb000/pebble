@@ -1,6 +1,5 @@
 /**
- * Pebble visual = imported Microduck body + 2× SO-101 follower meshes only.
- * Procedural larped geometry lives in ProceduralPebble.legacy.tsx (not default).
+ * Pebble visual = imported Microduck body + 2× SO-101 follower meshes.
  */
 import { Suspense, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'

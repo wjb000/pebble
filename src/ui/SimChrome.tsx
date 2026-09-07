@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { COLOURWAYS } from '../product'
+import { useSim } from '../sim/SimContext'
 
 type Props = {
   colourId: string
@@ -7,6 +8,8 @@ type Props = {
 }
 
 export function SimChrome({ colourId, onColour }: Props) {
+  const { state } = useSim()
+  const mode = state.mode.toUpperCase()
   return (
     <>
       <div className="hud-box hud-nav-back">
@@ -15,7 +18,7 @@ export function SimChrome({ colourId, onColour }: Props) {
       </div>
       <div className="hud-box hud-shop">
         <div className="hud-label">SITE</div>
-        <Link className="hud-preorder" to="/bom">BOM / SPECS</Link>
+        <Link className="hud-preorder" to="/bom">BOM</Link>
       </div>
       <div className="hud-box hud-color">
         <div className="hud-label">COLOR</div>
@@ -35,10 +38,11 @@ export function SimChrome({ colourId, onColour }: Props) {
       <div className="hud-box hud-mode">
         <div className="hud-label">MODE</div>
         <div className="mode-toggle">
-          <span className="mode-on">FEET</span>
-          <span className="mode-off">AUTO</span>
+          <span className={mode === 'AUTO' ? 'mode-on' : 'mode-off'}>AUTO</span>
+          <span className={mode === 'TELEOP' ? 'mode-on' : 'mode-off'}>TELEOP</span>
         </div>
       </div>
+      <div className="sim-mesh-foot">microduck_rl · SO-ARM100</div>
     </>
   )
 }

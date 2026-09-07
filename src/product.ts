@@ -18,7 +18,7 @@ export const COLOURWAYS: Colourway[] = [
   {
     id: 'riverstone',
     name: 'Riverstone',
-    tagline: 'Soft grey shell, studio default',
+    tagline: 'Default grey',
     primary: '#9aa3b0',
     belly: '#d0d5de',
     face: '#0a1620',
@@ -30,7 +30,7 @@ export const COLOURWAYS: Colourway[] = [
   {
     id: 'slate',
     name: 'Slate',
-    tagline: 'Dark desk-bot finish',
+    tagline: 'Dark finish',
     primary: '#4b5563',
     belly: '#6b7280',
     face: '#0a1620',
@@ -42,7 +42,7 @@ export const COLOURWAYS: Colourway[] = [
   {
     id: 'coral',
     name: 'Coral',
-    tagline: 'Warm blush shell',
+    tagline: 'Warm blush',
     primary: '#e9897a',
     belly: '#f3c7bc',
     face: '#0a1620',
@@ -54,7 +54,7 @@ export const COLOURWAYS: Colourway[] = [
   {
     id: 'moss',
     name: 'Moss',
-    tagline: 'Quiet lab green',
+    tagline: 'Lab green',
     primary: '#6f8f72',
     belly: '#c5d6c4',
     face: '#0a1620',
@@ -66,65 +66,14 @@ export const COLOURWAYS: Colourway[] = [
 ]
 
 export const ONE_LINER =
-  'Pebble = Microduck-class body (15× XL330, 250 mm) + dual LeRobot SO-101 arms (6 DOF ×2, STS3215). Not an official Pollen product — sim matches CAD.'
+  'Microduck-class body (15× XL330, 250 mm) + dual LeRobot SO-101 arms. Not an official Pollen product.'
 
 export const FAST_FACTS = [
-  { label: 'Body height', value: '250 mm' },
-  { label: 'Body width', value: '~140 mm' },
+  { label: 'Height', value: '250 mm' },
   { label: 'Body servos', value: '15× XL330' },
-  { label: 'Leg DOF', value: '10 (5×2)' },
-  { label: 'Neck / head / beak', value: '4 + mouth' },
-  { label: 'Arms', value: '2× SO-101 (6 DOF)' },
-  { label: 'Locomotion cmd', value: '{forward, yawRate}' },
-  { label: 'Twin BOM (draft)', value: '~$0.9–1.4k' },
-  { label: 'Digital twin', value: 'sim = CAD = BOM' },
-]
-
-export type PricePack = {
-  id: string
-  name: string
-  price: string
-  blurb: string
-  items: string[]
-}
-
-export const PRICE_PACKS: PricePack[] = [
-  {
-    id: 'body',
-    name: 'Microduck-class body',
-    price: '~$0.5–0.8k',
-    blurb: '15× Dynamixel XL330 duck biped (public kinematics). Walk with WASD / velocity commands; arms optional later.',
-    items: [
-      '15× Dynamixel XL330 (14 + beak)',
-      'Printed Microduck-scale trunk + legs',
-      'Pi Zero 2 W / Radxa Zero 3W + cam',
-      'Small LiPo + TTL hub',
-    ],
-  },
-  {
-    id: 'twin',
-    name: 'Pebble twin (body + arms)',
-    price: '~$0.9–1.4k',
-    blurb: 'Body + 2× LeRobot SO-101 follower kits. Top-heavy — tabletop / braced mode recommended.',
-    items: [
-      'Everything in body pack',
-      '2× SO-101 follower (12× STS3215)',
-      'Shoulder mount plates',
-      'Optional counterweight / dock',
-    ],
-  },
-  {
-    id: 'arms_only',
-    name: 'SO-101 arms only',
-    price: '~$200–400',
-    blurb: 'DIY ~$100–200 per arm (HF LeRobot SO-101). Mount to existing Microduck-class torso.',
-    items: [
-      '1–2× SO-101 follower kits',
-      'Feetech STS3215 ×6 each',
-      'Print SO-101 STLs (TheRobotStudio)',
-      'Separate 5–12 V arm PSU',
-    ],
-  },
+  { label: 'Arms', value: '2× SO-101 (STS3215)' },
+  { label: 'Locomotion', value: '{forward, yawRate}' },
+  { label: 'Status', value: 'Draft / not for sale' },
 ]
 
 export type BomRow = {
@@ -263,7 +212,6 @@ export function bomSubtotal(column: 'v1' | 'full'): number {
   return BOM.reduce((sum, row) => {
     const unit = column === 'v1' ? row.usd_v1 : row.usd_full
     if (typeof row.qty === 'number') {
-      // Skip loose STS3215 line when kits already priced (avoid double-count on full)
       if (column === 'full' && row.part.includes('STS3215 (if buying loose)')) return sum
       return sum + unit * row.qty
     }
@@ -272,59 +220,10 @@ export function bomSubtotal(column: 'v1' | 'full'): number {
 }
 
 export const SPECS = [
-  {
-    key: 'Positioning',
-    value:
-      'Pebble — Microduck-class body + 2× LeRobot SO-101 arms. NOT an official Pollen product. Digital twin: sim = CAD = BOM',
-  },
-  {
-    key: 'Standing height',
-    value: '250 mm (dims.ts / cad/pebble.scad) — public Microduck press-kit class',
-  },
-  {
-    key: 'Body width / mass',
-    value: '~140 mm envelope; Microduck body <800 g (arms add ~1.6 kg — top-heavy)',
-  },
-  {
-    key: 'Body actuators',
-    value: '15× Dynamixel XL330 (20×34×26 mm, ~18 g) — 10 leg + 4 neck/head + mouth/beak',
-  },
-  {
-    key: 'Locomotion DOF',
-    value: 'hip_yaw, hip_roll, hip_pitch, knee, ankle ×2 — Microduck joint names/order',
-  },
-  {
-    key: 'Neck / head DOF',
-    value: 'neck_pitch, head_pitch, head_yaw, head_roll + beak',
-  },
-  {
-    key: 'Arms',
-    value:
-      '2× LeRobot SO-101 (6 DOF: shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll, gripper) — STS3215 ×6/arm, reach ~500 mm, ~800 g/arm',
-  },
-  {
-    key: 'Integration',
-    value: 'HF LeRobot so101_follower · https://huggingface.co/docs/lerobot/en/so101',
-  },
-  {
-    key: 'Compute / battery',
-    value: 'Pi Zero 2 W class; small LiPo envelope 40×18×30',
-  },
-  {
-    key: 'Honesty',
-    value:
-      'Dual SO-101 on Microduck body is top-heavy — mount plate, counterweight, or tabletop braced / docked manipulation',
-  },
-  {
-    key: 'Locomotion interface',
-    value: '{forward, yawRate} in [-1, 1] for legs; arms idle pose in sim',
-  },
-  {
-    key: 'Physics honesty',
-    value: 'Geometry exact; kinematics-lite (not MuJoCo-perfect yet)',
-  },
-  {
-    key: 'Status',
-    value: 'Draft — not for sale. Not official Microduck. See docs/ASSEMBLY.md',
-  },
+  { key: 'Height', value: '250 mm standing (dims.ts)' },
+  { key: 'Body actuators', value: '15× Dynamixel XL330 — Microduck joint layout' },
+  { key: 'Arms', value: '2× LeRobot SO-101 (6 DOF each, STS3215 ×6/arm)' },
+  { key: 'Top-heavy', value: 'Dual arms ~1.6 kg on <800 g body — brace / counterweight / dock' },
+  { key: 'Interface', value: '{forward, yawRate} in [-1, 1]; arms idle in walk sim' },
+  { key: 'Status', value: 'Draft — not for sale. Not official Microduck/Pollen.' },
 ]
