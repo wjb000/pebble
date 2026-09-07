@@ -365,6 +365,20 @@ export function WheeledChassis({
           showWipe={showWipe}
           liftLocal
         />
+        {/* MGN carriage block — under LIFT (local ≈ [-18, 0, 14] mm) */}
+        <mesh
+          position={[
+            mmToM(-(MGN12.rail_w_mm + 6)),
+            0,
+            mmToM(EXTRUSION.depth_mm * 0.35),
+          ]}
+          castShadow
+        >
+          <boxGeometry
+            args={[mmToM(MGN12.block_w_mm), mmToM(MGN12.block_l_mm), mmToM(MGN12.block_h_mm)]}
+          />
+          <meshStandardMaterial color="#9ca3af" roughness={0.32} metalness={0.7} />
+        </mesh>
       </group>
 
       {/* Outrigger feet — widen support to 400 mm (TIP.support_width) */}
@@ -414,21 +428,6 @@ export function WheeledChassis({
         <boxGeometry args={[mmToM(MGN12.rail_w_mm), extLen * 0.95, mmToM(MGN12.rail_h_mm)]} />
         <meshStandardMaterial color="#d1d5db" roughness={0.28} metalness={0.75} />
       </mesh>
-      {/* MGN carriage block rides with shoulder AGL */}
-      <mesh
-        position={[
-          screwX - mmToM(MGN12.rail_w_mm + 6),
-          carriageY,
-          mmToM(EXTRUSION.depth_mm * 0.35),
-        ]}
-        castShadow
-      >
-        <boxGeometry
-          args={[mmToM(MGN12.block_w_mm), mmToM(MGN12.block_l_mm), mmToM(MGN12.block_h_mm)]}
-        />
-        <meshStandardMaterial color="#9ca3af" roughness={0.32} metalness={0.7} />
-      </mesh>
-
       {/* SO-ARM overhead cam — on-column (X=0); boom stacks UP; no sideways poke */}
       <group position={[0, columnTopY + mmToM(6), 0]} rotation={[0, 0, 0]}>
         <StlPart url={HEAD_STL.bottom} color={colour.dark} roughness={0.48} metalness={0.1} />
