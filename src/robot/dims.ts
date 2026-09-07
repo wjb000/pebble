@@ -148,7 +148,7 @@ export const HEAD = {
   /** cam_mount_top native max Y — UVC tip after rotX(+π/2) → +Z forward. */
   boom_tip_mm: 48,  // compact face — was 372 boom poke
   upstream: 'TheRobotStudio/SO-ARM100 Optional/Overhead_Cam_Mount_32x32_UVC_Module (Apache-2.0)',
-  note: 'Printed 1:1; boom stacks UP on column (not a 370 mm forward poke)',
+  note: 'Printed 1:1; place at X=0 on column top (do not subtract stl_center_x — that poked sideways)',
 } as const
 
 export const HEIGHT_STACK_MM =

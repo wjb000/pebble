@@ -1,10 +1,11 @@
 /**
  * Shared assembled robot — used by Sim (Pebble) and /model viewer.
+ * Arms ride inside WheeledChassis lift group (carriage → 4040 → SO-101).
  */
 import { Suspense } from 'react'
 import type { Colourway } from '../product'
 import { OVERALL_HEIGHT_MM, SCREW_ELEVATOR, mmToM } from '../robot/dims'
-import { SO101FollowerArm, WheeledChassis } from './ImportedRobots'
+import { WheeledChassis } from './ImportedRobots'
 
 function MeshFallback() {
   const h = mmToM(OVERALL_HEIGHT_MM)
@@ -31,20 +32,11 @@ export function RobotAssembly({
 }) {
   return (
     <Suspense fallback={<MeshFallback />}>
-      <WheeledChassis colour={colour} carriageAglMm={carriageAglMm} />
-      <SO101FollowerArm
-        side="L"
+      <WheeledChassis
         colour={colour}
         carriageAglMm={carriageAglMm}
-        shoulderRad={armShoulderRad}
-        elbowRad={armElbowRad}
-      />
-      <SO101FollowerArm
-        side="R"
-        colour={colour}
-        carriageAglMm={carriageAglMm}
-        shoulderRad={armShoulderRad}
-        elbowRad={armElbowRad}
+        armShoulderRad={armShoulderRad}
+        armElbowRad={armElbowRad}
         showWipe={showWipe}
       />
     </Suspense>

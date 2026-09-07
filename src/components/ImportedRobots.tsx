@@ -152,9 +152,15 @@ useGLTF.preload(SO101_GLB)
 export function WheeledChassis({
   colour,
   carriageAglMm,
+  armShoulderRad = 0,
+  armElbowRad = 0,
+  showWipe = true,
 }: {
   colour: Colourway
   carriageAglMm: number
+  armShoulderRad?: number
+  armElbowRad?: number
+  showWipe?: boolean
 }) {
   const baseH = mmToM(BASE.height_mm)
   const extLen = mmToM(EXTRUSION.length_mm)
@@ -166,7 +172,6 @@ export function WheeledChassis({
   const screwR = mmToM(SCREW_ELEVATOR.screw_od_mm) * 0.5
   const screwX = mmToM(SCREW_AXIS_X_MM)
   const carriageY = mmToM(carriageAglMm)
-  const shoulderX = mmToM(ARM.mount_x_mm)
   const columnTopY = baseH + extLen
   // Seat chassis so axle ≈ wheel radius (lower plate near axle height)
   const chassisLift = wheelR - mmToM(4)
@@ -240,7 +245,7 @@ export function WheeledChassis({
         roughness={0.55}
       />
 
-      {/* Lead-screw nut carriage (Prusa x-end-motor) at current AGL — coax on screw */}
+      {/* Lift stack: carriage + 4040 + SO-101 — one rigid parent (screwX, carriageY) */}
       <group position={[screwX, carriageY, 0]}>
         <StlPart
           url={LIFT_STL.carriage}
@@ -250,82 +255,117 @@ export function WheeledChassis({
           roughness={0.48}
           metalness={0.1}
         />
-      </group>
 
-      {/*
-        L/R 4040 mounts — world-anchored to ARM.mount_* (not screwX parent).
-        Native STL centered then yawed so zmax arm-bolt face sits at ±mount_x, Z=mount_z.
-        L = +X, R = −X (mirrored). Face half = ARM.mount_face_half_mm.
-      */}
-      {([-1, 1] as const).map((sign) => {
-        const left = sign === 1
-        const half = mmToM(ARM.mount_face_half_mm)
-        const [cx, cy, cz] = ARM.mount_stl_center_mm
-        const drop = mmToM(ARM.mount_face_drop_mm)
-        const mz = mmToM(ARM.mount_z_mm)
-        // Inset group origin by face-half so zmax arm face lands on ±mount_x
-        const gx = sign * (shoulderX - half)
-        return (
-          <group
-            key={left ? 'm4040-L' : 'm4040-R'}
-            position={[gx, carriageY - drop, mz]}
-            rotation={[0, left ? Math.PI / 2 : -Math.PI / 2, 0]}
+        {/*
+          L/R 4040 mounts — children of carriage (not world orphans).
+          Local mm: L [+(mount_x-face_half)-screwX, -drop, mount_z]
+                    R [-(mount_x-face_half)-screwX, -drop, mount_z]
+        */}
+        {([-1, 1] as const).map((sign) => {
+          const left = sign === 1
+          const half = ARM.mount_face_half_mm
+          const [cx, cy, cz] = ARM.mount_stl_center_mm
+          const lx = mmToM(sign * (ARM.mount_x_mm - half) - SCREW_AXIS_X_MM)
+          const ly = mmToM(-ARM.mount_face_drop_mm)
+          const lz = mmToM(ARM.mount_z_mm)
+          return (
+            <group
+              key={left ? 'm4040-L' : 'm4040-R'}
+              position={[lx, ly, lz]}
+              rotation={[0, left ? Math.PI / 2 : -Math.PI / 2, 0]}
+            >
+              <StlPart
+                url={LIFT_STL.mount4040}
+                color={colour.dark}
+                position={[mmToM(-cx), mmToM(-cy), mmToM(-cz)]}
+                roughness={0.5}
+              />
+            </group>
+          )
+        })}
+
+        {/* Seat pads at SO-101 base_link seats (local to lift) */}
+        {([-1, 1] as const).map((sign) => (
+          <mesh
+            key={`arm-pad-${sign}`}
+            position={[
+              mmToM(sign * ARM.mount_x_mm - SCREW_AXIS_X_MM),
+              mmToM(-ARM.mount_face_drop_mm),
+              mmToM(ARM.mount_z_mm),
+            ]}
+            castShadow
           >
-            <StlPart
-              url={LIFT_STL.mount4040}
-              color={colour.dark}
-              position={[mmToM(-cx), mmToM(-cy), mmToM(-cz)]}
-              roughness={0.5}
-            />
-          </group>
-        )
-      })}
+            <boxGeometry args={[mmToM(36), mmToM(8), mmToM(36)]} />
+            <meshStandardMaterial color="#374151" roughness={0.5} metalness={0.25} />
+          </mesh>
+        ))}
 
-      {/* Yoke bridge: carriage → L/R 4040 — continuous load path (no floating mounts) */}
-      <mesh position={[0, carriageY - mmToM(ARM.mount_face_drop_mm), mmToM(ARM.mount_z_mm)]} castShadow receiveShadow>
-        <boxGeometry args={[shoulderX * 2 - mmToM(8), mmToM(18), mmToM(28)]} />
-        <meshStandardMaterial color="#6b7280" roughness={0.4} metalness={0.45} />
-      </mesh>
-      {/* Column stub: extrusion face → yoke center */}
-      <mesh position={[0, carriageY - mmToM(ARM.mount_face_drop_mm), mmToM(ARM.mount_z_mm * 0.45)]} castShadow>
-        <boxGeometry args={[mmToM(EXTRUSION.width_mm + 8), mmToM(22), mmToM(ARM.mount_z_mm + 10)]} />
-        <meshStandardMaterial color="#8b939e" roughness={0.38} metalness={0.5} />
-      </mesh>
-      {/* Seat pads under each SO-101 base_link (visual bolt face) */}
-      {([-1, 1] as const).map((sign) => (
+        {/* Keyed L/R lugs — ride with carriage */}
         <mesh
-          key={`arm-pad-${sign}`}
-          position={[sign * shoulderX, carriageY - mmToM(ARM.mount_face_drop_mm), mmToM(ARM.mount_z_mm)]}
+          position={[
+            mmToM(ARM.mount_x_mm - SCREW_AXIS_X_MM),
+            mmToM(14),
+            mmToM(ARM.mount_z_mm + 10),
+          ]}
           castShadow
         >
-          <boxGeometry args={[mmToM(36), mmToM(8), mmToM(36)]} />
-          <meshStandardMaterial color="#374151" roughness={0.5} metalness={0.25} />
+          <boxGeometry args={[mmToM(22), mmToM(10), mmToM(8)]} />
+          <meshStandardMaterial color="#38bdf8" roughness={0.4} />
         </mesh>
-      ))}
+        <mesh
+          position={[
+            mmToM(ARM.mount_x_mm - SCREW_AXIS_X_MM + 14),
+            mmToM(18),
+            mmToM(ARM.mount_z_mm + 10),
+          ]}
+          castShadow
+        >
+          <boxGeometry args={[mmToM(8), mmToM(16), mmToM(8)]} />
+          <meshStandardMaterial color="#0ea5e9" roughness={0.35} />
+        </mesh>
+        <mesh
+          position={[
+            mmToM(-ARM.mount_x_mm - SCREW_AXIS_X_MM),
+            mmToM(14),
+            mmToM(ARM.mount_z_mm + 10),
+          ]}
+          castShadow
+        >
+          <boxGeometry args={[mmToM(22), mmToM(10), mmToM(8)]} />
+          <meshStandardMaterial color="#f97316" roughness={0.4} />
+        </mesh>
+        <mesh
+          position={[
+            mmToM(-ARM.mount_x_mm - SCREW_AXIS_X_MM - 12),
+            mmToM(20),
+            mmToM(ARM.mount_z_mm + 10),
+          ]}
+          rotation={[0, 0, Math.PI / 5]}
+          castShadow
+        >
+          <boxGeometry args={[mmToM(10), mmToM(20), mmToM(7)]} />
+          <meshStandardMaterial color="#ea580c" roughness={0.35} />
+        </mesh>
 
-      {/* Physical keyed L/R asymmetry — lug geometry differs (not just colour) */}
-      {/* L (+X): rectangular key lug + blue */}
-      <mesh position={[shoulderX, carriageY + mmToM(14), mmToM(ARM.mount_z_mm + 10)]} castShadow>
-        <boxGeometry args={[mmToM(22), mmToM(10), mmToM(8)]} />
-        <meshStandardMaterial color="#38bdf8" roughness={0.4} />
-      </mesh>
-      <mesh position={[shoulderX + mmToM(14), carriageY + mmToM(18), mmToM(ARM.mount_z_mm + 10)]} castShadow>
-        <boxGeometry args={[mmToM(8), mmToM(16), mmToM(8)]} />
-        <meshStandardMaterial color="#0ea5e9" roughness={0.35} />
-      </mesh>
-      {/* R (−X): triangular-ish wedge lug + orange */}
-      <mesh position={[-shoulderX, carriageY + mmToM(14), mmToM(ARM.mount_z_mm + 10)]} castShadow>
-        <boxGeometry args={[mmToM(22), mmToM(10), mmToM(8)]} />
-        <meshStandardMaterial color="#f97316" roughness={0.4} />
-      </mesh>
-      <mesh
-        position={[-shoulderX - mmToM(12), carriageY + mmToM(20), mmToM(ARM.mount_z_mm + 10)]}
-        rotation={[0, 0, Math.PI / 5]}
-        castShadow
-      >
-        <boxGeometry args={[mmToM(10), mmToM(20), mmToM(7)]} />
-        <meshStandardMaterial color="#ea580c" roughness={0.35} />
-      </mesh>
+        {/* SO-101 base_link seats on 4040 faces — same rigid lift parent */}
+        <SO101FollowerArm
+          side="L"
+          colour={colour}
+          carriageAglMm={carriageAglMm}
+          shoulderRad={armShoulderRad}
+          elbowRad={armElbowRad}
+          liftLocal
+        />
+        <SO101FollowerArm
+          side="R"
+          colour={colour}
+          carriageAglMm={carriageAglMm}
+          shoulderRad={armShoulderRad}
+          elbowRad={armElbowRad}
+          showWipe={showWipe}
+          liftLocal
+        />
+      </group>
 
       {/* Outrigger feet — widen support to 400 mm (TIP.support_width) */}
       {([-1, 1] as const).map((side) => {
@@ -389,16 +429,13 @@ export function WheeledChassis({
         <meshStandardMaterial color="#9ca3af" roughness={0.32} metalness={0.7} />
       </mesh>
 
-      {/* SO-ARM overhead cam — TRUE 1:1; boom root centered on column; +Y native → +Z forward */}
-      <group
-        position={[-mmToM(HEAD.stl_center_x_mm), columnTopY + mmToM(6), mmToM(-8)]}
-        rotation={[0, 0, 0]}
-      >
+      {/* SO-ARM overhead cam — on-column (X=0); boom stacks UP; no sideways poke */}
+      <group position={[0, columnTopY + mmToM(6), 0]} rotation={[0, 0, 0]}>
         <StlPart url={HEAD_STL.bottom} color={colour.dark} roughness={0.48} metalness={0.1} />
         <StlPart url={HEAD_STL.middle} color={colour.dark} roughness={0.48} />
         <StlPart url={HEAD_STL.top} color={colour.accent} roughness={0.45} />
       </group>
-      {/* Face screen + UVC lens seated at boom tip (cam_mount_top max Y) */}
+      {/* Face nest on column top */}
       <group position={[0, columnTopY + mmToM(52), mmToM(8)]}>
         <mesh castShadow>
           <boxGeometry args={[mmToM(HEAD.screen_w_mm), mmToM(HEAD.screen_h_mm), mmToM(HEAD.screen_t_mm)]} />
@@ -428,6 +465,7 @@ export function SO101FollowerArm({
   shoulderRad = 0,
   elbowRad = 0,
   showWipe = false,
+  liftLocal = false,
 }: {
   colour: Colourway
   side?: 'L' | 'R'
@@ -435,11 +473,17 @@ export function SO101FollowerArm({
   shoulderRad?: number
   elbowRad?: number
   showWipe?: boolean
+  /** When true, parent is lift group at [screwX, carriageY, 0] — local seat coords. */
+  liftLocal?: boolean
 }) {
   const left = side === 'L'
-  // base_link origin flush on 4040 arm-bolt face (±mount_x, AGL−drop, mount_z)
-  const shoulderX = mmToM(left ? ARM.mount_x_mm : -ARM.mount_x_mm)
-  const shoulderY = mmToM(carriageAglMm - ARM.mount_face_drop_mm)
+  // World: (±mount_x, AGL−drop, mount_z). Lift-local: (±mount_x − screwX, −drop, mount_z).
+  const shoulderX = liftLocal
+    ? mmToM((left ? ARM.mount_x_mm : -ARM.mount_x_mm) - SCREW_AXIS_X_MM)
+    : mmToM(left ? ARM.mount_x_mm : -ARM.mount_x_mm)
+  const shoulderY = liftLocal
+    ? mmToM(-ARM.mount_face_drop_mm)
+    : mmToM(carriageAglMm - ARM.mount_face_drop_mm)
   const shoulderZ = mmToM(ARM.mount_z_mm)
 
   return (
