@@ -5,7 +5,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { useSim } from '../sim/SimContext'
 
-/** Frame pebble-shell wheeled twin + one hanging SO-101. */
+/** Frame ~5′8″ wheeled twin + dual SO-101 on lead-screw carriage. */
 export function ChaseCamera() {
   const { state, notifyOrbitDetach } = useSim()
   const controls = useRef<OrbitControlsImpl>(null)
@@ -29,10 +29,10 @@ export function ChaseCamera() {
 
   useFrame((_, dt) => {
     // Look at mid-torso of taller bot
-    const target = look.current.set(state.x, 0.38, state.y)
+    const target = look.current.set(state.x, 0.95, state.y)
     if (state.chaseCam && !dragging.current) {
-      const back = 1.85
-      const height = 1.05
+      const back = 2.8
+      const height = 1.55
       const yaw = -state.theta + Math.PI / 2
       desired.current.set(
         state.x - Math.sin(yaw) * back,

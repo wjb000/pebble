@@ -15,7 +15,7 @@ export function Scene({ colourId }: { colourId: string }) {
     <Canvas
       shadows
       dpr={[1, 2]}
-      camera={{ position: [0, 1.05, 2.0], fov: 42, near: 0.02, far: 40 }}
+      camera={{ position: [0, 1.6, 3.2], fov: 42, near: 0.02, far: 40 }}
       gl={{ antialias: true, toneMappingExposure: 1.1 }}
       style={{ width: '100%', height: '100%', background: '#0a0b0e' }}
     >
