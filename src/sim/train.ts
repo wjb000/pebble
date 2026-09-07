@@ -1,6 +1,6 @@
 /**
  * Digital-twin training hooks — observation / action loop for teleop dumps & future RL.
- * Physics are simple planar unicycle + ball (not MuJoCo); geometry = CAD meshes.
+ * Physics are simple planar unicycle + ball (not MuJoCo); visual = placeholder wheeled chassis + SO-101 GLB.
  *
  * Action contract (stable): { forward, yawRate } in [-1, 1]
  * Observation: robot pose, ball relative, v/omega, mode

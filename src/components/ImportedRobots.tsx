@@ -1,62 +1,20 @@
 /**
- * Real CAD meshes only — Microduck (microduck_rl / assembled MJCF) + SO-101 (SO-ARM100 URDF bake).
- * No handmade capsules/boxes pretending to be the robot.
+ * Pebble visual twin: procedural wheeled chassis (honest placeholder) + SO-101 GLB.
+ * Microduck biped mesh is NOT the product visual anymore (asset may remain on disk).
  *
  * Frame convention (Pebble / Three.js body):
- *   +Y up, +Z forward (beak), +X left (robotics FLU after Z-up→Y-up + yaw).
- * Microduck STL is mm, Z-up, +X forward, ±Y lateral.
+ *   +Y up, +Z forward, +X left (robotics FLU after Z-up→Y-up + yaw).
  * SO-101 URDF/GLB is meters, Z-up, reach along +X.
  */
 import { useMemo } from 'react'
-import { useLoader } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
-import type { MeshStandardMaterialParameters } from 'three'
 import type { Colourway } from '../product'
-import { ARM, HIP_HEIGHT_MM, PELVIS, TORSO, mmToM } from '../robot/dims'
+import { ARM, BASE, CAMERA, MAST, mmToM } from '../robot/dims'
 
-const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`
+const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
 
-/** Assembled Microduck STL is millimeters, Z-up; feet at z ≈ -106.53 mm */
-export const MICRODUCK_STL = asset('assets/microduck/body_assembled.stl')
 /** SO-101 follower baked from Simulation/SO101 URDF visuals (meters, Z-up) */
-export const SO101_STL = asset('assets/so101/follower_idle.stl')
 export const SO101_GLB = asset('assets/so101/follower_idle.glb')
-
-const MICRODUCK_FOOT_Z_MM = 106.526
-const MICRODUCK_SCALE = 0.001
-
-/** Shoulder height above sole: hip bar + ~25% up the torso (MJCF trunk / neck class). */
-const SHOULDER_HEIGHT_MM =
-  HIP_HEIGHT_MM + PELVIS.H + TORSO.H * 0.25
-
-type StlProps = {
-  url: string
-  color: string
-  material?: MeshStandardMaterialParameters
-}
-
-function StlMesh({ url, color, material }: StlProps) {
-  const geom = useLoader(STLLoader, url)
-  const geometry = useMemo(() => {
-    const g = geom.clone()
-    g.computeVertexNormals()
-    return g
-  }, [geom])
-
-  return (
-    <mesh geometry={geometry} castShadow receiveShadow>
-      <meshStandardMaterial
-        color={color}
-        roughness={0.45}
-        metalness={0.12}
-        flatShading={false}
-        {...material}
-      />
-    </mesh>
-  )
-}
-
 
 function SO101Glb({ color }: { color: string }) {
   const { scene } = useGLTF(SO101_GLB)
@@ -82,23 +40,63 @@ function SO101Glb({ color }: { color: string }) {
 
 useGLTF.preload(SO101_GLB)
 
-/**
- * Official / community Microduck body mesh (assembled from MJCF STLs).
- * STL: Z-up, +X forward → body: Y-up, +Z forward via Rx(-90°) then Ry(-90°).
- */
-export function MicroduckBody({ colour }: { colour: Colourway }) {
+/** Low round-ish differential-drive chassis + mast eye (procedural placeholder). */
+export function WheeledChassis({ colour }: { colour: Colourway }) {
+  const r = mmToM(BASE.diameter_mm) * 0.5
+  const h = mmToM(BASE.height_mm)
+  const wheelR = mmToM(BASE.wheel_diameter_mm) * 0.5
+  const wheelW = mmToM(BASE.wheel_width_mm)
+  const track = mmToM(BASE.track_mm) * 0.5
+  const mastH = mmToM(MAST.height_mm)
+  const mastR = mmToM(MAST.diameter_mm) * 0.5
+  const camW = mmToM(CAMERA.W)
+  const camH = mmToM(CAMERA.H)
+  const camD = mmToM(CAMERA.D)
+
   return (
-    <group position={[0, mmToM(MICRODUCK_FOOT_Z_MM), 0]}>
-      {/* Outer yaw maps STL +X (beak) → body +Z (forward) */}
-      <group rotation={[0, -Math.PI / 2, 0]}>
-        {/* Inner: Z-up → Y-up */}
-        <group rotation={[-Math.PI / 2, 0, 0]} scale={MICRODUCK_SCALE}>
-          <StlMesh
-            url={MICRODUCK_STL}
-            color={colour.primary}
-            material={{ roughness: 0.42, metalness: 0.08 }}
-          />
-        </group>
+    <group>
+      {/* Shell — flat cylinder (honest placeholder chassis) */}
+      <mesh position={[0, h * 0.5, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[r, r * 0.98, h, 32]} />
+        <meshStandardMaterial color={colour.primary} roughness={0.5} metalness={0.08} />
+      </mesh>
+      {/* Top lid slightly inset */}
+      <mesh position={[0, h + 0.002, 0]} receiveShadow>
+        <cylinderGeometry args={[r * 0.92, r * 0.92, 0.006, 32]} />
+        <meshStandardMaterial color={colour.belly} roughness={0.55} metalness={0.05} />
+      </mesh>
+      {/* Drive wheels */}
+      {([-1, 1] as const).map((side) => (
+        <mesh
+          key={side}
+          position={[side * track, wheelR, 0]}
+          rotation={[0, 0, Math.PI / 2]}
+          castShadow
+        >
+          <cylinderGeometry args={[wheelR, wheelR, wheelW, 20]} />
+          <meshStandardMaterial color={colour.dark} roughness={0.7} metalness={0.15} />
+        </mesh>
+      ))}
+      {/* Front caster */}
+      <mesh position={[0, mmToM(BASE.caster_diameter_mm) * 0.5, r * 0.55]} castShadow>
+        <sphereGeometry args={[mmToM(BASE.caster_diameter_mm) * 0.5, 12, 12]} />
+        <meshStandardMaterial color={colour.dark} roughness={0.65} />
+      </mesh>
+      {/* Mast */}
+      <mesh position={[0, h + mastH * 0.5, mmToM(MAST.offset_forward_mm)]} castShadow>
+        <cylinderGeometry args={[mastR, mastR * 1.1, mastH, 12]} />
+        <meshStandardMaterial color={colour.dark} roughness={0.4} metalness={0.2} />
+      </mesh>
+      {/* Camera eye */}
+      <group position={[0, h + mastH + camH * 0.5, mastR + camD * 0.2]}>
+        <mesh castShadow>
+          <boxGeometry args={[camW, camH, camD]} />
+          <meshStandardMaterial color={colour.face} roughness={0.35} metalness={0.25} />
+        </mesh>
+        <mesh position={[0, 0, camD * 0.55]}>
+          <circleGeometry args={[camH * 0.28, 16]} />
+          <meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={0.35} />
+        </mesh>
       </group>
     </group>
   )
@@ -106,25 +104,23 @@ export function MicroduckBody({ colour }: { colour: Colourway }) {
 
 /**
  * One SO-101 follower arm from URDF-baked GLB (meters, Z-up, reach +X).
- * Mounted on Microduck flanks: left -X, right +X; both reach body +Z when idle.
- * Same orientation both sides (no mirrored negative scale).
+ * Mounted on wheeled base right/front (+X is left → mount_x negative = right).
  */
 export function SO101FollowerArm({
-  side,
   colour,
+  side = 'R',
 }: {
-  side: 'L' | 'R'
   colour: Colourway
+  side?: 'L' | 'R'
 }) {
   const left = side === 'L'
-  // Body +X = left after Microduck facing fix
-  const shoulderX = mmToM(ARM.shoulder_span) * 0.5 * (left ? -1 : 1)
-  const shoulderY = mmToM(SHOULDER_HEIGHT_MM)
-  const shoulderZ = mmToM(ARM.mount_forward)
+  const shoulderX = mmToM(left ? -ARM.mount_x_mm : ARM.mount_x_mm)
+  const shoulderY = mmToM(ARM.mount_y_mm)
+  const shoulderZ = mmToM(ARM.mount_z_mm)
 
   return (
     <group position={[shoulderX, shoulderY, shoulderZ]}>
-      {/* Z-up→Y-up, then yaw so URDF +X reach → body +Z forward; base stays Y-up */}
+      {/* Z-up→Y-up, then yaw so URDF +X reach → body +Z forward */}
       <group rotation={[0, -Math.PI / 2, 0]}>
         <group rotation={[-Math.PI / 2, 0, 0]}>
           <SO101Glb color={colour.dark} />
@@ -135,4 +131,4 @@ export function SO101FollowerArm({
 }
 
 export const MESH_ATTRIBUTION =
-  'Meshes: Microduck (microduck_rl, CC BY-SA-NC) + SO-101 (TheRobotStudio/SO-ARM100)'
+  'Placeholder wheeled chassis (procedural) + SO-101 GLB (TheRobotStudio/SO-ARM100). Not Microduck product visual.'

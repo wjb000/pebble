@@ -1,13 +1,9 @@
 /**
- * Pebble dimensions — documentation / mounts / BOM (millimeters / grams). Visual truth on /sim = imported CAD meshes.
+ * Pebble dimensions — documentation / mounts / BOM (millimeters / grams).
+ * Product: low wheeled differential-drive base + mast camera + 1× LeRobot SO-101 (v1).
+ * Dual SO-101 is an optional upgrade. NOT official Pollen / Microduck.
+ * Visual on /sim: procedural placeholder chassis + real SO-101 GLB.
  * Three.js converts mm → m only at render (mmToM).
- * OpenSCAD cad/pebble.scad hardcodes matching constants — must stay in sync.
- *
- * Product: Pebble = Microduck-class body + 2× LeRobot SO-101 arms.
- * NOT an official Pollen Robotics / Microduck product. Public specs + MJCF
- * kinematics only — no proprietary STLs or Pollen branding as official.
- *
- * Body height target: 250 mm (press-kit / microduck_rl AGENTS.md).
  */
 
 export const MM = 1
@@ -15,25 +11,36 @@ export const mmToM = (mm: number) => mm * 0.001
 export const mToMm = (m: number) => m * 1000
 
 /**
- * Dynamixel XL330 case — Robotis XL330-M288-T class datasheet (mm / g).
- * Microduck body: 15× XL330 (14 controlled + mouth/beak).
+ * Low round-ish wheeled base (Roomba-class thinking) — draft printable twin.
+ * Diameter ~320 mm, shell height ~80 mm; stable under ~800 g arm.
  */
-export const XL330 = {
-  L: 20.0,
-  W: 34.0,
-  H: 26.0,
-  mass_g: 18,
-  /** stall torque class ~0.52 N·m @ 5 V (document only) */
-  torque_nm: 0.52,
-  bus: 'TTL' as const,
-  /** 14 controlled + 1 mouth/beak */
-  qty_body: 15,
-  qty_controlled: 14,
-  qty_beak: 1,
+export const BASE = {
+  diameter_mm: 320,
+  height_mm: 80,
+  wheel_diameter_mm: 70,
+  wheel_width_mm: 22,
+  track_mm: 280,
+  caster_diameter_mm: 28,
+  note: 'Differential-drive; procedural placeholder in sim until CAD shell lands',
+} as const
+
+/** Mast for the single cheap eye */
+export const MAST = {
+  height_mm: 180,
+  diameter_mm: 18,
+  offset_forward_mm: 0,
+} as const
+
+/** Tiny CSI/USB camera on mast top */
+export const CAMERA = {
+  W: 18,
+  H: 14,
+  D: 12,
+  rise: 2,
 } as const
 
 /**
- * Feetech STS3215 — used on SO-101 arms only (not body legs).
+ * Feetech STS3215 — used on SO-101 arms.
  * Datasheet case mm; ~55 g; ~19 kg·cm @ 6–7.4 V.
  */
 export const STS3215 = {
@@ -43,100 +50,14 @@ export const STS3215 = {
   mass_g: 55,
   torque_kgcm: 19,
   bus: 'TTL' as const,
-  /** 6 per SO-101 follower × 2 arms */
   qty_per_arm: 6,
+  /** Optional dual-arm upgrade */
   qty_arms_pair: 12,
-} as const
-
-/**
- * Microduck-class body envelope — public press kit + approximate link lengths
- * from pollen-robotics/microduck_rl robot_walk.xml body origins (fetched via
- * raw GitHub; mesh STLs not vendored). Values rounded for printable twin.
- *
- * Sources:
- * - Height 250 mm, mass <800 g, width ~140 mm (Pollen Microduck intro)
- * - Joint layout AGENTS.md: L leg 5, neck/head 4, R leg 5 (+ beak)
- * - MJCF segment magnitudes ~42 mm thigh, ~49 mm shin, hip lateral ~28–35 mm
- */
-export const FOOT = {
-  L: 55,
-  W: 32,
-  H: 12,
-} as const
-
-/** Shin (knee → ankle) — MJCF shin/ankle chain ≈ 42–49 mm */
-export const SHIN_LEN = 48
-/** Thigh (hip_pitch → knee) — MJCF upper_leg geom ≈ 42.5 mm */
-export const THIGH_LEN = 42
-
-/** Pelvis / hip bar (printed) */
-export const PELVIS = {
-  W: 72,
-  H: 20,
-  D: 48,
-} as const
-
-/**
- * Duck-like trunk. Width envelope with shoulders ≈ 140 mm press-kit width.
- * Depth gives the biped duck silhouette (not a phone-bezel head).
- */
-export const TORSO = {
-  W: 100,
-  H: 68,
-  D: 78,
-} as const
-
-export const NECK_LEN = 22
-
-/** Head shell + articulated beak (Microduck-class), not a phone LCD */
-export const HEAD = {
-  W: 48,
-  H: 38,
-  D: 52,
-} as const
-
-export const BEAK = {
-  L: 28,
-  W: 16,
-  H: 10,
-} as const
-
-/** Tiny head camera (CSI/USB class) */
-export const CAMERA = {
-  W: 12,
-  H: 12,
-  D: 8,
-  rise: 1,
-} as const
-
-/**
- * Standing height (mm) — sole → crown.
- * 12 + 48 + 42 + 20 + 68 + 22 + 38 = 250
- */
-export const STANDING_HEIGHT_MM =
-  FOOT.H + SHIN_LEN + THIGH_LEN + PELVIS.H + TORSO.H + NECK_LEN + HEAD.H
-
-/** Press-kit body width envelope (mm) */
-export const BODY_WIDTH_MM = 140
-
-/** Hip joint height above sole */
-export const HIP_HEIGHT_MM = FOOT.H + SHIN_LEN + THIGH_LEN
-
-/** Printed Microduck-class frame (small PLA links, not 16 mm chore tube) */
-export const FRAME = {
-  tube_OD: 8,
-  tube_ID: 5,
-  horn_thickness: 2.5,
-  link_radius: 6,
 } as const
 
 /**
  * LeRobot SO-101 follower arm — Hugging Face LeRobot / TheRobotStudio SO-ARM100.
  * Docs: https://huggingface.co/docs/lerobot/en/so101 · so101_follower
- *
- * Link lengths approximate from public URDF
- * TheRobotStudio/SO-ARM100 Simulation/SO101/so101_new_calib.urdf joint origins.
- * Reach ~500 mm and mass ~800 g are published kit figures (not measured here).
  */
 export const SO101 = {
   joints: [
@@ -148,23 +69,14 @@ export const SO101 = {
     'gripper',
   ] as const,
   dof: 6,
-  /** URDF shoulder_pan origin z (mm) */
   base_z: 62.4,
-  /** URDF |z| shoulder_lift → upper_arm (mm) */
   shoulder_lift_z: 54.2,
-  /** URDF |x| elbow_flex — upper arm (mm) */
   upper_arm: 112.6,
-  /** URDF |x| wrist_flex — forearm (mm) */
   forearm: 134.9,
-  /** URDF |y| wrist_roll (mm) */
   wrist: 61.1,
-  /** Approx gripper / jaw length (mm) */
   gripper: 80,
-  /** Published approximate reach */
   reach_mm: 500,
-  /** Published approximate arm mass */
   mass_g: 800,
-  /** DIY kit street price band USD (follower) */
   diy_usd_lo: 100,
   diy_usd_hi: 200,
   sts3215_qty: 6,
@@ -173,84 +85,84 @@ export const SO101 = {
 } as const
 
 /**
- * Shoulder mount span across Microduck torso (mm) — bimanual SO-101 bases.
- * Body frame after CAD fix: +X left, -X right, +Z forward (beak).
- * Visual mounts use shoulder_span/2 on ±X at hip+pelvis+0.25·torso height.
+ * Default v1: one SO-101 on the right/front of the base (reachable for floor/table-edge).
+ * Body frame: +Y up, +Z forward, +X left.
  */
 export const ARM = {
-  shoulder_span: 140,
-  /** Forward mount offset from torso center along +Z (mm) */
-  mount_forward: 8,
-  /** Vertical mount on torso (fraction of torso H above pelvis; ImportedRobots) */
-  mount_y_frac: 0.25,
+  /** Lateral offset of shoulder mount from base center (mm); +X = left */
+  mount_x_mm: -90,
+  /** Height of mount top above floor (mm) ≈ base height */
+  mount_y_mm: 78,
+  /** Forward offset along +Z (mm) */
+  mount_z_mm: 40,
+  default_count: 1,
+  optional_second: true,
 } as const
 
-/** Small compute — Pi Zero 2 W class fits Microduck bay better than full Pi 5 */
+/** Overall visual height: base + mast + cam */
+export const STANDING_HEIGHT_MM = BASE.height_mm + MAST.height_mm + CAMERA.H
+
+export const BODY_WIDTH_MM = BASE.diameter_mm
+
 export const PI_ZERO = {
   W: 65,
   H: 30,
   D: 12,
-  note: 'Pi Zero 2 W / Radxa Zero 3W class; Microduck-scale bay',
+  note: 'Pi Zero 2 W / Radxa Zero 3W class; base bay',
 } as const
 
-/** Keep PI5 export alias for any leftover imports — same bay footprint as Zero */
 export const PI5 = PI_ZERO
 
-/** Small LiPo envelope (not NP-F brick) */
 export const BATTERY = {
-  W: 40,
-  H: 18,
-  D: 30,
+  W: 50,
+  H: 22,
+  D: 35,
   note: '2S/3S LiPo envelope; chemistry TBD at build',
 } as const
 
-/** Hip lateral offset from pelvis center (each leg) — MJCF ~17–35 mm class */
-export const HIP_LATERAL = 30
+/**
+ * Wheeled base carries arm mass better than a biped — still mind tip on ramps / rugs.
+ * Dual arms optional; v1 ships one arm for cost + balance.
+ */
+export const STABILITY_NOTE =
+  'Wheeled low base is the product locomotion (not Microduck biped). One SO-101 (~800 g) is the v1 default; dual arms optional. Mind rugs, thresholds, and arm reach when extended.'
 
-/** Joint stack offsets between stacked hip DOFs (XL330 clearances) */
-export const JOINT = {
-  yaw_to_roll: 12,
-  roll_to_pitch: 16,
-} as const
+/** @deprecated alias — wheeled product; kept so old imports compile briefly */
+export const TOPHEAVY_NOTE = STABILITY_NOTE
 
 /**
- * Honesty: dual SO-101 (~1.6 kg) on an ~800 g Microduck body is top-heavy.
- * Prefer mount plate + counterweight, docked/tabletop braced manipulation, or
- * arms stowed while walking.
+ * Legacy XL330 datasheet kept only as reference (NOT part of v1 BOM).
+ * Previous Microduck-class biped framing dropped for this home-chore goal.
  */
-export const TOPHEAVY_NOTE =
-  'Dual SO-101 (~800 g each ≈ 1.6 kg) on Microduck-class body (<800 g) is top-heavy. Use shoulder mount plate, counterweight / ballast, or docked tabletop mode with body braced; walk with arms idle/stowed.'
+export const XL330 = {
+  L: 20.0,
+  W: 34.0,
+  H: 26.0,
+  mass_g: 18,
+  torque_nm: 0.52,
+  bus: 'TTL' as const,
+  qty_body: 0,
+  note: 'Not used on wheeled Pebble v1 — retained for archive only',
+} as const
 
-/** Convenience aggregate for JSON export / HUD */
 export const PEBBLE_DIMS = {
-  product: 'Pebble — Microduck body + 2× SO-101 arms (not official Pollen)',
+  product: 'Pebble — wheeled base + eye + 1× SO-101 (not official Pollen)',
   standing_height_mm: STANDING_HEIGHT_MM,
   body_width_mm: BODY_WIDTH_MM,
-  hip_height_mm: HIP_HEIGHT_MM,
-  xl330: XL330,
-  sts3215: STS3215,
-  foot: FOOT,
-  shin_len: SHIN_LEN,
-  thigh_len: THIGH_LEN,
-  pelvis: PELVIS,
-  torso: TORSO,
-  neck_len: NECK_LEN,
-  head: HEAD,
-  beak: BEAK,
+  base: BASE,
+  mast: MAST,
   camera: CAMERA,
-  frame: FRAME,
+  sts3215: STS3215,
   so101: SO101,
   arm: ARM,
   pi_zero: PI_ZERO,
   battery: BATTERY,
-  hip_lateral: HIP_LATERAL,
-  joint: JOINT,
-  topheavy_note: TOPHEAVY_NOTE,
+  stability_note: STABILITY_NOTE,
   units: 'mm / g',
-  digital_twin_rule: 'visual = imported meshes; dims.ts documents mounts/BOM',
+  digital_twin_rule:
+    'visual = procedural wheeled chassis (placeholder) + SO-101 GLB; dims.ts documents mounts/BOM',
   sources: [
-    'Microduck press kit 250×~140 mm, <800 g, 15× XL330',
-    'microduck_rl AGENTS.md joint layout + robot_walk.xml body origins',
+    'Roomba-class differential-drive home base (cost-first)',
     'SO-101 URDF so101_new_calib.urdf + HF docs/lerobot/en/so101',
   ],
 } as const

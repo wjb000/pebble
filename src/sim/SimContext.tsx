@@ -9,7 +9,10 @@ import { integratePose, nudgeBall } from './physics'
 import {
   TrajectoryBuffer, installTrainApi, observe, type TrainAction,
 } from './train'
-import { DT, START_THETA, START_X, START_Y, type SimState } from './types'
+import {
+  BOX_PICK_RANGE, BOX_START_X, BOX_START_Y, DT,
+  START_THETA, START_X, START_Y, type SimState,
+} from './types'
 
 type SimApi = {
   state: SimState
@@ -76,7 +79,6 @@ export function SimProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, fps }))
       }
 
-      // Fixed timestep control loop — DT from types.ts (50 Hz)
       while (accum >= DT) {
         accum -= DT
         const prev = stateRef.current
@@ -94,6 +96,9 @@ export function SimProvider({ children }: { children: ReactNode }) {
         let ballY = prev.ballY
         let ballVx = prev.ballVx
         let ballVy = prev.ballVy
+        let boxX = prev.boxX
+        let boxY = prev.boxY
+        let boxHeld = prev.boxHeld
 
         if (keys.toggleMode) mode = mode === 'auto' ? 'teleop' : 'auto'
         if (keys.toggleChase) chaseCam = !chaseCam
@@ -102,7 +107,22 @@ export function SimProvider({ children }: { children: ReactNode }) {
           x = START_X; y = START_Y; theta = START_THETA; phase = 0
           sitting = false; sitTarget.current = 0; odo = 0
           ballX = -0.55; ballY = 0.2; ballVx = 0; ballVy = 0
+          boxX = BOX_START_X; boxY = BOX_START_Y; boxHeld = false
           trajRef.current.resetClock()
+        }
+
+        if (keys.togglePick) {
+          if (boxHeld) {
+            // Drop ahead of robot
+            const reach = 0.28
+            boxX = x + Math.cos(theta) * reach
+            boxY = y + Math.sin(theta) * reach
+            boxHeld = false
+          } else {
+            const dx = boxX - x
+            const dy = boxY - y
+            if (Math.hypot(dx, dy) <= BOX_PICK_RANGE) boxHeld = true
+          }
         }
 
         sitTarget.current = sitting ? 1 : 0
@@ -121,8 +141,17 @@ export function SimProvider({ children }: { children: ReactNode }) {
 
         const integrated = integratePose({ ...prev, x, y, theta, phase, odo }, steering, DT, sitBlend)
         const ball = nudgeBall({ ...prev, ...integrated, ballX, ballY, ballVx, ballVy }, DT)
+
+        // Keep held box tracking robot (ChoreProps also mirrors for render)
+        if (boxHeld) {
+          const reach = 0.28
+          boxX = integrated.x + Math.cos(integrated.theta) * reach
+          boxY = integrated.y + Math.sin(integrated.theta) * reach
+        }
+
         const next: SimState = {
           ...prev, ...integrated, ...ball,
+          boxX, boxY, boxHeld,
           mode, chaseCam, sitting, sitBlend, fps: stateRef.current.fps,
         }
         lastActionRef.current = steering

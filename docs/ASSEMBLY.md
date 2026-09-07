@@ -1,62 +1,45 @@
-# Pebble assembly — Microduck body + SO-101 arms
+# Pebble assembly — wheeled base + SO-101 arm
 
-**Digital twin rule:** `sim = CAD = BOM`. All millimeters live in `src/robot/dims.ts` (export `public/robot/dims.json`). OpenSCAD `cad/pebble.scad` hardcodes the same constants with comment `must match dims.ts`.
+Digital twin: `src/robot/dims.ts` is source of truth for mounts / BOM. Sim shows a **procedural placeholder chassis** + real SO-101 GLB until a printed shell CAD lands.
 
-**Product name:** Pebble — **Microduck-class body + 2× LeRobot SO-101 arms**.  
-**Not an official Pollen Robotics / Microduck product.** Public specs and MJCF kinematics only — do not copy proprietary STLs or brand as official.
-
-Standing height: **250 mm**. Body: **15× Dynamixel XL330**. Arms: **2× SO-101** (6 DOF each, Feetech **STS3215** ×6/arm).
+**Product:** Pebble — **low differential-drive wheeled base + mast camera + 1× LeRobot SO-101** (v1). Dual arms optional.
+**Not** an official Pollen Robotics / Microduck product. Microduck biped is **not** the locomotion for this goal.
 
 ## Safety (read before power)
 
-- **Not a babysitter.** Research / DIY platform — never leave unsupervised with children or pets.
-- **Pinch hazards.** XL330 joints, STS3215 arm joints, and grippers pinch hard. E-stop on servo PSUs.
-- **Battery.** LiPo packs: fire-safe charge surface; servo bus ≠ logic 5V.
-- **Tip-over / top-heavy.** Dual SO-101 (~800 g each ≈ **1.6 kg**) on a Microduck-class body (**&lt;800 g**) is top-heavy. Prefer:
-  - shoulder **mount plate** + optional **counterweight / ballast**
-  - **docked / tabletop** manipulation with body braced
-  - walk with arms **idle / stowed**
+- **Not a babysitter.** Research / DIY — never leave unsupervised with children or pets.
+- **Pinch hazards.** STS3215 arm joints and gripper pinch hard. E-stop on servo PSU.
+- **Battery.** LiPo: fire-safe charge surface; wheel motor rail ≠ arm servo rail ≠ logic 5V.
+- **Floors.** Rugs, cords, stairs, pets. Optional bumper/cliff sensors later — not in v1 UI.
 - **Home deploy caveats.** Not certified. No warranty. You own electrical/mechanical risk.
 
 ## Assembly order
 
-1. **Print Microduck-scale body** — original twin from dims.ts (pelvis, trunk, thigh/shin). Do **not** redistribute proprietary Pollen meshes.
-2. **Dry-fit legs** — hip_yaw → hip_roll → hip_pitch → knee → ankle. Mount visible XL330 bodies (20×34×26 mm).
-3. **Trunk bay** — Pi Zero 2 W / Radxa Zero 3W; small LiPo tray.
-4. **Neck + duck head + beak** — neck_pitch, head_pitch, head_yaw, head_roll + 15th XL330 for mouth/beak; tiny cam on crown.
-5. **SO-101 arms** — build two follower arms per [LeRobot SO-101 docs](https://huggingface.co/docs/lerobot/en/so101) / TheRobotStudio SO-ARM100. Bolt mount plates to torso shoulders (span 140 mm).
-6. **Bus + power** — separate TTL hubs/BECs for XL330 body vs STS3215 arms; bring-up one joint at a time.
-7. **Brain hook** — locomotion `{forward, yawRate}` (same as browser sim). Arms: LeRobot `so101_follower` (idle pose in playground).
-8. **Calibrate** — zero poses match sim rest; verify standing height ~250 mm sole to crown.
+1. **Print / build low round-ish chassis** — diff-drive bay, battery tray, Pi bay, arm mount boss, mast socket.
+2. **Wheels + motors + driver** — two geared motors + wheels; caster(s); TB6612/L298N-class driver. Tank `{forward, yawRate}`.
+3. **Compute + eye** — Pi Zero 2 W (or similar) in base; CSI/USB cam on mast.
+4. **Power** — 2S/3S LiPo; separate BEC/hub for STS3215 arm bus.
+5. **SO-101 arm (v1 = one)** — build follower per LeRobot SO-101 docs. Mount side/front for floor / table-edge reach.
+6. **Optional second arm** — only after base proves stable; update power budget.
+7. **Brain hook** — locomotion same as browser sim. Arms: LeRobot `so101_follower`.
 
-## LeRobot integration
+## What it can do (honest)
 
-| Item | Value |
-|------|--------|
-| Docs | https://huggingface.co/docs/lerobot/en/so101 |
-| Class | `so101_follower` |
-| Joints | shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll, gripper |
-| Motors | STS3215 ×6 / arm (1/345 follower gearing typical) |
-| Reach / mass | ~500 mm · ~800 g (published kit figures) |
-| Link lengths | URDF `so101_new_calib.urdf` origins — see `SO101` in dims.ts |
+- In scope: pick/place small items; wipe within reach; nudge laundry basket
+- Out of scope: laundry folding; MuJoCo autonomy; babysitting
 
-## Torque / mass honesty
+## LeRobot
 
-| Stack | Approx mass |
-|-------|-------------|
-| Microduck-class body budget | &lt;800 g |
-| Dual SO-101 | ~1.6 kg |
-| Twin as built | body + arms + mounts — **top-heavy** |
+- Docs: https://huggingface.co/docs/lerobot/en/so101
+- Class: `so101_follower` · STS3215 ×6 / arm · reach ~500 mm · ~800 g
+
+## Cost
+
+See `/bom`: Base kit vs + 1 arm (v1) vs optional second arm. Draft street USD; aggressive DIY twin aims roughly USD 400–600 with one arm — not a 1.4k biped XL330 stack.
 
 ## Files
 
-| Artifact | Path |
-|----------|------|
-| Dims (SoT) | `src/robot/dims.ts` |
-| Mass estimates | `src/robot/mass.ts` |
-| JSON export | `public/robot/dims.json` |
-| OpenSCAD twin | `cad/pebble.scad` |
-| Browser body | `src/components/Pebble.tsx` |
-| BOM UI | `/bom` |
-
-Physics is kinematics-lite today — **geometry must stay exact**.
+- Dims: `src/robot/dims.ts`
+- Mass: `src/robot/mass.ts`
+- Browser body: `src/components/Pebble.tsx`
+- BOM UI: `/bom`

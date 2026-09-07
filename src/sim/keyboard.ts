@@ -1,4 +1,4 @@
-/** Tank-style teleop: W/S -> forward, A/D -> yawRate (CCW+/CW-). Touch mirrors. */
+/** Tank-style teleop: W/S -> forward, A/D -> yawRate (CCW+/CW-). Touch mirrors. E = pick/drop box. */
 export type KeyState = {
   forward: number
   yawRate: number
@@ -6,6 +6,7 @@ export type KeyState = {
   toggleChase: boolean
   reset: boolean
   toggleSit: boolean
+  togglePick: boolean
 }
 
 const pressed = new Set<string>()
@@ -13,6 +14,7 @@ let edgeMode = false
 let edgeChase = false
 let edgeReset = false
 let edgeSit = false
+let edgePick = false
 
 function onKeyDown(e: KeyboardEvent) {
   if (e.repeat) return
@@ -23,6 +25,7 @@ function onKeyDown(e: KeyboardEvent) {
   if (e.code === 'KeyC') edgeChase = true
   if (e.code === 'Space') { e.preventDefault(); edgeReset = true }
   if (e.code === 'KeyR') edgeSit = true
+  if (e.code === 'KeyE') edgePick = true
   if (e.code === 'Enter') edgeReset = edgeReset
 }
 
@@ -56,8 +59,8 @@ export function sampleKeys(): KeyState {
   const out: KeyState = {
     forward, yawRate,
     toggleMode: edgeMode, toggleChase: edgeChase,
-    reset: edgeReset, toggleSit: edgeSit,
+    reset: edgeReset, toggleSit: edgeSit, togglePick: edgePick,
   }
-  edgeMode = edgeChase = edgeReset = edgeSit = false
+  edgeMode = edgeChase = edgeReset = edgeSit = edgePick = false
   return out
 }

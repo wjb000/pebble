@@ -1,5 +1,5 @@
-/** Pebble — Microduck-class body + 2× LeRobot SO-101 arms (draft / not for sale).
- *  NOT an official Pollen Robotics product. Sim matches CAD. */
+/** Pebble — cheap wheeled home chore bot + 1× LeRobot SO-101 (draft / not for sale).
+ *  NOT an official Pollen Robotics product. Cost is the primary design constraint. */
 
 export type Colourway = {
   id: string
@@ -66,164 +66,167 @@ export const COLOURWAYS: Colourway[] = [
 ]
 
 export const ONE_LINER =
-  'Microduck-class body (15× XL330, 250 mm) + dual LeRobot SO-101 arms. Not an official Pollen product.'
+  'Dead-simple home chore bot: low wheeled base + camera eye + one LeRobot SO-101 arm. Draft / not for sale. Not official Pollen.'
 
 export const FAST_FACTS = [
-  { label: 'Height', value: '250 mm' },
-  { label: 'Body servos', value: '15× XL330' },
-  { label: 'Arms', value: '2× SO-101 (STS3215)' },
-  { label: 'Locomotion', value: '{forward, yawRate}' },
+  { label: 'Base', value: 'Diff-drive wheels' },
+  { label: 'Eye', value: '1× CSI/USB cam' },
+  { label: 'Arm (v1)', value: '1× SO-101' },
+  { label: 'Target', value: 'Sub-$400–600 DIY' },
   { label: 'Status', value: 'Draft / not for sale' },
 ]
+
+export type BomColumn = 'base' | 'arm' | 'dual'
 
 export type BomRow = {
   category: string
   part: string
   qty: number | string
-  usd_v1: number
-  usd_full: number
+  /** Draft street USD for base-kit column (wheels + eye + compute) */
+  usd_base: number
+  /** Draft street USD for base + 1× SO-101 (default product) */
+  usd_arm: number
+  /** Draft street USD for base + 2× SO-101 (optional upgrade) */
+  usd_dual: number
   vendor: string
   notes: string
 }
 
 /**
- * Purchasable BOM — approx USD street prices (2025–2026 hobby).
- * v1 = body-focused; full = twin with dual SO-101.
+ * Purchasable BOM — round draft USD street prices (hobby, 2025–2026).
+ * Columns: Base kit | + 1 arm (v1) | + 2nd arm (optional).
+ * Aggressive DIY twin aims sub-$400–600 with one arm — not a $1.4k biped stack.
  */
 export const BOM: BomRow[] = [
   {
-    category: 'Actuation (body)',
-    part: 'Dynamixel XL330-M288-T (or equiv.)',
-    qty: 15,
-    usd_v1: 28,
-    usd_full: 28,
-    vendor: 'Robotis / authorized reseller — XL330',
-    notes: '20×34×26 mm, ~18 g. 14 controlled + mouth/beak. Microduck-class layout.',
+    category: 'Locomotion',
+    part: 'Gear motors + wheels (diff-drive pair)',
+    qty: 1,
+    usd_base: 30,
+    usd_arm: 30,
+    usd_dual: 30,
+    vendor: 'Amazon / Pololu-class / AliExpress',
+    notes: '2× cheap geared DC motors + rubber wheels. Roomba-class thinking.',
   },
   {
-    category: 'Actuation (arms)',
-    part: 'LeRobot SO-101 follower kit (DIY)',
-    qty: 2,
-    usd_v1: 0,
-    usd_full: 150,
-    vendor: 'HF docs/lerobot/en/so101 · TheRobotStudio/SO-ARM100',
-    notes: '6× STS3215 each, reach ~500 mm, ~800 g/arm, DIY ~$100–200. v1 column omits arms.',
-  },
-  {
-    category: 'Actuation (arms)',
-    part: 'Feetech STS3215 (if buying loose)',
-    qty: 12,
-    usd_v1: 0,
-    usd_full: 25,
-    vendor: 'Feetech / WaveShare / AliExpress — STS3215',
-    notes: 'Included in SO-101 kits usually — line for loose rebuild. 45.2×24.7×35 mm.',
+    category: 'Locomotion',
+    part: 'Caster / support wheel(s)',
+    qty: 1,
+    usd_base: 8,
+    usd_arm: 8,
+    usd_dual: 8,
+    vendor: 'Amazon',
+    notes: 'Front/rear caster so low base stays stable with arm mass.',
   },
   {
     category: 'Driver',
-    part: 'TTL hubs + BEC / PSU (body + arms)',
+    part: 'Motor driver (TB6612 / L298N class)',
     qty: 1,
-    usd_v1: 45,
-    usd_full: 90,
-    vendor: 'U2D2-class / Feetech hub / Amazon BEC',
-    notes: 'Separate rails: XL330 body bus vs STS3215 arm bus preferred.',
+    usd_base: 10,
+    usd_arm: 10,
+    usd_dual: 10,
+    vendor: 'Amazon / Pololu',
+    notes: 'Tank drive H-bridge for the two wheel motors.',
+  },
+  {
+    category: 'Driver',
+    part: 'Arm TTL hub + BEC (STS3215 rail)',
+    qty: 1,
+    usd_base: 0,
+    usd_arm: 25,
+    usd_dual: 40,
+    vendor: 'Feetech hub / Amazon BEC',
+    notes: 'Separate rail from wheel motors. Dual arms need more headroom.',
   },
   {
     category: 'Compute',
     part: 'Pi Zero 2 W / Radxa Zero 3W + cooler',
     qty: 1,
-    usd_v1: 25,
-    usd_full: 25,
+    usd_base: 20,
+    usd_arm: 20,
+    usd_dual: 20,
     vendor: 'Raspberry Pi / Radxa',
-    notes: 'Microduck-scale bay (~65×30). Pi 5 optional if bay redesigned.',
+    notes: 'Fits in base bay. Pi 5 optional if bay redesigned.',
   },
   {
     category: 'Sensors',
-    part: 'CSI/USB camera (+ optional depth)',
+    part: 'CSI / USB camera (mast or head)',
     qty: 1,
-    usd_v1: 20,
-    usd_full: 35,
+    usd_base: 18,
+    usd_arm: 18,
+    usd_dual: 18,
     vendor: 'Pi Camera / Amazon USB',
-    notes: 'Head-mounted; Microduck has cam + small depth on real product.',
-  },
-  {
-    category: 'Sensors',
-    part: 'IMU (MPU-6050 / BMI088)',
-    qty: 1,
-    usd_v1: 8,
-    usd_full: 12,
-    vendor: 'Amazon / Adafruit',
-    notes: 'Torso mount.',
+    notes: 'One cheap eye. Optional bumper/cliff later — not faked in UI.',
   },
   {
     category: 'Power',
     part: '2S/3S LiPo + charger',
     qty: 1,
-    usd_v1: 30,
-    usd_full: 45,
+    usd_base: 35,
+    usd_arm: 40,
+    usd_dual: 45,
     vendor: 'Hobby LiPo',
-    notes: 'Envelope ~40×18×30 mm; not NP-F.',
+    notes: 'Bigger pack as arms draw more. Draft — chemistry TBD at build.',
   },
   {
     category: 'Structure',
-    part: 'PLA filament + printed Microduck-scale links',
+    part: 'PLA chassis + mast (printed)',
     qty: 1,
-    usd_v1: 40,
-    usd_full: 55,
+    usd_base: 25,
+    usd_arm: 30,
+    usd_dual: 35,
     vendor: 'Amazon filament',
-    notes: 'Original printable twin — do not copy proprietary Pollen STLs.',
+    notes: 'Low round-ish shell, mast for cam, arm mount boss. DIY twin.',
+  },
+  {
+    category: 'Actuation (arm)',
+    part: 'LeRobot SO-101 follower kit (DIY)',
+    qty: '1 (v1) / 2 opt.',
+    usd_base: 0,
+    usd_arm: 150,
+    usd_dual: 300,
+    vendor: 'HF docs/lerobot/en/so101 · TheRobotStudio/SO-ARM100',
+    notes: '6× STS3215 each, reach ~500 mm, ~800 g/arm, DIY ~$100–200. v1 = one arm.',
   },
   {
     category: 'Structure',
-    part: 'SO-101 shoulder mount plates + optional ballast',
+    part: 'SO-101 mount plate + fasteners',
     qty: 1,
-    usd_v1: 0,
-    usd_full: 35,
+    usd_base: 0,
+    usd_arm: 15,
+    usd_dual: 25,
     vendor: 'Print / metal plate',
-    notes: 'REQUIRED honesty: dual arms ~1.6 kg on <800 g body — brace / counterweight / dock.',
+    notes: 'Side/front mount on wheeled base — stable vs biped tip risk.',
   },
   {
     category: 'Fasteners',
-    part: 'M2/M3 screws + bearings + horns',
+    part: 'M2/M3 screws + wiring + XT30',
     qty: 1,
-    usd_v1: 25,
-    usd_full: 40,
-    vendor: 'Amazon fastener kit',
-    notes: 'XL330 horns + SO-101 M2/M3 kit.',
-  },
-  {
-    category: 'Misc',
-    part: 'Wiring, XT30, heat-shrink',
-    qty: 1,
-    usd_v1: 20,
-    usd_full: 30,
-    vendor: 'Amazon',
-    notes: 'Home deploy harness.',
+    usd_base: 20,
+    usd_arm: 30,
+    usd_dual: 40,
+    vendor: 'Amazon fastener / wiring kit',
+    notes: 'Wheel harness + arm bus + heat-shrink.',
   },
 ]
 
-export function bomLineTotal(row: BomRow, column: 'v1' | 'full'): number {
-  const unit = column === 'v1' ? row.usd_v1 : row.usd_full
-  const q = typeof row.qty === 'number' ? row.qty : 0
-  if (q === 0) return unit
-  return unit * q
+export function bomLineTotal(row: BomRow, column: BomColumn): number {
+  const unit =
+    column === 'base' ? row.usd_base : column === 'arm' ? row.usd_arm : row.usd_dual
+  return unit
 }
 
-export function bomSubtotal(column: 'v1' | 'full'): number {
-  return BOM.reduce((sum, row) => {
-    const unit = column === 'v1' ? row.usd_v1 : row.usd_full
-    if (typeof row.qty === 'number') {
-      if (column === 'full' && row.part.includes('STS3215 (if buying loose)')) return sum
-      return sum + unit * row.qty
-    }
-    return sum + unit
-  }, 0)
+export function bomSubtotal(column: BomColumn): number {
+  return BOM.reduce((sum, row) => sum + bomLineTotal(row, column), 0)
 }
 
 export const SPECS = [
-  { key: 'Height', value: '250 mm standing (dims.ts)' },
-  { key: 'Body actuators', value: '15× Dynamixel XL330 — Microduck joint layout' },
-  { key: 'Arms', value: '2× LeRobot SO-101 (6 DOF each, STS3215 ×6/arm)' },
-  { key: 'Top-heavy', value: 'Dual arms ~1.6 kg on <800 g body — brace / counterweight / dock' },
-  { key: 'Interface', value: '{forward, yawRate} in [-1, 1]; arms idle in walk sim' },
-  { key: 'Status', value: 'Draft — not for sale. Not official Microduck/Pollen.' },
+  { key: 'What', value: 'Cheap home helper — wheeled base + eye + SO-101 arm' },
+  { key: 'Locomotion', value: 'Low differential-drive base (Roomba-class); tank {forward, yawRate}' },
+  { key: 'Why wheels', value: 'Traverse home floors, stable with arm mass, cheap, less tip/stuck than biped' },
+  { key: 'Eye', value: '1× cheap CSI/USB camera on mast/head; bumper/cliff optional later' },
+  { key: 'Arm (v1)', value: '1× LeRobot SO-101 (6 DOF, STS3215 ×6); dual arms optional upgrade' },
+  { key: 'Near-term chores', value: 'Pick/place small items, wipe within reach, nudge laundry basket — not folding laundry' },
+  { key: 'Cost target', value: 'Aggressive DIY twin sub-$400–600 with one arm (draft street prices)' },
+  { key: 'Status', value: 'Draft — not for sale. Not official Pollen / Microduck.' },
 ]

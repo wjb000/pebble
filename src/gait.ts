@@ -1,5 +1,5 @@
 /**
- * Microduck-compatible biped gait (5 DOF per leg visual).
+ * Legacy gait clock kept for sim state; wheeled Pebble ignores biped visuals.
  *
  * Joint layout mirrors public Microduck leg stack:
  *   hip_yaw → hip_roll → hip_pitch → knee → ankle

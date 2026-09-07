@@ -3,7 +3,7 @@ import { steeringToSetpoints, type Steering } from '../steering'
 import { ARENA_HALF, type SimState } from './types'
 
 const BALL_R = 0.08
-const ROBOT_R = 0.22
+const ROBOT_R = 0.18
 
 /**
  * Unicycle integrate in the physics XY plane (mapped to Three.js XZ).

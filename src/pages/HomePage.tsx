@@ -3,7 +3,7 @@ import { ONE_LINER, bomSubtotal } from '../product'
 import { STANDING_HEIGHT_MM } from '../robot/dims'
 
 export function HomePage() {
-  const twin = bomSubtotal('full')
+  const withArm = bomSubtotal('arm')
   return (
     <div className="page home">
       <section className="hero hero-lean">
@@ -16,23 +16,30 @@ export function HomePage() {
           </div>
           <div className="fact-grid fact-strip">
             <div className="fact-card">
-              <div className="fact-label">Height</div>
-              <div className="fact-value">{STANDING_HEIGHT_MM} mm</div>
+              <div className="fact-label">Base</div>
+              <div className="fact-value">Wheels</div>
             </div>
             <div className="fact-card">
-              <div className="fact-label">Body servos</div>
-              <div className="fact-value">15× XL330</div>
+              <div className="fact-label">Eye</div>
+              <div className="fact-value">1× cam</div>
             </div>
             <div className="fact-card">
-              <div className="fact-label">Arms</div>
-              <div className="fact-value">2× SO-101</div>
+              <div className="fact-label">Arm (v1)</div>
+              <div className="fact-value">1× SO-101</div>
             </div>
             <div className="fact-card">
-              <div className="fact-label">Twin BOM</div>
-              <div className="fact-value">{`~$${Math.round(twin).toLocaleString('en-US')}`}</div>
+              <div className="fact-label">Draft twin</div>
+              <div className="fact-value">{`~$${Math.round(withArm).toLocaleString('en-US')}`}</div>
             </div>
           </div>
-          <p className="draft-banner">Draft / not for sale. Dual arms are top-heavy.</p>
+          <p className="lede" style={{ marginTop: '1rem', maxWidth: '38rem' }}>
+            Near-term chores: pick small objects off the floor / table edge, wipe surfaces within reach,
+            nudge a laundry basket — <strong>not</strong> folding laundry. Wheels so it can traverse
+            home floors without tipping like a biped.
+          </p>
+          <p className="draft-banner">
+            Draft / not for sale. Mast height ~{STANDING_HEIGHT_MM} mm. Not official Pollen.
+          </p>
         </div>
       </section>
     </div>

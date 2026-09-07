@@ -5,7 +5,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { useSim } from '../sim/SimContext'
 
-/** Frame 250 mm Microduck-class body + SO-101 arms. */
+/** Frame low wheeled chassis + SO-101 arm. */
 export function ChaseCamera() {
   const { state, notifyOrbitDetach } = useSim()
   const controls = useRef<OrbitControlsImpl>(null)
@@ -28,10 +28,10 @@ export function ChaseCamera() {
   }, [notifyOrbitDetach])
 
   useFrame((_, dt) => {
-    const target = look.current.set(state.x, 0.14, state.y)
+    const target = look.current.set(state.x, 0.12, state.y)
     if (state.chaseCam && !dragging.current) {
-      const back = 1.15
-      const height = 0.55
+      const back = 1.25
+      const height = 0.62
       const yaw = -state.theta + Math.PI / 2
       desired.current.set(
         state.x - Math.sin(yaw) * back,

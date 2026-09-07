@@ -1,39 +1,39 @@
 import { Link } from 'react-router-dom'
-import { BOM, SPECS, bomSubtotal, type BomRow } from '../product'
-import { STANDING_HEIGHT_MM, XL330 } from '../robot/dims'
+import { BOM, SPECS, bomLineTotal, bomSubtotal, type BomColumn, type BomRow } from '../product'
 
 function money(n: number) {
   return `$${Math.round(n).toLocaleString('en-US')}`
 }
 
-function line(row: BomRow, col: 'v1' | 'full') {
-  const unit = col === 'v1' ? row.usd_v1 : row.usd_full
-  if (typeof row.qty === 'number') {
-    if (col === 'full' && row.part.includes('STS3215 (if buying loose)')) return 0
-    return unit * row.qty
-  }
-  return unit
+function line(row: BomRow, col: BomColumn) {
+  return bomLineTotal(row, col)
 }
 
 export function BomPage() {
   const categories = [...new Set(BOM.map((r) => r.category))]
-  const v1 = bomSubtotal('v1')
-  const full = bomSubtotal('full')
+  const base = bomSubtotal('base')
+  const arm = bomSubtotal('arm')
+  const dual = bomSubtotal('dual')
   return (
     <div className="page bom">
       <header className="page-header">
         <h1>BOM / Specs</h1>
         <p className="lede">
-          {XL330.qty_body}× XL330 body ({STANDING_HEIGHT_MM} mm) + 2× SO-101. Draft street prices — not for sale.
+          Base kit (wheels + eye + Pi) vs + 1× SO-101 (v1 default) vs optional second arm.
+          Round <strong>draft</strong> street USD — not for sale. Aggressive DIY twin aims sub-$400–600 with one arm.
         </p>
         <div className="fact-grid" style={{ marginTop: '1.2rem' }}>
           <div className="fact-card">
-            <div className="fact-label">Body-only</div>
-            <div className="fact-value">{money(v1)}</div>
+            <div className="fact-label">Base kit</div>
+            <div className="fact-value">{money(base)}</div>
           </div>
           <div className="fact-card">
-            <div className="fact-label">Twin + dual SO-101</div>
-            <div className="fact-value">{money(full)}</div>
+            <div className="fact-label">+ 1 arm (v1)</div>
+            <div className="fact-value">{money(arm)}</div>
+          </div>
+          <div className="fact-card">
+            <div className="fact-label">+ 2nd arm (opt.)</div>
+            <div className="fact-value">{money(dual)}</div>
           </div>
         </div>
       </header>
@@ -51,7 +51,7 @@ export function BomPage() {
 
       <section className="section">
         <h2>Parts</h2>
-        <p className="muted">Body-only vs twin (body + 2× SO-101). Loose STS3215 omitted from twin when kits priced.</p>
+        <p className="muted">Draft hobby street prices. No precision claimed — round numbers labeled draft.</p>
         {categories.map((cat) => (
           <div key={cat} className="bom-block">
             <h3>{cat}</h3>
@@ -60,8 +60,9 @@ export function BomPage() {
                 <tr>
                   <th>Part</th>
                   <th>Qty</th>
-                  <th>Body USD</th>
-                  <th>Twin USD</th>
+                  <th>Base USD</th>
+                  <th>+1 arm USD</th>
+                  <th>+2 arms USD</th>
                   <th>Vendor</th>
                   <th>Notes</th>
                 </tr>
@@ -71,8 +72,9 @@ export function BomPage() {
                   <tr key={r.part + r.category}>
                     <td>{r.part}</td>
                     <td>{r.qty}</td>
-                    <td>{line(r, 'v1') ? money(line(r, 'v1')) : '—'}</td>
-                    <td>{line(r, 'full') ? money(line(r, 'full')) : '—'}</td>
+                    <td>{line(r, 'base') ? money(line(r, 'base')) : '—'}</td>
+                    <td>{line(r, 'arm') ? money(line(r, 'arm')) : '—'}</td>
+                    <td>{line(r, 'dual') ? money(line(r, 'dual')) : '—'}</td>
                     <td>{r.vendor}</td>
                     <td>{r.notes}</td>
                   </tr>
@@ -84,12 +86,16 @@ export function BomPage() {
         <table className="bom-table" style={{ marginTop: '1rem' }}>
           <tbody>
             <tr>
-              <th>Subtotal body-only</th>
-              <td>{money(v1)}</td>
+              <th>Subtotal base kit</th>
+              <td>{money(base)}</td>
             </tr>
             <tr>
-              <th>Subtotal twin</th>
-              <td>{money(full)}</td>
+              <th>Subtotal + 1 arm (v1 twin)</th>
+              <td>{money(arm)}</td>
+            </tr>
+            <tr>
+              <th>Subtotal + 2 arms (optional)</th>
+              <td>{money(dual)}</td>
             </tr>
           </tbody>
         </table>
