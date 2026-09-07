@@ -27,11 +27,14 @@ export type SimState = {
   ballVy: number
 }
 
-/** ~4 m half-width playground for ~90 cm chore biped */
+/** ~4 m half-width playground */
 export const ARENA_HALF = 2.2
+/** Fixed control timestep — 50 Hz (explicit for training loops) */
 export const DT = 0.02
+export const CONTROL_HZ = 1 / DT
 export const START_X = 0
 export const START_Y = -1.2
+/** Facing +Y physics (= body +Z at spawn) */
 export const START_THETA = Math.PI / 2
 export const BEACON_X = 1.2
 export const BEACON_Y = 1.3

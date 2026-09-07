@@ -1,3 +1,4 @@
+/** Tank-style teleop: W/S -> forward, A/D -> yawRate (CCW+/CW-). Touch mirrors. */
 export type KeyState = {
   forward: number
   yawRate: number

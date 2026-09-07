@@ -14,3 +14,8 @@ Microduck body + dual LeRobot SO-101 arms (not an official Pollen product).
 npm run dev   # http://127.0.0.1:5173 — hard-refresh /sim
 npm run build
 Routes: / /sim /bom /docs
+
+## Sim / teleop
+Tank-style: W/S forward, A/D yaw, Space reset, Tab auto. DT=0.02 (50Hz).
+Training: src/sim/train.ts and window.__PEBBLE_TRAIN__ (downloadTrajectory).
+Not MuJoCo — CAD meshes are the visual twin. GITHUB_PAGES=true for /pebble/ base.

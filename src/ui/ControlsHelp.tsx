@@ -1,8 +1,9 @@
 export function ControlsHelp() {
   return (
     <div className="help-bar">
-      <span><kbd>↑↓←→</kbd> MOVE</span>
-      <span><kbd>WASD</kbd> TOO</span>
+      <span><kbd>W/S</kbd> FWD/BACK</span>
+      <span><kbd>A/D</kbd> YAW</span>
+      <span><kbd>↑↓←→</kbd> SAME</span>
       <span><kbd>TAB</kbd> AUTO/TELEOP</span>
       <span><kbd>C</kbd> CAMERA</span>
       <span><kbd>R</kbd> SIT</span>

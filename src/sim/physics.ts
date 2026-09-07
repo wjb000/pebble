@@ -5,6 +5,11 @@ import { ARENA_HALF, type SimState } from './types'
 const BALL_R = 0.08
 const ROBOT_R = 0.22
 
+/**
+ * Unicycle integrate in the physics XY plane (mapped to Three.js XZ).
+ * Motion is robot-local: forward along heading theta (CCW from +X).
+ * Uses pre-step heading for translation (classic discrete unicycle).
+ */
 export function integratePose(
   state: SimState,
   steering: Steering,
@@ -16,10 +21,11 @@ export function integratePose(
   const v = setpoints.v * sitFactor
   const omega = setpoints.omega * sitFactor
   const cadence = setpoints.cadence * sitFactor
+  // Translate along current heading, then yaw (tank / unicycle)
+  let x = state.x + Math.cos(state.theta) * v * dt
+  let y = state.y + Math.sin(state.theta) * v * dt
   let theta = state.theta + omega * dt
   theta = Math.atan2(Math.sin(theta), Math.cos(theta))
-  let x = state.x + Math.cos(theta) * v * dt
-  let y = state.y + Math.sin(theta) * v * dt
   const limit = ARENA_HALF - 0.18
   x = Math.max(-limit, Math.min(limit, x))
   y = Math.max(-limit, Math.min(limit, y))

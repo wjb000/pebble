@@ -36,10 +36,13 @@ export function SimPage() {
             <button type="button" className="splash" onClick={() => setShowSplash(false)}>
               <div className="splash-inner">
                 <div className="splash-brand">PEBBLE</div>
-                <p className="splash-sub">Tap / Enter to walk · WASD · C camera</p>
+                <p className="splash-sub">
+                  CAD twin · tank drive: W/S forward · A/D yaw · Space reset · Tab auto
+                </p>
                 <div className="splash-cta">WALK</div>
                 <div className="splash-keys">
                   Meshes: microduck_rl (CC BY-SA-NC) + TheRobotStudio/SO-ARM100
+                  · window.__PEBBLE_TRAIN__ for traj dumps
                 </div>
               </div>
             </button>

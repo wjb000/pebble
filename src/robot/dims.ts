@@ -172,13 +172,17 @@ export const SO101 = {
     'LeRobot SO-101 / so101_follower; URDF so101_new_calib.urdf; HF docs/lerobot/en/so101',
 } as const
 
-/** Shoulder mount span across Microduck torso (mm) — bimanual SO-101 bases */
+/**
+ * Shoulder mount span across Microduck torso (mm) — bimanual SO-101 bases.
+ * Body frame after CAD fix: +X left, -X right, +Z forward (beak).
+ * Visual mounts use shoulder_span/2 on ±X at hip+pelvis+0.25·torso height.
+ */
 export const ARM = {
   shoulder_span: 140,
-  /** Forward mount offset from torso center (mm) */
+  /** Forward mount offset from torso center along +Z (mm) */
   mount_forward: 8,
-  /** Vertical mount on torso (fraction of torso H from center, used in Pebble) */
-  mount_y_frac: 0.28,
+  /** Vertical mount on torso (fraction of torso H above pelvis; ImportedRobots) */
+  mount_y_frac: 0.25,
 } as const
 
 /** Small compute — Pi Zero 2 W class fits Microduck bay better than full Pi 5 */

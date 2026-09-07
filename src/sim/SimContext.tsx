@@ -6,6 +6,9 @@ import { StubBrain } from '../brain'
 import { createInitialState } from './createInitialState'
 import { installKeyboard, sampleKeys } from './keyboard'
 import { integratePose, nudgeBall } from './physics'
+import {
+  TrajectoryBuffer, installTrainApi, observe, type TrainAction,
+} from './train'
 import { DT, START_THETA, START_X, START_Y, type SimState } from './types'
 
 type SimApi = {
@@ -29,6 +32,8 @@ export function SimProvider({ children }: { children: ReactNode }) {
   const brainRef = useRef(new StubBrain())
   const fpsAcc = useRef({ frames: 0, t: performance.now() })
   const sitTarget = useRef(0)
+  const trajRef = useRef(new TrajectoryBuffer())
+  const lastActionRef = useRef<TrainAction>({ forward: 0, yawRate: 0 })
 
   const setChaseCam = useCallback((v: boolean) => {
     setState((s) => ({ ...s, chaseCam: v }))
@@ -39,6 +44,20 @@ export function SimProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => installKeyboard(), [])
+
+  useEffect(() => {
+    const buf = trajRef.current
+    return installTrainApi({
+      dt: DT,
+      hz: 1 / DT,
+      getObs: () => observe(stateRef.current),
+      getAction: () => lastActionRef.current,
+      getState: () => stateRef.current,
+      buffer: buf,
+      downloadTrajectory: (filename?: string) => buf.download(filename),
+      clearTrajectory: () => buf.resetClock(),
+    })
+  }, [])
 
   useEffect(() => {
     let raf = 0
@@ -57,6 +76,7 @@ export function SimProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, fps }))
       }
 
+      // Fixed timestep control loop — DT from types.ts (50 Hz)
       while (accum >= DT) {
         accum -= DT
         const prev = stateRef.current
@@ -82,6 +102,7 @@ export function SimProvider({ children }: { children: ReactNode }) {
           x = START_X; y = START_Y; theta = START_THETA; phase = 0
           sitting = false; sitTarget.current = 0; odo = 0
           ballX = -0.55; ballY = 0.2; ballVx = 0; ballVy = 0
+          trajRef.current.resetClock()
         }
 
         sitTarget.current = sitting ? 1 : 0
@@ -104,6 +125,8 @@ export function SimProvider({ children }: { children: ReactNode }) {
           ...prev, ...integrated, ...ball,
           mode, chaseCam, sitting, sitBlend, fps: stateRef.current.fps,
         }
+        lastActionRef.current = steering
+        trajRef.current.push(observe(next), steering, DT)
         stateRef.current = next
         setState(next)
       }

@@ -34,6 +34,7 @@ export function Pebble({ x, y, theta, pose, colour }: Props) {
   const root = useRef<Group>(null)
   useFrame(() => {
     if (!root.current) return
+    // Physics (x,y) -> Three (x,z); yaw maps body +Z to heading theta
     root.current.position.set(x, pose.bob, y)
     root.current.rotation.y = -theta + Math.PI / 2
   })
