@@ -1,9 +1,10 @@
 /**
- * Pebble dimensions — documentation / mounts / BOM / print twin (millimeters / grams).
- * Product: wheeled differential base + vertical torso + head (screen+cam) + 2× LeRobot SO-101.
- * NOT official Pollen / Microduck.
- * Visual on /sim: printable base/torso/head STLs (public/assets/base/) + SO-101 follower GLB
- * baked from upstream printable URDF meshes. Three.js converts mm → m only at render (mmToM).
+ * Pebble dimensions — composed from real OSS meshes + bought extrusion.
+ * Base: PedroS235/perceptron_bot (MIT)
+ * Lift: prusa3d/Original-Prusa-i3 Z + x-end nut carriage (GPL-2.0)
+ * Head: TheRobotStudio/SO-ARM100 Optional Overhead Cam (Apache-2.0)
+ * Arms: TheRobotStudio/SO-ARM100 / LeRobot SO-101 (Apache-2.0)
+ * NOT official Pollen / Microduck. No generated placeholder bodies.
  */
 
 export const MM = 1
@@ -11,58 +12,97 @@ export const mmToM = (mm: number) => mm * 0.001
 export const mToMm = (m: number) => m * 1000
 
 /**
- * Printable octagonal differential base — matches print/base/*.stl
- * Wider / taller bay for dual-arm tip resistance + ballast.
+ * Overall product height with purchased 2040 extrusion column.
+ * Printable OSS meshes alone are shorter (perceptron ~108 mm + Prusa Z parts + cam);
+ * extrusion fills the gap to human scale — see HEIGHT_NOTE.
  */
+export const OVERALL_HEIGHT_MM = 1730
+
+export const HEIGHT_NOTE =
+  'Overall 1730 mm (~5′8″) requires purchased 2040 extrusion (~1540 mm) between perceptron base top and head cam. Visible printable meshes are upstream OSS downloads only; extrusion is a bought envelope in sim + BOM.'
+
+/** Perceptron Bot chassis — plates stack in CAD-Z ≈ 0…108 mm (170×170 mm footprint). */
 export const BASE = {
-  diameter_mm: 340,
-  plate_thickness_mm: 3.5,
-  standoff_height_mm: 70,
-  standoff_od_mm: 12,
-  standoff_qty: 8,
-  /** Overall plate stack (bottom + standoffs + top) */
-  height_mm: 77,
-  wheel_diameter_mm: 70,
-  wheel_width_mm: 22,
-  track_mm: 280,
-  caster_diameter_mm: 28,
-  motor_pod_l_mm: 55,
-  motor_pod_w_mm: 34,
-  motor_pod_h_mm: 40,
-  note:
-    'Wider octagon + taller bay for dual SO-101; rubber tires / motors / caster bought; add ballast in bay',
+  footprint_mm: 170,
+  /** Top of top_plate in upstream CAD-Z */
+  height_mm: 108,
+  depth_mm: 170,
+  diameter_mm: 170,
+  wheel_diameter_mm: 65,
+  wheel_width_mm: 25,
+  track_mm: 160,
+  wheelbase_mm: 140,
+  caster_diameter_mm: 16,
+  upstream: 'PedroS235/perceptron_bot (MIT)',
+  note: 'Diff-drive chassis plates/walls/casters from perceptron_bot; drive tires/gearmotors bought',
 } as const
 
 /**
- * Vertical torso column — print/base/torso_column.stl
- * Sits on top plate; top ≈ shoulder line.
+ * Bought 2040 extrusion column — not printed.
+ * Length chosen so base.height + extrusion + head ≈ OVERALL_HEIGHT_MM.
  */
+export const EXTRUSION = {
+  profile: '2040 V-slot aluminium',
+  length_mm: 1540,
+  width_mm: 20,
+  depth_mm: 40,
+  note: 'Purchased column; printable Prusa Z mounts bolt to it; leadscrew runs parallel',
+} as const
+
+/**
+ * Screw-drive shoulder elevator — Prusa Z motor/top + x-end-motor nut carriage.
+ * Carriage AGL measured from floor; travel along extrusion.
+ */
+export const SCREW_ELEVATOR = {
+  min_agl_mm: 160,
+  max_agl_mm: 1250,
+  travel_mm: 1090,
+  default_agl_mm: 900,
+  screw_od_mm: 8,
+  screw_pitch_mm: 2,
+  screw_length_mm: 1500,
+  motor: 'NEMA17 (Prusa z-axis-bottom mount)',
+  anti_rotation: '2040 extrusion + optional MGN12',
+  printed_parts: [
+    'z-axis-bottom.stl',
+    'carriage_x-end-motor.stl',
+    'z-axis-top.stl',
+    'z-screw-cover.stl',
+    '4040_base_mount.stl',
+  ] as const,
+  upstream: 'prusa3d/Original-Prusa-i3 (GPL-2.0) + SO-ARM100 4040_Base_Mount (Apache-2.0)',
+  note: 'Lead screw spins; Prusa x-end-motor rides as nut carriage carrying both SO-101s',
+} as const
+
+/** @deprecated alias */
+export const LIFT = SCREW_ELEVATOR
+
+/** Modular torso ≈ extrusion visual envelope */
 export const TORSO = {
-  height_mm: 450,
-  width_mm: 95,
-  depth_mm: 75,
-  note: 'Printable column; shoulders at base.height + torso.height',
+  height_mm: EXTRUSION.length_mm,
+  width_mm: EXTRUSION.width_mm,
+  depth_mm: EXTRUSION.depth_mm,
+  segment_h_mm: EXTRUSION.length_mm,
+  segment_qty: 1,
+  note: 'Bought 2040 extrusion (envelope in sim); not a generated printable torso',
 } as const
 
-/**
- * Head: neck + face bezel + screen backplate + forehead camera mount.
- * Screen panel is a dark quad in sim (bought display); bezel/backplate printed.
- */
+/** SO-ARM100 overhead UVC cam mount stack at column top */
 export const HEAD = {
-  neck_h_mm: 45,
-  bezel_w_mm: 130,
-  bezel_h_mm: 120,
-  bezel_t_mm: 8,
-  screen_w_mm: 110,
-  screen_h_mm: 75,
-  screen_t_mm: 3,
-  cam_mount_w_mm: 28,
-  cam_mount_h_mm: 18,
-  cam_mount_d_mm: 22,
-  cam_rise_mm: 25,
+  neck_h_mm: 20,
+  bezel_w_mm: 58,
+  bezel_h_mm: 80,
+  bezel_t_mm: 37,
+  screen_w_mm: 0,
+  screen_h_mm: 0,
+  screen_t_mm: 0,
+  cam_mount_w_mm: 37,
+  cam_mount_h_mm: 40,
+  cam_mount_d_mm: 50,
+  cam_rise_mm: 30,
+  upstream: 'TheRobotStudio/SO-ARM100 Optional/Overhead_Cam_Mount_32x32_UVC_Module (Apache-2.0)',
 } as const
 
-/** Tiny CSI/USB camera on forehead mount (bought module) */
 export const CAMERA = {
   W: 18,
   H: 14,
@@ -70,19 +110,6 @@ export const CAMERA = {
   rise: 2,
 } as const
 
-/** @deprecated Mast replaced by torso+head; kept for legacy STL filenames */
-export const MAST = {
-  height_mm: 180,
-  diameter_mm: 18,
-  offset_forward_mm: 0,
-  shelf_w_mm: 40,
-  shelf_d_mm: 28,
-  shelf_t_mm: 3,
-} as const
-
-/**
- * Feetech STS3215 — used on SO-101 arms.
- */
 export const STS3215 = {
   L: 45.2,
   W: 24.7,
@@ -94,11 +121,6 @@ export const STS3215 = {
   qty_arms_pair: 12,
 } as const
 
-/**
- * LeRobot SO-101 follower arm — Hugging Face LeRobot / TheRobotStudio SO-ARM100.
- * Docs: https://huggingface.co/docs/lerobot/en/so101 · so101_follower
- * Printables: print/SO101/
- */
 export const SO101 = {
   joints: [
     'shoulder_pan',
@@ -124,54 +146,38 @@ export const SO101 = {
     'LeRobot SO-101 / so101_follower; URDF so101_new_calib.urdf; HF docs/lerobot/en/so101; print/SO101/',
 } as const
 
-/**
- * Default product: two SO-101s at shoulder height, idle hang along flanks (grippers toward floor).
- * Body frame: +Y up, +Z forward, +X left.
- * Shoulder AGL ≈ BASE.height + TORSO.height = 527 mm → downward reach ≈ floor, up/forward ≈ counter (~900 mm).
- */
 export const ARM = {
-  /** Lateral span of shoulder mount from center (mm); +X = left */
-  mount_x_mm: 125,
-  /** Height of shoulder mount above floor (mm) */
-  mount_y_mm: 527,
-  /** Forward offset along +Z (mm) — 0 = hang along flanks */
-  mount_z_mm: 0,
+  mount_x_mm: 120,
+  mount_y_mm: SCREW_ELEVATOR.default_agl_mm,
+  mount_z_mm: 20,
   default_count: 2,
   optional_second: false,
+  shoulder_span_mm: 240,
 } as const
 
-/** Shoulder line above floor */
-export const SHOULDER_HEIGHT_MM = BASE.height_mm + TORSO.height_mm
+export const SHOULDER_HEIGHT_MM = SCREW_ELEVATOR.default_agl_mm
+export const STANDING_HEIGHT_MM = OVERALL_HEIGHT_MM
+export const BODY_WIDTH_MM = BASE.footprint_mm
 
-/** Overall visual height: base + torso + neck + bezel + cam rise */
-export const STANDING_HEIGHT_MM =
-  BASE.height_mm + TORSO.height_mm + HEAD.neck_h_mm + HEAD.bezel_h_mm + HEAD.cam_rise_mm
-
-export const BODY_WIDTH_MM = BASE.diameter_mm
-
-export const PI_ZERO = {
-  W: 65,
-  H: 30,
-  D: 12,
-  note: 'Pi Zero 2 W / Radxa Zero 3W class; base bay',
+export const PI5 = {
+  W: 85,
+  H: 56,
+  D: 16,
+  note: 'Pi 5 class in base bay — dual arms + screw stepper need headroom',
 } as const
 
-export const PI5 = PI_ZERO
+export const PI_ZERO = PI5
 
 export const BATTERY = {
-  W: 50,
-  H: 22,
-  D: 35,
-  note: '2S/3S LiPo envelope + ballast space in taller bay; chemistry TBD',
+  W: 70,
+  H: 35,
+  D: 50,
+  note: '3S/4S LiPo + low ballast in perceptron bay',
 } as const
 
-/**
- * Dual arms + taller COM raise tip risk — wide base + ballast required.
- */
 export const STABILITY_NOTE =
-  'Wheeled wide base + ballast in bay is required: dual SO-101 (~1.6 kg arms) on a ~527 mm shoulder raises tip risk on rugs, ramps, and thresholds. Draft — not for sale. Not a Microduck biped.'
+  'Perceptron-scale base (~170 mm) + dual SO-101 on a tall extrusion/leadscrew raises serious tip risk — wide stance ballast mandatory. Draft — not for sale. Not a Microduck biped.'
 
-/** @deprecated alias */
 export const TOPHEAVY_NOTE = STABILITY_NOTE
 
 export const XL330 = {
@@ -185,27 +191,37 @@ export const XL330 = {
   note: 'Not used on wheeled Pebble — retained for archive only',
 } as const
 
+/** Unique printable structure SKUs from upstream (excl. SO-101 arm library) */
+export const PRINT_UNIQUE_SKUS = 16
+
 export const PEBBLE_DIMS = {
-  product: 'Pebble — wheeled base + torso/head + 2× SO-101 (not official Pollen)',
+  product:
+    'Pebble — ~5′8″ wheeled twin composed from OSS meshes + extrusion + 2× SO-101 (not official Pollen)',
+  overall_height_mm: OVERALL_HEIGHT_MM,
   standing_height_mm: STANDING_HEIGHT_MM,
   shoulder_height_mm: SHOULDER_HEIGHT_MM,
   body_width_mm: BODY_WIDTH_MM,
+  print_unique_skus: PRINT_UNIQUE_SKUS,
+  height_note: HEIGHT_NOTE,
   base: BASE,
+  extrusion: EXTRUSION,
   torso: TORSO,
+  screw_elevator: SCREW_ELEVATOR,
   head: HEAD,
   camera: CAMERA,
   sts3215: STS3215,
   so101: SO101,
   arm: ARM,
-  pi_zero: PI_ZERO,
+  pi5: PI5,
   battery: BATTERY,
   stability_note: STABILITY_NOTE,
   units: 'mm / g',
   digital_twin_rule:
-    'visual = printable base/torso/head STLs (public/assets/base) + SO-101 GLB baked from upstream printable URDF STLs; dims.ts = print = BOM',
+    'visual = upstream OSS STLs (base/lift/head) + bought extrusion/leadscrew envelopes + SO-101 GLB; dims.ts = BOM',
   sources: [
-    'Pebble print/base humanoid stack (authored numpy-stl)',
-    'SO-101 URDF so101_new_calib.urdf + TheRobotStudio/SO-ARM100 STL/SO101 + HF docs/lerobot/en/so101',
+    'PedroS235/perceptron_bot (MIT) — wheeled base STLs',
+    'prusa3d/Original-Prusa-i3 (GPL-2.0) — Z mounts + x-end-motor carriage',
+    'TheRobotStudio/SO-ARM100 (Apache-2.0) — SO-101 arms, 4040 mount, overhead cam',
   ],
 } as const
 

@@ -3,7 +3,8 @@ export function ControlsHelp() {
     <div className="help-bar">
       <span><kbd>W/S</kbd> FWD/BACK</span>
       <span><kbd>A/D</kbd> YAW</span>
-      <span><kbd>E</kbd> PICK/DROP</span>
+      <span><kbd>Q/E</kbd> LIFT</span>
+      <span><kbd>F</kbd> PICK/DROP</span>
       <span><kbd>↑↓←→</kbd> SAME</span>
       <span><kbd>TAB</kbd> AUTO/TELEOP</span>
       <span><kbd>C</kbd> CAMERA</span>

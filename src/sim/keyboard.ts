@@ -1,7 +1,9 @@
-/** Tank-style teleop: W/S -> forward, A/D -> yawRate (CCW+/CW-). Touch mirrors. E = pick/drop box. */
+/** Tank teleop: W/S forward, A/D yawRate (fixed signs). Q/E lead-screw raise/lower. F pick/drop. */
 export type KeyState = {
   forward: number
   yawRate: number
+  /** +1 raise / -1 lower lead-screw carriage */
+  lift: number
   toggleMode: boolean
   toggleChase: boolean
   reset: boolean
@@ -25,8 +27,7 @@ function onKeyDown(e: KeyboardEvent) {
   if (e.code === 'KeyC') edgeChase = true
   if (e.code === 'Space') { e.preventDefault(); edgeReset = true }
   if (e.code === 'KeyR') edgeSit = true
-  if (e.code === 'KeyE') edgePick = true
-  if (e.code === 'Enter') edgeReset = edgeReset
+  if (e.code === 'KeyF') edgePick = true
 }
 
 function onKeyUp(e: KeyboardEvent) {
@@ -48,16 +49,20 @@ export function installKeyboard(): () => void {
 export function sampleKeys(): KeyState {
   let forward = 0
   let yawRate = 0
+  let lift = 0
   if (pressed.has('KeyW') || pressed.has('ArrowUp')) forward += 1
   if (pressed.has('KeyS') || pressed.has('ArrowDown')) forward -= 1
   if (pressed.has('KeyA') || pressed.has('ArrowLeft')) yawRate -= 1
   if (pressed.has('KeyD') || pressed.has('ArrowRight')) yawRate += 1
+  if (pressed.has('KeyQ')) lift += 1
+  if (pressed.has('KeyE')) lift -= 1
   forward += touchBias.forward
   yawRate += touchBias.yawRate
   forward = Math.max(-1, Math.min(1, forward))
   yawRate = Math.max(-1, Math.min(1, yawRate))
+  lift = Math.max(-1, Math.min(1, lift))
   const out: KeyState = {
-    forward, yawRate,
+    forward, yawRate, lift,
     toggleMode: edgeMode, toggleChase: edgeChase,
     reset: edgeReset, toggleSit: edgeSit, togglePick: edgePick,
   }

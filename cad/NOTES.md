@@ -1,4 +1,10 @@
-# CAD / print notes
-OpenSCAD not required. Generate humanoid base/torso/head STLs with
-`/tmp/pebble-humanoid/gen_humanoid_stls.py` (numpy-stl) into `print/base` and `public/assets/base`.
-Legacy `pebble.scad` is old biped twin — not the product. Scale in Three.js: 0.001 mm→m.
+# CAD notes
+
+ForgeCAD path abandoned (no account). Pebble body is **composed from preexisting OSS STLs**:
+
+- `public/assets/base/` — PedroS235/perceptron_bot (MIT)
+- `public/assets/lift/` — Prusa i3 Z + x-end carriage (GPL-2.0) + SO-ARM 4040 mount
+- `public/assets/head/` — SO-ARM100 Overhead Cam (Apache-2.0)
+- `public/assets/so101/` — SO-101 GLB / URDF (Apache-2.0)
+
+`pebble.scad` is legacy reference only — not the sim twin.

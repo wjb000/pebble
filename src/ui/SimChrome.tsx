@@ -41,8 +41,10 @@ export function SimChrome({ colourId, onColour }: Props) {
           <span className={mode === 'AUTO' ? 'mode-on' : 'mode-off'}>AUTO</span>
           <span className={mode === 'TELEOP' ? 'mode-on' : 'mode-off'}>TELEOP</span>
         </div>
+        <div className="hud-label" style={{ marginTop: '0.4rem' }}>LIFT</div>
+        <div>{Math.round(state.carriageAglMm)} mm</div>
       </div>
-      <div className="sim-mesh-foot">print/base STLs · 2x SO-101 GLB</div>
+      <div className="sim-mesh-foot">OSS compose · perceptron + Prusa Z · 2× SO-101 · Q/E lift</div>
     </>
   )
 }

@@ -30,6 +30,8 @@ export type SimState = {
   boxY: number
   /** Kinematic attach when E pressed near box */
   boxHeld: boolean
+  /** Lead-screw carriage AGL (mm) */
+  carriageAglMm: number
 }
 
 /** ~4 m half-width playground */

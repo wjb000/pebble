@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ONE_LINER, bomSubtotal } from '../product'
-import { ARM, SHOULDER_HEIGHT_MM, STANDING_HEIGHT_MM } from '../robot/dims'
+import { ARM, HEIGHT_NOTE, PRINT_UNIQUE_SKUS, SHOULDER_HEIGHT_MM, STANDING_HEIGHT_MM } from '../robot/dims'
 
 export function HomePage() {
   const twin = bomSubtotal('dual')
@@ -17,11 +17,11 @@ export function HomePage() {
           <div className="fact-grid fact-strip">
             <div className="fact-card">
               <div className="fact-label">Base</div>
-              <div className="fact-value">Wheels</div>
+              <div className="fact-value">perceptron_bot</div>
             </div>
             <div className="fact-card">
-              <div className="fact-label">Head</div>
-              <div className="fact-value">Screen+cam</div>
+              <div className="fact-label">Lift</div>
+              <div className="fact-value">Prusa Z / Q·E</div>
             </div>
             <div className="fact-card">
               <div className="fact-label">Arms</div>
@@ -32,15 +32,15 @@ export function HomePage() {
               <div className="fact-value">{`~$${Math.round(twin).toLocaleString('en-US')}`}</div>
             </div>
           </div>
-          <p className="lede" style={{ marginTop: '1rem', maxWidth: '38rem' }}>
-            Humanoid upper body on a wheeled base: shoulders ~{SHOULDER_HEIGHT_MM} mm so two hanging
-            SO-101s can work <strong>floor → US counter (~900 mm)</strong>. Near-term chores: pick/place,
-            wipe within reach, nudge a laundry basket — <strong>not</strong> folding laundry. Sim uses
-            real printable STLs + SO-101 meshes.
+          <p className="lede" style={{ marginTop: '1rem', maxWidth: '40rem' }}>
+            Composed from <strong>real OSS meshes</strong> (no generated bodies): perceptron_bot chassis,
+            Prusa lead-screw carriage, SO-ARM overhead cam, dual SO-101. Shoulders ride ~
+            {SHOULDER_HEIGHT_MM} mm AGL idle. {PRINT_UNIQUE_SKUS} upstream print SKUs + bought 2040 extrusion
+            to overall ~{STANDING_HEIGHT_MM} mm.
           </p>
+          <p className="draft-banner">{HEIGHT_NOTE}</p>
           <p className="draft-banner">
-            Draft / not for sale. Overall ~{STANDING_HEIGHT_MM} mm. Dual arms raise tip risk — wide base + ballast.
-            Not official Pollen.
+            Draft / not for sale. Tip risk real on a narrow base + tall stack. Not official Pollen.
           </p>
         </div>
       </section>

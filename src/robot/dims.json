@@ -1,21 +1,17 @@
 {
-  "product": "Pebble — wheeled base + torso/head + 2x SO-101 (not official Pollen)",
-  "standing_height_mm": 717,
-  "shoulder_height_mm": 527,
-  "body_width_mm": 340,
-  "units": "mm / g",
-  "base": {
-    "diameter_mm": 340,
-    "plate_thickness_mm": 3.5,
-    "standoff_height_mm": 70,
-    "height_mm": 77
+  "overall_height_mm": 1730,
+  "base_height_mm": 108,
+  "extrusion_length_mm": 1540,
+  "screw_elevator": {
+    "min_agl_mm": 160,
+    "max_agl_mm": 1250,
+    "travel_mm": 1090,
+    "default_agl_mm": 900
   },
-  "torso": { "height_mm": 450, "width_mm": 95, "depth_mm": 75 },
-  "arm": { "default_count": 2, "mount_x_mm": 125, "mount_y_mm": 527, "mount_z_mm": 0 },
-  "print": {
-    "base": "print/base/",
-    "so101": "print/SO101/",
-    "sim_assets_base": "public/assets/base/"
-  },
-  "stability_note": "Wide base + ballast required; dual SO-101 + height raises tip risk. Draft not for sale."
+  "shoulder_span_mm": 240,
+  "track_mm": 160,
+  "wheelbase_mm": 140,
+  "print_unique_skus": 16,
+  "arms": 2,
+  "height_note": "1730 mm overall via bought 2040 extrusion; printable OSS meshes are shorter stack"
 }

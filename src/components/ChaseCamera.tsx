@@ -5,7 +5,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { useSim } from '../sim/SimContext'
 
-/** Frame taller wheeled humanoid + dual hanging SO-101 arms. */
+/** Frame pebble-shell wheeled twin + one hanging SO-101. */
 export function ChaseCamera() {
   const { state, notifyOrbitDetach } = useSim()
   const controls = useRef<OrbitControlsImpl>(null)

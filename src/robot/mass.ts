@@ -5,19 +5,19 @@
 import { BATTERY, PI_ZERO, SO101, STS3215, STABILITY_NOTE } from './dims'
 
 export const MASS_G = {
-  wheeled_base_structure: 550,
-  torso_head_structure: 350,
-  motors_wheels: 180,
-  motor_driver: 40,
-  ballast: 800,
+  wheeled_base_structure: 280,  // perceptron PLA
+  torso_head_structure: 180,  // Prusa Z + cam + 4040 (extrusion bought separately)
+  motors_wheels: 140,
+  motor_driver: 35,
+  ballast: 500,
   sts3215_each: STS3215.mass_g,
   so101_each: SO101.mass_g,
   so101_pair: SO101.mass_g * 2,
   pi_zero: 20,
-  battery_lipo: 150,
-  camera_screen: 120,
-  mount_plate: 60,
-  wiring_misc: 70,
+  battery_lipo: 140,
+  camera_screen: 100,
+  mount_plate: 40,
+  wiring_misc: 55,
 } as const
 
 export function estimateBaseOnly_g(): number {

@@ -9,6 +9,7 @@ import { integratePose, nudgeBall } from './physics'
 import {
   TrajectoryBuffer, installTrainApi, observe, type TrainAction,
 } from './train'
+import { SCREW_ELEVATOR } from '../robot/dims'
 import {
   BOX_PICK_RANGE, BOX_START_X, BOX_START_Y, DT,
   START_THETA, START_X, START_Y, type SimState,
@@ -99,6 +100,7 @@ export function SimProvider({ children }: { children: ReactNode }) {
         let boxX = prev.boxX
         let boxY = prev.boxY
         let boxHeld = prev.boxHeld
+        let carriageAglMm = prev.carriageAglMm
 
         if (keys.toggleMode) mode = mode === 'auto' ? 'teleop' : 'auto'
         if (keys.toggleChase) chaseCam = !chaseCam
@@ -108,6 +110,7 @@ export function SimProvider({ children }: { children: ReactNode }) {
           sitting = false; sitTarget.current = 0; odo = 0
           ballX = -0.55; ballY = 0.2; ballVx = 0; ballVy = 0
           boxX = BOX_START_X; boxY = BOX_START_Y; boxHeld = false
+          carriageAglMm = SCREW_ELEVATOR.default_agl_mm
           trajRef.current.resetClock()
         }
 
@@ -126,6 +129,15 @@ export function SimProvider({ children }: { children: ReactNode }) {
         }
 
         sitTarget.current = sitting ? 1 : 0
+
+        // Lead-screw elevator Q/E
+        if (keys.lift !== 0) {
+          const rate = 280 // mm/s
+          carriageAglMm = Math.max(
+            SCREW_ELEVATOR.min_agl_mm,
+            Math.min(SCREW_ELEVATOR.max_agl_mm, carriageAglMm + keys.lift * rate * DT),
+          )
+        }
         const sitBlend = prev.sitBlend + (sitTarget.current - prev.sitBlend) * Math.min(1, DT * 4)
 
         let steering = { forward: 0, yawRate: 0 }
@@ -151,7 +163,7 @@ export function SimProvider({ children }: { children: ReactNode }) {
 
         const next: SimState = {
           ...prev, ...integrated, ...ball,
-          boxX, boxY, boxHeld,
+          boxX, boxY, boxHeld, carriageAglMm,
           mode, chaseCam, sitting, sitBlend, fps: stateRef.current.fps,
         }
         lastActionRef.current = steering
