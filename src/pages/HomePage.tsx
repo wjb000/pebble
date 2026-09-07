@@ -12,6 +12,7 @@ export function HomePage() {
           <p className="one-liner">{ONE_LINER}</p>
           <div className="hero-actions">
             <Link className="btn primary" to="/sim">Try the sim</Link>
+            <Link className="btn ghost" to="/model">Model</Link>
             <Link className="btn ghost" to="/bom">BOM</Link>
           </div>
           <div className="fact-grid fact-strip">
@@ -34,9 +35,9 @@ export function HomePage() {
           </div>
           <p className="lede" style={{ marginTop: '1rem', maxWidth: '40rem' }}>
             Composed from <strong>real OSS meshes</strong> (no generated bodies): perceptron_bot chassis,
-            Prusa lead-screw carriage, SO-ARM overhead cam, dual SO-101. Shoulders ride ~
+            Prusa lead-screw carriage, SO-ARM overhead cam (1:1), dual SO-101. Shoulders ride ~
             {SHOULDER_HEIGHT_MM} mm AGL idle. {PRINT_UNIQUE_SKUS} upstream print SKUs + bought 2040 extrusion
-            to overall ~{STANDING_HEIGHT_MM} mm.
+            to overall ~{STANDING_HEIGHT_MM} mm. Arms DIY dominate cost (~$250 of twin).
           </p>
           <p className="draft-banner">{HEIGHT_NOTE}</p>
           <p className="draft-banner">

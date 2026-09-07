@@ -1,17 +1,20 @@
 {
   "overall_height_mm": 1730,
+  "height_stack_mm": 1730,
   "base_height_mm": 108,
   "extrusion_length_mm": 1540,
+  "head_stack_h_mm": 82,
+  "screw_axis_x_mm": 22,
   "screw_elevator": {
     "min_agl_mm": 160,
     "max_agl_mm": 1250,
     "travel_mm": 1090,
     "default_agl_mm": 900
   },
-  "shoulder_span_mm": 240,
+  "shoulder_span_mm": 190,
   "track_mm": 160,
   "wheelbase_mm": 140,
   "print_unique_skus": 16,
   "arms": 2,
-  "height_note": "1730 mm overall via bought 2040 extrusion; printable OSS meshes are shorter stack"
+  "height_note": "1730 mm = base 108 + extrusion 1540 + head stack 82; printable OSS meshes are shorter"
 }

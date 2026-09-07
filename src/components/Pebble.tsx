@@ -1,59 +1,41 @@
 /**
  * Pebble visual = 5′8″ printable twin + screw-drive carriage + 2× SO-101.
+ * Pose is world x/y/theta only — no biped bob on the wheeled base.
  */
-import { Suspense, useRef } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
-import type { GaitPose } from '../gait'
 import type { Colourway } from '../product'
 import { OVERALL_HEIGHT_MM, SCREW_ELEVATOR } from '../robot/dims'
-import {
-  MESH_ATTRIBUTION,
-  SO101FollowerArm,
-  WheeledChassis,
-} from './ImportedRobots'
+import { MESH_ATTRIBUTION } from './ImportedRobots'
+import { RobotAssembly } from './RobotAssembly'
 
 type Props = {
   x: number
   y: number
   theta: number
-  pose: GaitPose
   colour: Colourway
   /** Carriage AGL mm from screw elevator (sim state) */
   carriageAglMm?: number
-}
-
-function MeshFallback() {
-  return (
-    <mesh position={[0, 0.85, 0]}>
-      <cylinderGeometry args={[0.14, 0.18, 1.7, 16]} />
-      <meshStandardMaterial color="#334155" wireframe />
-    </mesh>
-  )
 }
 
 export function Pebble({
   x,
   y,
   theta,
-  pose,
   colour,
   carriageAglMm = SCREW_ELEVATOR.default_agl_mm,
 }: Props) {
   const root = useRef<Group>(null)
   useFrame(() => {
     if (!root.current) return
-    root.current.position.set(x, pose.bob * 0.15, y)
+    root.current.position.set(x, 0, y)
     root.current.rotation.y = -theta + Math.PI / 2
   })
 
   return (
     <group ref={root}>
-      <Suspense fallback={<MeshFallback />}>
-        <WheeledChassis colour={colour} carriageAglMm={carriageAglMm} />
-        <SO101FollowerArm side="L" colour={colour} carriageAglMm={carriageAglMm} />
-        <SO101FollowerArm side="R" colour={colour} carriageAglMm={carriageAglMm} />
-      </Suspense>
+      <RobotAssembly colour={colour} carriageAglMm={carriageAglMm} />
     </group>
   )
 }

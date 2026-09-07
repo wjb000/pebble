@@ -44,7 +44,13 @@ export function Scene({ colourId }: { colourId: string }) {
         robotTheta={state.theta}
       />
       <Ball x={state.ballX} y={state.ballY} />
-      <Pebble x={state.x} y={state.y} theta={state.theta} pose={state.pose} colour={colour} carriageAglMm={state.carriageAglMm} />
+      <Pebble
+        x={state.x}
+        y={state.y}
+        theta={state.theta}
+        colour={colour}
+        carriageAglMm={state.carriageAglMm}
+      />
       <ContactShadows position={[0, 0.001, 0]} opacity={0.55} scale={6} blur={2.6} far={2.5} />
       <ChaseCamera />
     </Canvas>

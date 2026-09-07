@@ -106,6 +106,8 @@ export function BomPage() {
         <p style={{ marginTop: '1rem' }}>
           <Link className="btn ghost" to="/docs">Docs</Link>
           {' '}
+          <Link className="btn ghost" to="/model">Model</Link>
+          {' '}
           <Link className="btn primary" to="/sim">Sim</Link>
         </p>
       </section>

@@ -1,16 +1,19 @@
-# SO-101 follower printable parts (upstream)
+# SO-101 follower printable parts (upstream) — **print 2×**
 
 Copied from local checkout of **[TheRobotStudio/SO-ARM100](https://github.com/TheRobotStudio/SO-ARM100)**  
 (`robosim/SO-ARM100` on this machine). License: **Apache-2.0** — see `LICENSE.Apache-2.0.txt`.
+
+Pebble’s default product mounts **two** LeRobot SO-101 followers on the lead-screw carriage
+(via L/R `4040_Base_Mount`). **Print a full follower set twice** (or two Follower plate packs).
 
 Upstream paths:
 - Individual printables: `STL/SO101/Individual/*.stl`
 - Follower plate packs: `STL/SO101/Follower/*.stl` (Prusa / Ender beds)
 - Sim / URDF visuals: `Simulation/SO101/assets/*.stl` + `so101_new_calib.urdf`
 
-## What to print (follower arm for Pebble v1)
+## What to print (per follower arm — do this **twice**)
 
-Print the **Individual** parts (or one **Follower** plate pack):
+Print the **Individual** parts (or one **Follower** plate pack) **×2**:
 
 | File | Role |
 |------|------|
@@ -30,16 +33,21 @@ Print the **Individual** parts (or one **Follower** plate pack):
 | `Individual/Trigger_SO101.stl` | Leader trigger (not needed for follower-only) |
 | `Individual/Wrist_Roll_SO101.stl` | Leader wrist roll variant |
 
-**Follower plate packs** (`Follower/Prusa_Follower_SO101.stl` or `Ender_Follower_SO101.stl`) print the whole follower set on one bed.
+**Follower plate packs** (`Follower/Prusa_Follower_SO101.stl` or `Ender_Follower_SO101.stl`) print the whole follower set on one bed — run **two** plates for dual-arm Pebble.
+
+Also print **2×** `print/lift/4040_base_mount.stl` (or upstream SO-ARM `Optional/4040_Base_Mount`).
 
 See also upstream `3DPRINT.md` for Craftcloud3d / PCBWay settings (PLA+, ~20% infill).
 
-## Browser sim
+## Browser twin
 
-Pebble `/sim` loads `public/assets/so101/follower_idle.glb`, which is **baked from the same upstream URDF visual STLs** (`Simulation/SO101/assets/*.stl`) at an idle pose — not handmade primitives. Attribution: `public/assets/so101/NOTICE.md`.
+- `/sim` and `/model` share `RobotAssembly` → `public/assets/so101/follower_idle.glb` (**two** instances, L/R).
+- GLB is baked from the same upstream URDF visual STLs at an idle pose — not handmade primitives.
+- Attribution: `public/assets/so101/NOTICE.md`.
 
-Pebble does **not** invent Microduck as the product. Product = wheeled base (our `print/base/`) + 1× SO-101 follower + mast eye.
+Pebble is **not** Microduck. Product = wheeled perceptron base + Prusa lead-screw carriage + **2×** SO-101 + SO-ARM overhead cam. Legacy Microduck assets live under `refs/quarantine/` and are unused.
 
-## Filament
+## Filament (BOM)
 
-Upstream follower plate is roughly **~300–400 g PLA** depending on infill; verify in your slicer.
+Upstream follower plate is roughly **~300–400 g PLA** each depending on infill.
+Dual-arm BOM filament line accounts for **2× follower print sets** plus chassis/lift/cam PLA — verify in your slicer.
