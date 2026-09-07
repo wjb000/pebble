@@ -168,7 +168,6 @@ export function WheeledChassis({
   const carriageY = mmToM(carriageAglMm)
   const shoulderX = mmToM(ARM.mount_x_mm)
   const columnTopY = baseH + extLen
-  const headY = columnTopY + mmToM(HEAD.neck_h_mm)
   // Seat chassis so axle ≈ wheel radius (lower plate near axle height)
   const chassisLift = wheelR - mmToM(4)
 
@@ -282,6 +281,28 @@ export function WheeledChassis({
         )
       })}
 
+      {/* Yoke bridge: carriage → L/R 4040 — continuous load path (no floating mounts) */}
+      <mesh position={[0, carriageY - mmToM(ARM.mount_face_drop_mm), mmToM(ARM.mount_z_mm)]} castShadow receiveShadow>
+        <boxGeometry args={[shoulderX * 2 - mmToM(8), mmToM(18), mmToM(28)]} />
+        <meshStandardMaterial color="#6b7280" roughness={0.4} metalness={0.45} />
+      </mesh>
+      {/* Column stub: extrusion face → yoke center */}
+      <mesh position={[0, carriageY - mmToM(ARM.mount_face_drop_mm), mmToM(ARM.mount_z_mm * 0.45)]} castShadow>
+        <boxGeometry args={[mmToM(EXTRUSION.width_mm + 8), mmToM(22), mmToM(ARM.mount_z_mm + 10)]} />
+        <meshStandardMaterial color="#8b939e" roughness={0.38} metalness={0.5} />
+      </mesh>
+      {/* Seat pads under each SO-101 base_link (visual bolt face) */}
+      {([-1, 1] as const).map((sign) => (
+        <mesh
+          key={`arm-pad-${sign}`}
+          position={[sign * shoulderX, carriageY - mmToM(ARM.mount_face_drop_mm), mmToM(ARM.mount_z_mm)]}
+          castShadow
+        >
+          <boxGeometry args={[mmToM(36), mmToM(8), mmToM(36)]} />
+          <meshStandardMaterial color="#374151" roughness={0.5} metalness={0.25} />
+        </mesh>
+      ))}
+
       {/* Physical keyed L/R asymmetry — lug geometry differs (not just colour) */}
       {/* L (+X): rectangular key lug + blue */}
       <mesh position={[shoulderX, carriageY + mmToM(14), mmToM(ARM.mount_z_mm + 10)]} castShadow>
@@ -310,8 +331,18 @@ export function WheeledChassis({
       {([-1, 1] as const).map((side) => {
         const half = mmToM(OUTRIGGERS.support_width_mm) * 0.5
         const pad = mmToM(OUTRIGGERS.foot_pad_mm)
+        const chassisHalf = mmToM(BASE.footprint_mm) * 0.5
         return (
           <group key={`out-${side}`}>
+            {/* Beam from chassis rail to outrigger foot */}
+            <mesh
+              position={[side * (chassisHalf + (half - chassisHalf) * 0.5), mmToM(12), 0]}
+              castShadow
+              receiveShadow
+            >
+              <boxGeometry args={[half - chassisHalf + mmToM(10), mmToM(10), mmToM(22)]} />
+              <meshStandardMaterial color="#7c8590" roughness={0.42} metalness={0.42} />
+            </mesh>
             <mesh position={[side * half, mmToM(8), 0]} castShadow receiveShadow>
               <boxGeometry args={[mmToM(14), mmToM(10), mmToM(80)]} />
               <meshStandardMaterial color="#6b7280" roughness={0.45} metalness={0.4} />
@@ -323,6 +354,7 @@ export function WheeledChassis({
           </group>
         )
       })}
+
 
       {/* Low-bay ballast block 4.0 kg (visual envelope) */}
       <mesh position={[0, mmToM(28), mmToM(-20)]} castShadow>
@@ -359,15 +391,15 @@ export function WheeledChassis({
 
       {/* SO-ARM overhead cam — TRUE 1:1; boom root centered on column; +Y native → +Z forward */}
       <group
-        position={[-mmToM(HEAD.stl_center_x_mm), headY, 0]}
-        rotation={[Math.PI / 2, 0, 0]}
+        position={[-mmToM(HEAD.stl_center_x_mm), columnTopY + mmToM(6), mmToM(-8)]}
+        rotation={[0, 0, 0]}
       >
         <StlPart url={HEAD_STL.bottom} color={colour.dark} roughness={0.48} metalness={0.1} />
         <StlPart url={HEAD_STL.middle} color={colour.dark} roughness={0.48} />
         <StlPart url={HEAD_STL.top} color={colour.accent} roughness={0.45} />
       </group>
       {/* Face screen + UVC lens seated at boom tip (cam_mount_top max Y) */}
-      <group position={[0, headY + mmToM(HEAD.cam_rise_mm * 0.25), mmToM(HEAD.boom_tip_mm)]}>
+      <group position={[0, columnTopY + mmToM(52), mmToM(8)]}>
         <mesh castShadow>
           <boxGeometry args={[mmToM(HEAD.screen_w_mm), mmToM(HEAD.screen_h_mm), mmToM(HEAD.screen_t_mm)]} />
           <meshStandardMaterial color={colour.face} roughness={0.3} metalness={0.2} />

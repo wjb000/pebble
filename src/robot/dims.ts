@@ -146,9 +146,9 @@ export const HEAD = {
   /** Bottom boom length (native +Y); tip cam uses boom_tip_mm. */
   boom_length_mm: 231,
   /** cam_mount_top native max Y — UVC tip after rotX(+π/2) → +Z forward. */
-  boom_tip_mm: 372,
+  boom_tip_mm: 48,  // compact face — was 372 boom poke
   upstream: 'TheRobotStudio/SO-ARM100 Optional/Overhead_Cam_Mount_32x32_UVC_Module (Apache-2.0)',
-  note: 'Printed 1:1 — no visual scale hacks; boom root centered on column top',
+  note: 'Printed 1:1; boom stacks UP on column (not a 370 mm forward poke)',
 } as const
 
 export const HEIGHT_STACK_MM =
@@ -210,7 +210,7 @@ export const SO101 = {
  * (zmin extrusion / zmax arm face). After centering, arm face at +z = 21 mm.
  */
 export const ARM = {
-  mount_x_mm: 95,
+  mount_x_mm: 52,  // column face + 4040 + arm base (was 95 — floated)
   mount_y_mm: SCREW_ELEVATOR.default_agl_mm,
   mount_z_mm: 28,
   mount_face_drop_mm: 8,
@@ -220,7 +220,7 @@ export const ARM = {
   mount_face_half_mm: 21,
   default_count: 2,
   optional_second: false,
-  shoulder_span_mm: 190,
+  shoulder_span_mm: 116,
 } as const
 
 export const SHOULDER_HEIGHT_MM = SCREW_ELEVATOR.default_agl_mm
