@@ -27,8 +27,6 @@ import {
   OVERALL_HEIGHT_MM,
   SCREW_AXIS_X_MM,
   SCREW_ELEVATOR,
-  SO101,
-  STS3215,
   mmToM,
 } from '../robot/dims'
 
@@ -446,8 +444,8 @@ export function WheeledChassis({
 }
 
 /**
- * One SO-101 kit seated on the 4040 mount at current carriage AGL.
- * L = +X outboard, R = −X mirrored. Soft pads + wipe. No GLB.
+ * One SO-101 arm for house chores — bright, chunky, impossible to miss.
+ * L = sky blue, R = orange (same poka-yoke as keyed lugs). Hangs from 4040, reaches forward.
  */
 export function SO101FollowerArm({
   colour,
@@ -464,11 +462,9 @@ export function SO101FollowerArm({
   shoulderRad?: number
   elbowRad?: number
   showWipe?: boolean
-  /** When true, parent is lift group at [screwX, carriageY, 0] — local seat coords. */
   liftLocal?: boolean
 }) {
   const left = side === 'L'
-  // World: (±mount_x, AGL−drop, mount_z). Lift-local: (±mount_x − screwX, −drop, mount_z).
   const shoulderX = liftLocal
     ? mmToM((left ? ARM.mount_x_mm : -ARM.mount_x_mm) - SCREW_AXIS_X_MM)
     : mmToM(left ? ARM.mount_x_mm : -ARM.mount_x_mm)
@@ -476,14 +472,17 @@ export function SO101FollowerArm({
     ? mmToM(-ARM.mount_face_drop_mm)
     : mmToM(carriageAglMm - ARM.mount_face_drop_mm)
   const shoulderZ = mmToM(ARM.mount_z_mm)
+  // High-contrast kit colors (not colour.dark — that vanished on the dark stage)
+  void colour
+  const kitColor = left ? '#38bdf8' : '#f97316'
+  const jointColor = left ? '#0ea5e9' : '#ea580c'
 
   return (
     <group position={[shoulderX, shoulderY, shoulderZ]}>
-      {/* R yaw 180° so kit geometry faces outboard; arm hangs toward floor */}
       <group rotation={[0, left ? 0 : Math.PI, 0]}>
         <SimpleSO101Arm
-          color={colour.dark}
-          left={left}
+          color={kitColor}
+          jointColor={jointColor}
           shoulderRad={shoulderRad}
           elbowRad={elbowRad}
           showWipe={showWipe && !left}
@@ -494,107 +493,92 @@ export function SO101FollowerArm({
 }
 
 /**
- * Bought-kit link envelopes — boxes/cylinders from SO101 + STS3215 dims (BOM still real kits).
- * Pose: base_link on 4040 face; chain folds down (−Y) toward floor (home chore pose).
- * No wild π/2 stacks that flatten into horizontal plates.
+ * Visible dual-arm chore kit — thick links, hang down then bend forward (+Z) for wipe/dishes reach.
  */
 function SimpleSO101Arm({
   color,
-  left,
+  jointColor,
   shoulderRad = 0,
   elbowRad = 0,
   showWipe = false,
 }: {
   color: string
-  left: boolean
+  jointColor: string
   shoulderRad?: number
   elbowRad?: number
   showWipe?: boolean
 }) {
   const m = mmToM
-  const servoL = m(STS3215.L)
-  const servoW = m(STS3215.W)
-  const servoH = m(STS3215.H)
-  const linkW = m(18)
-  const linkT = m(22)
-  const mat = { roughness: 0.45, metalness: 0.12 }
+  // Chunky envelopes — readable at orbit distance (still sized near SO-101)
+  const baseH = m(70)
+  const upper = m(130)
+  const fore = m(140)
+  const wrist = m(70)
+  const grip = m(90)
+  const thick = m(36)
+  const wide = m(48)
 
-  // Shoulder pitch: π flips child +Y → world −Y (hang). Small demo offsets only.
-  const hangPitch = Math.PI + shoulderRad * 0.2
-  const elbowBend = 0.4 + elbowRad * 0.25
+  // Hang toward floor, slight demo sway; elbow bends so forearm comes FORWARD for chores
+  const hang = Math.PI + shoulderRad * 0.15
+  const elbow = 1.1 + elbowRad * 0.2 // ~63° toward +Z after hang
 
   return (
     <group>
-      {/* base_link — seated on mount pad, height = SO101.base_z along +Y */}
-      <mesh position={[0, m(SO101.base_z) * 0.5, 0]} castShadow receiveShadow>
-        <boxGeometry args={[servoL, m(SO101.base_z), servoW]} />
-        <meshStandardMaterial color={color} {...mat} />
+      {/* Mounted base on 4040 */}
+      <mesh position={[0, baseH * 0.5, 0]} castShadow receiveShadow>
+        <boxGeometry args={[wide, baseH, thick]} />
+        <meshStandardMaterial color={color} roughness={0.4} metalness={0.15} />
       </mesh>
-      {/* shoulder pan barrel hint */}
-      <mesh position={[0, m(SO101.base_z) * 0.55, m(8)]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-        <cylinderGeometry args={[m(10), m(10), m(14), 14]} />
-        <meshStandardMaterial color="#6b7280" roughness={0.35} metalness={0.55} />
+      <mesh position={[0, baseH * 0.7, m(12)]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[m(14), m(14), m(22), 16]} />
+        <meshStandardMaterial color={jointColor} roughness={0.3} metalness={0.55} />
       </mesh>
 
-      {/* Hang chain from top of base toward floor */}
-      <group position={[0, m(SO101.base_z), 0]} rotation={[hangPitch, left ? 0.04 : -0.04, 0]}>
-        {/* shoulder_lift servo */}
-        <mesh position={[0, m(SO101.shoulder_lift_z) * 0.5, 0]} castShadow>
-          <boxGeometry args={[servoL * 0.95, m(SO101.shoulder_lift_z), servoW]} />
-          <meshStandardMaterial color={color} {...mat} />
+      <group position={[0, baseH, 0]} rotation={[hang, 0, 0]}>
+        {/* Upper arm */}
+        <mesh position={[0, upper * 0.5, 0]} castShadow>
+          <boxGeometry args={[thick, upper, thick]} />
+          <meshStandardMaterial color={color} roughness={0.42} metalness={0.12} />
+        </mesh>
+        <mesh position={[0, upper, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[m(16), m(16), m(40), 16]} />
+          <meshStandardMaterial color={jointColor} roughness={0.3} metalness={0.6} />
         </mesh>
 
-        <group position={[0, m(SO101.shoulder_lift_z), 0]}>
-          {/* upper_arm link */}
-          <mesh position={[0, m(SO101.upper_arm) * 0.5, 0]} castShadow>
-            <boxGeometry args={[linkW, m(SO101.upper_arm), linkT]} />
-            <meshStandardMaterial color={color} {...mat} />
+        <group position={[0, upper, 0]} rotation={[elbow, 0, 0]}>
+          {/* Forearm — reaches into workspace */}
+          <mesh position={[0, fore * 0.5, 0]} castShadow>
+            <boxGeometry args={[thick * 0.9, fore, thick * 0.9]} />
+            <meshStandardMaterial color={color} roughness={0.42} metalness={0.12} />
           </mesh>
-          {/* elbow joint */}
-          <mesh position={[0, m(SO101.upper_arm), 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-            <cylinderGeometry args={[m(12), m(12), servoH * 0.7, 14]} />
-            <meshStandardMaterial color="#9ca3af" roughness={0.32} metalness={0.6} />
-          </mesh>
-
-          <group position={[0, m(SO101.upper_arm), 0]} rotation={[elbowBend, 0, 0]}>
-            {/* forearm */}
-            <mesh position={[0, m(SO101.forearm) * 0.5, 0]} castShadow>
-              <boxGeometry args={[linkW * 0.9, m(SO101.forearm), linkT * 0.9]} />
-              <meshStandardMaterial color={color} {...mat} />
+          <group position={[0, fore, 0]}>
+            <mesh position={[0, wrist * 0.5, 0]} castShadow>
+              <boxGeometry args={[m(32), wrist, m(28)]} />
+              <meshStandardMaterial color={jointColor} roughness={0.35} metalness={0.4} />
             </mesh>
-
-            <group position={[0, m(SO101.forearm), 0]}>
-              {/* wrist */}
-              <mesh position={[0, m(SO101.wrist) * 0.5, 0]} castShadow>
-                <boxGeometry args={[m(STS3215.W * 0.9), m(SO101.wrist), m(STS3215.H * 0.7)]} />
-                <meshStandardMaterial color={color} {...mat} />
+            <group position={[0, wrist + grip * 0.35, 0]}>
+              <mesh position={[m(14), 0, 0]} castShadow>
+                <boxGeometry args={[m(10), grip * 0.75, m(22)]} />
+                <meshStandardMaterial color="#374151" roughness={0.5} />
               </mesh>
-              {/* gripper jaws */}
-              <group position={[0, m(SO101.wrist + SO101.gripper * 0.35), 0]}>
-                <mesh position={[m(12), 0, 0]} castShadow>
-                  <boxGeometry args={[m(8), m(SO101.gripper * 0.7), m(16)]} />
-                  <meshStandardMaterial color="#4b5563" roughness={0.5} metalness={0.2} />
+              <mesh position={[m(-14), 0, 0]} castShadow>
+                <boxGeometry args={[m(10), grip * 0.75, m(22)]} />
+                <meshStandardMaterial color="#374151" roughness={0.5} />
+              </mesh>
+              <mesh position={[m(14), grip * 0.2, 0]} castShadow>
+                <boxGeometry args={[m(12), m(22), m(18)]} />
+                <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
+              </mesh>
+              <mesh position={[m(-14), grip * 0.2, 0]} castShadow>
+                <boxGeometry args={[m(12), m(22), m(18)]} />
+                <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
+              </mesh>
+              {showWipe && (
+                <mesh position={[0, m(10), m(-22)]} rotation={[0.35, 0, 0]} castShadow>
+                  <boxGeometry args={[m(48), m(8), m(32)]} />
+                  <meshStandardMaterial color="#e2e8f0" roughness={0.95} />
                 </mesh>
-                <mesh position={[m(-12), 0, 0]} castShadow>
-                  <boxGeometry args={[m(8), m(SO101.gripper * 0.7), m(16)]} />
-                  <meshStandardMaterial color="#4b5563" roughness={0.5} metalness={0.2} />
-                </mesh>
-                {/* Soft silicone/foam pads */}
-                <mesh position={[m(12), m(SO101.gripper * 0.2), 0]} castShadow>
-                  <boxGeometry args={[m(10), m(18), m(14)]} />
-                  <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
-                </mesh>
-                <mesh position={[m(-12), m(SO101.gripper * 0.2), 0]} castShadow>
-                  <boxGeometry args={[m(10), m(18), m(14)]} />
-                  <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
-                </mesh>
-                {showWipe && (
-                  <mesh position={[0, m(8), m(-18)]} rotation={[0.3, 0, 0]} castShadow>
-                    <boxGeometry args={[m(40), m(6), m(28)]} />
-                    <meshStandardMaterial color="#e2e8f0" roughness={0.95} metalness={0} />
-                  </mesh>
-                )}
-              </group>
+              )}
             </group>
           </group>
         </group>
@@ -605,4 +589,4 @@ function SimpleSO101Arm({
 
 export const MESH_ATTRIBUTION =
   `OSS compose: perceptron_bot base (MIT) + Prusa Z/x-end carriage (GPL-2.0 — derivatives stay GPL) + SO-ARM100 cam/4040 (Apache-2.0). ` +
-  `SO-101 = bought kits (twin link envelopes, no GLB). Overall ${OVERALL_HEIGHT_MM} mm. Bought REQUIRED: 2040 + T8 + MGN12H + outriggers + 4 kg ballast. Soft pads + wipe.`
+  `SO-101 = dual bought kits (bright twin arms for chores). Overall ${OVERALL_HEIGHT_MM} mm. Bought REQUIRED: 2040 + T8 + MGN12H + outriggers + 4 kg ballast. Soft pads + wipe.`
