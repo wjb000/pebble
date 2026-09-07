@@ -5,10 +5,11 @@ export function ControlsHelp() {
       <span><kbd>A/D</kbd> turn</span>
       <span><kbd>Q/E</kbd> lift</span>
       <span><kbd>F</kbd> pick</span>
+      <span><kbd>G</kbd> chore demo</span>
       <span><kbd>SPACE</kbd> e-stop / reset</span>
       <span><kbd>TAB</kbd> auto</span>
       <span><kbd>C</kbd> camera</span>
-      <span>DRAG orbit · high lift = tip slowdown</span>
+      <span>tip HUD = physics · slowdown = UX</span>
     </div>
   )
 }

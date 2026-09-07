@@ -21,6 +21,8 @@ import {
   CAMERA,
   EXTRUSION,
   HEAD,
+  MGN12,
+  OUTRIGGERS,
   OVERALL_HEIGHT_MM,
   SCREW_AXIS_X_MM,
   SCREW_ELEVATOR,
@@ -265,16 +267,81 @@ export function WheeledChassis({
           scale={[-1, 1, 1]}
           roughness={0.5}
         />
-        {/* Poka-yoke L/R colour ticks — keyed visual so arms can't swap silently */}
-        <mesh position={[shoulderX - screwX, mmToM(12), mmToM(ARM.mount_z_mm + 8)]}>
-          <boxGeometry args={[mmToM(18), mmToM(6), mmToM(6)]} />
+        {/* Physical keyed L/R asymmetry — lug geometry differs (not just colour) */}
+        {/* L: rectangular key lug + blue */}
+        <mesh position={[shoulderX - screwX, mmToM(14), mmToM(ARM.mount_z_mm + 10)]} castShadow>
+          <boxGeometry args={[mmToM(22), mmToM(10), mmToM(8)]} />
           <meshStandardMaterial color="#38bdf8" roughness={0.4} />
         </mesh>
-        <mesh position={[-(shoulderX - screwX), mmToM(12), mmToM(ARM.mount_z_mm + 8)]}>
-          <boxGeometry args={[mmToM(18), mmToM(6), mmToM(6)]} />
+        <mesh position={[shoulderX - screwX + mmToM(14), mmToM(18), mmToM(ARM.mount_z_mm + 10)]} castShadow>
+          <boxGeometry args={[mmToM(8), mmToM(16), mmToM(8)]} />
+          <meshStandardMaterial color="#0ea5e9" roughness={0.35} />
+        </mesh>
+        {/* R: triangular-ish wedge lug + orange (different silhouette) */}
+        <mesh position={[-(shoulderX - screwX), mmToM(14), mmToM(ARM.mount_z_mm + 10)]} castShadow>
+          <boxGeometry args={[mmToM(22), mmToM(10), mmToM(8)]} />
           <meshStandardMaterial color="#f97316" roughness={0.4} />
         </mesh>
+        <mesh
+          position={[-(shoulderX - screwX) - mmToM(12), mmToM(20), mmToM(ARM.mount_z_mm + 10)]}
+          rotation={[0, 0, Math.PI / 5]}
+          castShadow
+        >
+          <boxGeometry args={[mmToM(10), mmToM(20), mmToM(7)]} />
+          <meshStandardMaterial color="#ea580c" roughness={0.35} />
+        </mesh>
       </group>
+
+      {/* Outrigger feet — widen support to 400 mm (TIP.support_width) */}
+      {([-1, 1] as const).map((side) => {
+        const half = mmToM(OUTRIGGERS.support_width_mm) * 0.5
+        const pad = mmToM(OUTRIGGERS.foot_pad_mm)
+        return (
+          <group key={`out-${side}`}>
+            <mesh position={[side * half, mmToM(8), 0]} castShadow receiveShadow>
+              <boxGeometry args={[mmToM(14), mmToM(10), mmToM(80)]} />
+              <meshStandardMaterial color="#6b7280" roughness={0.45} metalness={0.4} />
+            </mesh>
+            <mesh position={[side * half, mmToM(3), 0]} castShadow receiveShadow>
+              <boxGeometry args={[pad, mmToM(6), pad]} />
+              <meshStandardMaterial color="#1f2937" roughness={0.9} metalness={0.05} />
+            </mesh>
+          </group>
+        )
+      })}
+
+      {/* Low-bay ballast block 4.0 kg (visual envelope) */}
+      <mesh position={[0, mmToM(28), mmToM(-20)]} castShadow>
+        <boxGeometry args={[mmToM(90), mmToM(28), mmToM(50)]} />
+        <meshStandardMaterial color="#4b5563" roughness={0.55} metalness={0.35} />
+      </mesh>
+
+      {/* MGN12H rail envelope — silver, parallel to T8 (REQUIRED) */}
+      <mesh
+        position={[
+          screwX - mmToM(MGN12.rail_w_mm + 6),
+          baseH + extLen * 0.5,
+          mmToM(EXTRUSION.depth_mm * 0.35),
+        ]}
+        castShadow
+      >
+        <boxGeometry args={[mmToM(MGN12.rail_w_mm), extLen * 0.95, mmToM(MGN12.rail_h_mm)]} />
+        <meshStandardMaterial color="#d1d5db" roughness={0.28} metalness={0.75} />
+      </mesh>
+      {/* MGN carriage block rides with shoulder AGL */}
+      <mesh
+        position={[
+          screwX - mmToM(MGN12.rail_w_mm + 6),
+          carriageY,
+          mmToM(EXTRUSION.depth_mm * 0.35),
+        ]}
+        castShadow
+      >
+        <boxGeometry
+          args={[mmToM(MGN12.block_w_mm), mmToM(MGN12.block_l_mm), mmToM(MGN12.block_h_mm)]}
+        />
+        <meshStandardMaterial color="#9ca3af" roughness={0.32} metalness={0.7} />
+      </mesh>
 
       {/* SO-ARM overhead cam — TRUE 1:1 scale; boom forward (+Z) */}
       <group position={[0, headY, 0]} rotation={[Math.PI / 2, 0, 0]}>
@@ -303,16 +370,22 @@ export function WheeledChassis({
 
 /**
  * One SO-101 follower seated on the 4040 mount at current carriage AGL.
- * L = +X, R = −X. Simplified orientation: hang idle down from mount face.
+ * L = +X, R = −X. Soft pads + wipe visible. Demo joint offsets optional.
  */
 export function SO101FollowerArm({
   colour,
   side = 'R',
   carriageAglMm,
+  shoulderRad = 0,
+  elbowRad = 0,
+  showWipe = false,
 }: {
   colour: Colourway
   side?: 'L' | 'R'
   carriageAglMm: number
+  shoulderRad?: number
+  elbowRad?: number
+  showWipe?: boolean
 }) {
   const left = side === 'L'
   const shoulderX = mmToM(left ? ARM.mount_x_mm : -ARM.mount_x_mm)
@@ -321,14 +394,31 @@ export function SO101FollowerArm({
 
   return (
     <group position={[shoulderX, shoulderY, shoulderZ]}>
-      {/* Seat on 4040: yaw to face out, tip so arm hangs down */}
-      <group rotation={[Math.PI / 2, left ? 0 : Math.PI, left ? -Math.PI / 2 : Math.PI / 2]}>
-        <SO101Glb color={colour.dark} />
+      <group rotation={[Math.PI / 2 + shoulderRad * 0.15, left ? 0 : Math.PI, left ? -Math.PI / 2 : Math.PI / 2]}>
+        <group rotation={[elbowRad * 0.2, 0, 0]}>
+          <SO101Glb color={colour.dark} />
+          {/* Soft silicone/foam pads on gripper jaws */}
+          <mesh position={[0.02, 0.0, 0.075]} castShadow>
+            <boxGeometry args={[mmToM(18), mmToM(8), mmToM(14)]} />
+            <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
+          </mesh>
+          <mesh position={[-0.02, 0.0, 0.075]} castShadow>
+            <boxGeometry args={[mmToM(18), mmToM(8), mmToM(14)]} />
+            <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
+          </mesh>
+          {/* Microfiber wipe on R arm */}
+          {showWipe && !left && (
+            <mesh position={[0, -0.015, 0.095]} rotation={[0.4, 0, 0]} castShadow>
+              <boxGeometry args={[mmToM(40), mmToM(6), mmToM(28)]} />
+              <meshStandardMaterial color="#e2e8f0" roughness={0.95} metalness={0} />
+            </mesh>
+          )}
+        </group>
       </group>
     </group>
   )
 }
 
 export const MESH_ATTRIBUTION =
-  `OSS compose: perceptron_bot base (MIT) + Prusa Z/x-end carriage (GPL-2.0) + SO-ARM100 cam/4040/SO-101 (Apache-2.0). ` +
-  `Overall ${OVERALL_HEIGHT_MM} mm chore stack (not 5′8″). Bought: extrusion + T8. Q/E 160→950. Soft pads + wipe.`
+  `OSS compose: perceptron_bot base (MIT) + Prusa Z/x-end carriage (GPL-2.0 — derivatives stay GPL) + SO-ARM100 cam/4040/SO-101 (Apache-2.0). ` +
+  `Overall ${OVERALL_HEIGHT_MM} mm chore stack. Bought: 2040 + T8 + MGN12H REQUIRED + outriggers + 4 kg ballast. Soft pads + wipe.`

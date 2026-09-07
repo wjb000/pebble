@@ -2,7 +2,7 @@
 
 ## Prusa i3 MK3 Z + nut carriage (primary printable lift)
 **Source:** [prusa3d/Original-Prusa-i3](https://github.com/prusa3d/Original-Prusa-i3)  
-**License:** GPL-2.0 (see `LICENSE.GPL-2.0.txt`)  
+**License:** GPL-2.0 (see `LICENSE.GPL-2.0.txt`) — **derivatives of these STLs must remain GPL-2.0**  
 **Files:**
 - `z-axis-bottom.stl` — NEMA17 Z motor mount (column base)
 - `z-axis-top.stl` — top lead-screw bearing block
@@ -15,8 +15,8 @@
 **File:** `4040_base_mount.stl`
 
 ## Bought (not printed) — called out in BOM
-- T8 / Tr8 lead screw (~1.4–1.6 m) + coupler + bearings
-- 2040/2020 aluminium extrusion column to reach overall **1730 mm (~5′8″)**
-- MGN12 rail (anti-rotation) optional
+- T8 / Tr8 lead screw (~1.1 m) + coupler + bearings — travel **160→950 mm AGL**
+- 2040 aluminium extrusion column ~**1010 mm** → overall stack **~1200 mm** (chore envelope: counters / washer rim / floor)
+- **MGN12H linear rail + carriage — REQUIRED** (anti-rotation; carries dual-arm torque). Not optional.
 
-Printable lift meshes alone are short Prusa-scale parts; **purchased extrusion** extends the column to human height.
+Printable lift meshes alone are short Prusa-scale parts; **purchased extrusion + T8 + MGN12** make the chore-height elevator.

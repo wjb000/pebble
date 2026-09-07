@@ -4,10 +4,10 @@
  * Lift: prusa3d/Original-Prusa-i3 Z + x-end nut carriage (GPL-2.0)
  * Head: TheRobotStudio/SO-ARM100 Optional Overhead Cam (Apache-2.0)
  * Arms: TheRobotStudio/SO-ARM100 / LeRobot SO-101 (Apache-2.0)
- * NOT official Pollen / Microduck. No generated placeholder bodies.
+ * NOT official Pollen. No generated placeholder bodies.
  *
- * Height is chore-driven (not human-scale fashion): counters ~900, washer rim ~850–950,
- * floor pick. Full 5′8″ extrusion is overkill cost for this envelope.
+ * Height is chore-driven: counters ~900, washer rim ~850–950, floor pick.
+ * Overall stack ~1200 mm — not a humanoid fashion height.
  */
 
 export const MM = 1
@@ -22,7 +22,7 @@ export const mToMm = (m: number) => m * 1000
 export const OVERALL_HEIGHT_MM = 1200
 
 export const HEIGHT_NOTE =
-  'Overall 1200 mm (~3′11″) = base 108 + bought 2040 extrusion 1010 + head stack 82. Sized for counters ~900 mm, washer rim ~850–950 mm, and floor pick — not full human 5′8″ (that was cost overkill).'
+  'Overall 1200 mm (~3′11″) = base 108 + bought 2040 extrusion 1010 + head stack 82. Sized for counters ~900 mm, washer rim ~850–950 mm, and floor pick (chore envelope).'
 
 /** Honest chore envelope (mm AGL / world). */
 export const CHORE_ENVELOPE = {
@@ -53,7 +53,7 @@ export const BASE = {
 } as const
 
 /**
- * Bought 2040 extrusion — shorter stock for chore envelope (not 5′8″).
+ * Bought 2040 extrusion — chore-length stock.
  * 108 + 1010 + 82 = 1200.
  */
 export const EXTRUSION = {
@@ -61,7 +61,31 @@ export const EXTRUSION = {
   length_mm: 1010,
   width_mm: 20,
   depth_mm: 40,
-  note: 'Purchased column cut for chore reach; Prusa Z mounts bolt to it; leadscrew parallel',
+  mass_kg_approx: 1.0,
+  note: 'Purchased column cut for chore reach (~1 kg); Prusa Z mounts bolt to it; T8 + MGN12 parallel',
+} as const
+
+/** Bought outriggers — widen support to tip-safe stance (see stability.ts). */
+export const OUTRIGGERS = {
+  support_width_mm: 400,
+  foot_pad_mm: 50,
+  arm_reach_mm: 120,
+  mass_g: 400,
+  note: 'Angle-stock / printed feet — effective support width 400 mm (was track 160). Required for dual SO-101 tip margin.',
+} as const
+
+/** MGN12H anti-rotation rail — REQUIRED (not optional). Cheapest that carries dual-arm torque. */
+export const MGN12 = {
+  profile: 'MGN12H',
+  length_mm: 1000,
+  rail_w_mm: 12,
+  rail_h_mm: 8,
+  block_w_mm: 27,
+  block_h_mm: 13,
+  block_l_mm: 45,
+  usd_lo: 18,
+  usd_hi: 25,
+  note: 'Silver rail envelope parallel to T8; REQUIRED — extrusion slot alone will not take dual SO-101 yaw/pitch torque.',
 } as const
 
 export const SCREW_AXIS_X_MM = 22
@@ -79,7 +103,7 @@ export const SCREW_ELEVATOR = {
   screw_length_mm: 1100,
   axis_x_mm: SCREW_AXIS_X_MM,
   motor: 'NEMA17 (Prusa z-axis-bottom mount)',
-  anti_rotation: '2040 extrusion slot (MGN12 omitted)',
+  anti_rotation: 'MGN12H linear rail REQUIRED (parallel to T8) — carries dual-arm torque',
   printed_parts: [
     'z-axis-bottom.stl',
     'carriage_x-end-motor.stl',
@@ -202,11 +226,11 @@ export const BATTERY = {
   W: 70,
   H: 35,
   D: 50,
-  note: '3S LiPo + minimum scrap-steel ballast in bay (required)',
+  note: '3S LiPo in bay; separate 4.0 kg scrap-steel ballast REQUIRED (see TIP.ballast_kg)',
 } as const
 
 export const STABILITY_NOTE =
-  'Narrow base + dual SO-101 on lead-screw — ballast required. Draft — not for sale. Chore bot, not a Microduck biped.'
+  'Tip math (stability.ts): support 400 mm outriggers + 4.0 kg low-bay ballast → restore ≈9.6 N·m vs tip ≈7.85 N·m at 0.40 m reach / 2 kg @ 950 AGL (margin ≈1.22×). Tip slowdown is UX only. Draft — not for sale.'
 
 export const TOPHEAVY_NOTE = STABILITY_NOTE
 
@@ -238,6 +262,8 @@ export const PEBBLE_DIMS = {
   screw_axis_x_mm: SCREW_AXIS_X_MM,
   chore_envelope: CHORE_ENVELOPE,
   base: BASE,
+  outriggers: OUTRIGGERS,
+  mgn12: MGN12,
   extrusion: EXTRUSION,
   torso: TORSO,
   screw_elevator: SCREW_ELEVATOR,

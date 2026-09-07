@@ -3,6 +3,16 @@ import type { Steering } from '../steering'
 
 export type ControlMode = 'auto' | 'teleop'
 
+/** Scripted chore demo phases (G to start/stop). */
+export type DemoPhase =
+  | 'idle'
+  | 'floor_grasp'
+  | 'to_basket'
+  | 'basket_drop'
+  | 'wipe_pass'
+  | 'washer_drop'
+  | 'done'
+
 export type SimState = {
   x: number
   y: number
@@ -25,17 +35,35 @@ export type SimState = {
   ballY: number
   ballVx: number
   ballVy: number
-  /** Small chore box (physics XY) */
+  /** Small chore box / plate proxy (physics XY) */
   boxX: number
   boxY: number
-  /** Kinematic attach when E pressed near box */
+  /** Kinematic attach when F pressed near box */
   boxHeld: boolean
   /** Lead-screw carriage AGL (mm) */
   carriageAglMm: number
   /** True when carriage is hard-clamped at min or max AGL */
   liftAtLimit: boolean
-  /** Tip-risk drive scale 0..1 (lower when carriage high) */
+  /** Tip-risk drive scale 0..1 (UX only — not tip physics) */
   tipSlowdown: number
+  /** Live tip margin = restore/tip (physics) */
+  tipMargin: number
+  tipMomentNm: number
+  restoreMomentNm: number
+  /** True when tip moment exceeds restoring */
+  wouldTip: boolean
+  tipOver: boolean
+  /** Effective horizontal reach used for tip calc (m) */
+  tipReachM: number
+  /** Chore demo */
+  demoActive: boolean
+  demoPhase: DemoPhase
+  demoT: number
+  /** Arm demo pose (rad) — shoulder_lift / elbow simple */
+  armShoulderRad: number
+  armElbowRad: number
+  /** Wipe contact flag (demo) */
+  wipeContact: boolean
 }
 
 /** ~4 m half-width playground */

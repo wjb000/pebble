@@ -66,12 +66,13 @@ export const COLOURWAYS: Colourway[] = [
 ]
 
 export const ONE_LINER =
-  'Cheap wheeled chore bot (~1200 mm): perceptron base + short lead-screw + 2× SO-101 for floor pick, wipe, dishes assist, laundry basket/washer-assist. Draft / not for sale. Not official Pollen.'
+  'Cheap wheeled chore bot (~1200 mm): perceptron base + lead-screw + MGN12 + outriggers + 4 kg ballast + 2× SO-101. Floor pick, wipe, dishes assist, laundry basket/washer-assist. Draft / not for sale.'
 
 export const FAST_FACTS = [
   { label: 'Height', value: '~1200 mm / 3′11″ (chore stack)' },
-  { label: 'Elevator', value: 'Lead-screw 160→950 mm AGL' },
+  { label: 'Elevator', value: 'T8 + MGN12 160→950 mm AGL' },
   { label: 'Arms', value: '2× SO-101' },
+  { label: 'Tip margin', value: '~1.22× @ 400 mm stance + 4 kg ballast' },
   { label: 'Chores', value: 'Floor · wipe · dishes · laundry-assist' },
   { label: 'Status', value: 'Draft / not for sale' },
 ]
@@ -87,13 +88,17 @@ export type BomRow = {
   usd_dual: number
   vendor: string
   notes: string
+  quote?: string
 }
 
 /**
- * Min dual BOM — draft street USD (hobby, 2026). Target ~$650–670.
- * Arms DIY dominate (~$250). Cut list vs prior ~$740: shorter 2040/T8, Pi 4-class,
- * cheap USB cam, min ballast, trim fasteners/filament; + soft pads + wipe.
+ * Dual BOM — draft street USD (hobby, 2026). Prior min dual ~$655 rose for Critic P0 safety:
+ * outriggers + MGN12 + sized 4 kg ballast + hardware e-stop (see BOM_SAFETY_DELTA).
  */
+export const BOM_PRIOR_DUAL_USD = 655
+export const BOM_SAFETY_DELTA_NOTE =
+  'Safety delta vs prior ~$655: +outriggers, +MGN12H REQUIRED, +4.0 kg ballast line (was 0.5 kg bundled), +hardware e-stop. Tip margin target ≥1.2×.'
+
 export const BOM: BomRow[] = [
   {
     category: 'Locomotion',
@@ -116,6 +121,16 @@ export const BOM: BomRow[] = [
     notes: 'Upstream caster in public/assets/base/.',
   },
   {
+    category: 'Locomotion',
+    part: 'Outrigger feet / angle stock (support width 400 mm)',
+    qty: 1,
+    usd_base: 16,
+    usd_arm: 16,
+    usd_dual: 16,
+    vendor: 'Hardware store angle + print pads',
+    notes: 'REQUIRED — track 160 mm alone fails tip math for dual SO-101 @ 950 AGL.',
+  },
+  {
     category: 'Driver',
     part: 'Wheel motor driver (TB6612 class)',
     qty: 1,
@@ -133,7 +148,8 @@ export const BOM: BomRow[] = [
     usd_arm: 22,
     usd_dual: 22,
     vendor: 'Misumi / OpenBuilds / Amazon',
-    notes: 'CUT vs 1540 mm 5′8″ stock — chore reach only. Overall 1200 mm.',
+    notes: 'Chore length (~1 kg). Overall 1200 mm stack.',
+    quote: 'https://www.amazon.com/s?k=2040+v-slot+extrusion+1000mm',
   },
   {
     category: 'Screw elevator',
@@ -143,7 +159,19 @@ export const BOM: BomRow[] = [
     usd_arm: 18,
     usd_dual: 18,
     vendor: 'AliExpress / Amazon',
-    notes: 'Shorter screw matches 160→950 mm travel on SCREW_AXIS_X.',
+    notes: 'Matches 160→950 mm travel on SCREW_AXIS_X.',
+    quote: 'https://www.amazon.com/s?k=T8+leadscrew+1100mm',
+  },
+  {
+    category: 'Screw elevator',
+    part: 'MGN12H linear rail ~1000 mm + carriage block',
+    qty: 1,
+    usd_base: 22,
+    usd_arm: 22,
+    usd_dual: 22,
+    vendor: 'AliExpress / Amazon',
+    notes: 'REQUIRED anti-rotation parallel to T8. Cheapest rail that carries dual-arm torque (~$18–25).',
+    quote: 'https://www.amazon.com/s?k=MGN12H+1000mm',
   },
   {
     category: 'Screw elevator',
@@ -153,7 +181,7 @@ export const BOM: BomRow[] = [
     usd_arm: 18,
     usd_dual: 18,
     vendor: 'Amazon / Stepperonline',
-    notes: 'Prusa mount STL (GPL-2.0). No MGN12.',
+    notes: 'Prusa mount STL (GPL-2.0). MGN12 carries torque — not optional.',
   },
   {
     category: 'Driver',
@@ -167,13 +195,13 @@ export const BOM: BomRow[] = [
   },
   {
     category: 'Compute',
-    part: 'Pi 4 2–4GB or Pi Zero 2W class + cooler',
+    part: 'Pi 4 2–4GB class + cooler (~45 g board)',
     qty: 1,
     usd_base: 55,
     usd_arm: 55,
     usd_dual: 55,
     vendor: 'Raspberry Pi / reseller',
-    notes: 'CUT from Pi 5 8GB. Enough for LeRobot follower + tank. Fits middle plate.',
+    notes: 'Pi 4-class mass ~45 g (not Pi Zero). Enough for LeRobot follower + tank.',
   },
   {
     category: 'Sensors',
@@ -187,13 +215,34 @@ export const BOM: BomRow[] = [
   },
   {
     category: 'Power',
-    part: '3S LiPo + charger + minimum scrap-steel ballast',
+    part: '3S LiPo + charger',
     qty: 1,
-    usd_base: 40,
-    usd_arm: 40,
-    usd_dual: 40,
-    vendor: 'Hobby LiPo + scrap steel',
-    notes: 'Ballast REQUIRED — do not skip. Shared PSU/BEC where possible.',
+    usd_base: 32,
+    usd_arm: 32,
+    usd_dual: 32,
+    vendor: 'Hobby LiPo',
+    notes: 'Battery only — ballast is a separate line.',
+  },
+  {
+    category: 'Power',
+    part: 'Scrap-steel ballast 4.0 kg (low bay)',
+    qty: 1,
+    usd_base: 18,
+    usd_arm: 18,
+    usd_dual: 18,
+    vendor: 'Scrap steel / Amazon steel plate',
+    notes: 'REQUIRED — sized from tip math (stability.ts). Prior 0.5 kg was inadequate.',
+  },
+  {
+    category: 'Safety',
+    part: 'Hardware e-stop mushroom (NC) + panel mount',
+    qty: 1,
+    usd_base: 12,
+    usd_arm: 12,
+    usd_dual: 12,
+    vendor: 'Amazon / Digi-Key',
+    notes: 'SKU-class: 16–22 mm NC mushroom on motor rail. Sim Space = e-stop/reset.',
+    quote: 'https://www.amazon.com/s?k=16mm+mushroom+e-stop+NC',
   },
   {
     category: 'Structure',
@@ -203,17 +252,18 @@ export const BOM: BomRow[] = [
     usd_arm: 80,
     usd_dual: 105,
     vendor: 'Amazon filament + upstream STLs',
-    notes: 'Shorter column = less structure filament vs 5′8″ stack.',
+    notes: 'Keyed L/R lug asymmetry on 4040 mounts. Prusa parts GPL-2.0.',
   },
   {
     category: 'Actuation (arm)',
-    part: 'LeRobot SO-101 follower DIY kit (servos + electronics)',
-    qty: '2 (required)',
+    part: 'Feetech STS3215 servos ×12 (6 per SO-101) + DIY electronics',
+    qty: '12 / 2 arms',
     usd_base: 0,
     usd_arm: 125,
     usd_dual: 250,
-    vendor: 'HF docs/lerobot/en/so101 · TheRobotStudio/SO-ARM100',
-    notes: 'KEEP dual. 6× STS3215 each ≈ $125/arm. Dominates twin cost.',
+    vendor: 'Feetech / Amazon · HF docs/lerobot/en/so101',
+    notes: 'KEEP dual. ~$20–22/servo street. Dominates twin cost.',
+    quote: 'https://www.amazon.com/s?k=STS3215+servo',
   },
   {
     category: 'End-effector',
@@ -223,7 +273,7 @@ export const BOM: BomRow[] = [
     usd_arm: 5,
     usd_dual: 8,
     vendor: 'Amazon craft foam / silicone sheet',
-    notes: 'Honesty: NOT waterproof; NO hot water / dishwasher; glass = breakage risk.',
+    notes: 'Visible on twin gripper meshes. NOT waterproof; NO hot water; glass = breakage risk.',
   },
   {
     category: 'End-effector',
@@ -233,7 +283,7 @@ export const BOM: BomRow[] = [
     usd_arm: 5,
     usd_dual: 6,
     vendor: 'Dollar store microfiber + print clip',
-    notes: 'Dry/damp wipe only. Swap rag often. Not a mop bucket bot.',
+    notes: 'Visible wipe pad on R gripper in twin. Dry/damp only.',
   },
   {
     category: 'Fasteners',
@@ -243,7 +293,7 @@ export const BOM: BomRow[] = [
     usd_arm: 35,
     usd_dual: 40,
     vendor: 'Amazon fastener kit',
-    notes: 'Shorter elevator = less chain. Labels L/R blue/orange.',
+    notes: 'Labels L/R blue/orange + physical keyed lugs.',
   },
 ]
 
@@ -259,15 +309,17 @@ export function bomSubtotal(column: BomColumn): number {
 
 export const SPECS = [
   { key: 'What', value: '~1200 mm wheeled chore helper — floor pick, wipe, dishes assist, laundry basket/washer-assist + 2× SO-101' },
-  { key: 'Height', value: '1200 mm = base 108 + extrusion 1010 + head 82 (chore stack, not 5′8″)' },
+  { key: 'Height', value: '1200 mm = base 108 + extrusion 1010 + head 82 (chore stack)' },
   { key: 'Reach', value: 'Shoulders 160→950 mm AGL; SO-101 ~500 mm; counters ~900 / washer rim ~850–950 / floor' },
+  { key: 'Tip', value: 'Outriggers 400 mm + 4.0 kg ballast → tip ≈7.85 N·m / restore ≈9.6 N·m / margin ≈1.22× (stability.ts)' },
+  { key: 'Anti-rotation', value: 'MGN12H REQUIRED parallel to T8 (not optional)' },
   { key: 'Does', value: 'Pick clothes off floor → basket; nudge basket; drop into open washer if rim reachable; wipe tables; dish assist' },
   { key: 'Does NOT', value: 'Folding, detergent dosing, closed-door washer cycles, waterproofing, hot water, glass-safe grip' },
   { key: 'Base upstream', value: 'PedroS235/perceptron_bot (MIT)' },
-  { key: 'Lift upstream', value: 'Prusa i3 Z + x-end carriage (GPL-2.0); SO-ARM 4040 (Apache-2.0)' },
+  { key: 'Lift upstream', value: 'Prusa i3 Z + x-end carriage (GPL-2.0) — derivatives must stay GPL; SO-ARM 4040 (Apache-2.0)' },
   { key: 'Head upstream', value: 'SO-ARM100 Overhead Cam 1:1 (Apache-2.0)' },
-  { key: 'Screw elevator', value: 'T8 + NEMA17 coax SCREW_AXIS_X; Q/E soft limits; tip slowdown when high' },
+  { key: 'Screw elevator', value: 'T8 + MGN12 + NEMA17 coax SCREW_AXIS_X; Q/E soft limits; tip slowdown UX ≠ tip physics' },
   { key: 'Arms', value: '2× SO-101 required; soft pads + microfiber wipe accessory' },
-  { key: 'Cost (draft)', value: 'Min dual twin — see BOM (target ~$650–670); arms ~$250 dominate' },
-  { key: 'Status', value: 'Draft — not for sale. Ballast required. Not official Pollen.' },
+  { key: 'Cost (draft)', value: 'Dual twin — see BOM (prior ~$655 + safety delta for outriggers/MGN/ballast/e-stop)' },
+  { key: 'Status', value: 'Draft — not for sale. Ballast + outriggers + MGN + e-stop required.' },
 ]

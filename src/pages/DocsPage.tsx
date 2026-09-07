@@ -8,6 +8,8 @@ import {
   HEAD,
   HEIGHT_NOTE,
   HEIGHT_STACK_MM,
+  MGN12,
+  OUTRIGGERS,
   PRINT_UNIQUE_SKUS,
   SCREW_AXIS_X_MM,
   SCREW_ELEVATOR,
@@ -16,7 +18,8 @@ import {
   STANDING_HEIGHT_MM,
   STABILITY_NOTE,
 } from '../robot/dims'
-import { bomSubtotal } from '../product'
+import { TIP_DIAGRAM, TIP_SUMMARY } from '../robot/stability'
+import { BOM_PRIOR_DUAL_USD, BOM_SAFETY_DELTA_NOTE, bomSubtotal } from '../product'
 
 export function DocsPage() {
   return (
@@ -24,11 +27,33 @@ export function DocsPage() {
       <header className="page-header">
         <h1>Docs</h1>
         <p className="lede">
-          Pebble = cheap wheeled <strong>house-chore</strong> bot: perceptron_bot base + short {EXTRUSION.profile}{' '}
-          (~{EXTRUSION.length_mm} mm) + Prusa lead-screw + <strong>{ARM.default_count}×</strong> SO-101.
-          Overall ~{STANDING_HEIGHT_MM} mm. Not official Pollen. See <code>docs/ASSEMBLY.md</code>.
+          Pebble = cheap wheeled <strong>house-chore</strong> bot: perceptron_bot base + {EXTRUSION.profile}{' '}
+          (~{EXTRUSION.length_mm} mm) + Prusa lead-screw + <strong>{MGN12.profile} REQUIRED</strong> +{' '}
+          <strong>{ARM.default_count}×</strong> SO-101. Overall ~{STANDING_HEIGHT_MM} mm. Not official Pollen.
+          See <code>docs/ASSEMBLY.md</code>.
         </p>
       </header>
+
+      <section className="section">
+        <h2>Tip / CG (P0)</h2>
+        <p className="callout-danger">
+          Track {BASE.track_mm} mm + 0.5 kg ballast is inadequate for dual SO-101 at 950 AGL.
+          Outriggers → support <strong>{OUTRIGGERS.support_width_mm} mm</strong> + ballast{' '}
+          <strong>{TIP_SUMMARY.ballast_kg} kg</strong>.
+        </p>
+        <table className="spec-table">
+          <tbody>
+            <tr><th>Support width</th><td>{TIP_SUMMARY.support_width_mm} mm</td></tr>
+            <tr><th>Wheelbase</th><td>{TIP_SUMMARY.wheelbase_mm} mm</td></tr>
+            <tr><th>Tip moment</th><td>≈{TIP_SUMMARY.tip_moment_Nm} N·m</td></tr>
+            <tr><th>Restoring</th><td>≈{TIP_SUMMARY.restoring_moment_Nm} N·m</td></tr>
+            <tr><th>Margin</th><td>≈{TIP_SUMMARY.margin}×</td></tr>
+          </tbody>
+        </table>
+        <pre className="code-block">{TIP_DIAGRAM}</pre>
+        <p className="callout-warn">{TIP_SUMMARY.note}</p>
+        <p className="draft-banner">{STABILITY_NOTE}</p>
+      </section>
 
       <section className="section">
         <h2>Chores (honest)</h2>
@@ -36,6 +61,7 @@ export function DocsPage() {
           <li><strong>Does:</strong> floor pick (clothes/clutter) → laundry basket; nudge basket; drop into <em>open</em> washer if rim reachable; wipe tables/counters; dish assist (soft pads)</li>
           <li><strong>Does NOT:</strong> folding, detergent, closed-door washer cycles, waterproofing, hot water, glass-safe grip</li>
           <li><strong>Reach:</strong> shoulders {SCREW_ELEVATOR.min_agl_mm}→{SCREW_ELEVATOR.max_agl_mm} mm AGL + SO-101 ~{SO101.reach_mm} mm · counter ~{CHORE_ENVELOPE.counter_mm} · sink ~{CHORE_ENVELOPE.sink_rim_mm} · washer rim ~{CHORE_ENVELOPE.washer_rim_mm}</li>
+          <li><strong>Sim demo:</strong> press <kbd>G</kbd> — floor→basket grasp, wipe contact, washer drop @~900, held Y tracks AGL</li>
         </ul>
         <p className="callout-warn">{CHORE_ENVELOPE.note}</p>
       </section>
@@ -45,13 +71,11 @@ export function DocsPage() {
         <p className="callout-danger">
           <strong>Power OFF while wiring.</strong> Hardware e-stop on motor rail. Sim: <kbd>Space</kbd> = e-stop / reset.
         </p>
-        <p className="callout-warn">
-          <strong>Do not skip ballast.</strong> Tip slowdown when carriage high in sim.
-        </p>
         <ul className="checklist">
-          <li><strong>Keyed L/R:</strong> L = +X blue · R = −X orange on 4040 mounts</li>
-          <li><strong>Can&apos;t-wire-wrong:</strong> blue/orange plugs; motor rail ≠ TTL</li>
+          <li><strong>Ballast 4.0 kg + outriggers 400 mm + MGN12H</strong> — all required</li>
+          <li><strong>Keyed L/R:</strong> L = +X blue rectangular lug · R = −X orange wedge (physical, not colour alone)</li>
           <li><strong>Soft limits:</strong> Q/E clamped {SCREW_ELEVATOR.min_agl_mm}–{SCREW_ELEVATOR.max_agl_mm} mm · HUD LIMIT</li>
+          <li><strong>Tip HUD:</strong> live margin; freeze when tip &gt; restore (slowdown is UX only)</li>
         </ul>
       </section>
 
@@ -59,7 +83,7 @@ export function DocsPage() {
         <h2>What it is</h2>
         <ul className="doc-list">
           <li><strong>Base:</strong> PedroS235/perceptron_bot ({BASE.footprint_mm} mm) MIT</li>
-          <li><strong>Lift:</strong> Prusa Z + x-end · screw axis X = {SCREW_AXIS_X_MM} mm</li>
+          <li><strong>Lift:</strong> Prusa Z + x-end (GPL-2.0 — derivatives stay GPL) · screw axis X = {SCREW_AXIS_X_MM} mm · {MGN12.note}</li>
           <li><strong>Head:</strong> SO-ARM overhead cam 1:1</li>
           <li><strong>Arms:</strong> {ARM.default_count}× SO-101 · reach ~{SO101.reach_mm} mm · idle shoulders ~{SHOULDER_HEIGHT_MM} mm</li>
           <li>{HEIGHT_NOTE}</li>
@@ -69,11 +93,12 @@ export function DocsPage() {
 
       <section className="section">
         <h2>Locomotion + lift</h2>
-        <pre className="code-block">{`steering = {{ forward, yawRate }}  // tip-slowed when carriage high
+        <pre className="code-block">{`steering = {{ forward, yawRate }}  // tip-slowed when carriage high (UX)
+tip physics: margin = restore/tip  // HUD; freeze if < 1
 lift: Q/E soft-limited ${SCREW_ELEVATOR.min_agl_mm}→${SCREW_ELEVATOR.max_agl_mm} mm AGL
-Space = e-stop / reset · F = pick/drop (plate/cloth)
+Space = e-stop / reset · F = pick/drop · G = chore demo
 /model = orbit only · bought vs printed · fixed lift @ ${SCREW_ELEVATOR.default_agl_mm} mm
-sim props: counter, sink, plate, laundry basket, cloth, washer rim`}</pre>
+sim props: counter, sink, dish plate, laundry basket, cloth, washer rim`}</pre>
         <table className="spec-table">
           <tbody>
             <tr><th>V_MAX</th><td>{V_MAX} m/s</td></tr>
@@ -87,9 +112,9 @@ sim props: counter, sink, plate, laundry basket, cloth, washer rim`}</pre>
       <section className="section">
         <h2>Cost</h2>
         <ul className="doc-list">
-          <li>Min dual twin ≈ ${Math.round(bomSubtotal('dual'))} (arms ~$250 dominate; shorter column + Pi 4-class + cheap cam)</li>
+          <li>Dual twin ≈ ${Math.round(bomSubtotal('dual'))} (prior ~${BOM_PRIOR_DUAL_USD})</li>
+          <li>{BOM_SAFETY_DELTA_NOTE}</li>
         </ul>
-        <p className="draft-banner">{STABILITY_NOTE}</p>
         <Link className="btn primary" to="/sim">Open sim</Link>
         {' '}
         <Link className="btn ghost" to="/model">Model</Link>

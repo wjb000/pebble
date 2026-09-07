@@ -1,4 +1,4 @@
-/** Tank teleop: W/S forward, A/D yawRate (fixed signs). Q/E lead-screw raise/lower. F pick/drop. */
+/** Tank teleop: W/S forward, A/D yawRate. Q/E lift. F pick/drop. G chore demo. */
 export type KeyState = {
   forward: number
   yawRate: number
@@ -9,6 +9,7 @@ export type KeyState = {
   reset: boolean
   toggleSit: boolean
   togglePick: boolean
+  toggleDemo: boolean
 }
 
 const pressed = new Set<string>()
@@ -17,6 +18,7 @@ let edgeChase = false
 let edgeReset = false
 let edgeSit = false
 let edgePick = false
+let edgeDemo = false
 
 function onKeyDown(e: KeyboardEvent) {
   if (e.repeat) return
@@ -28,6 +30,7 @@ function onKeyDown(e: KeyboardEvent) {
   if (e.code === 'Space') { e.preventDefault(); edgeReset = true }
   if (e.code === 'KeyR') edgeSit = true
   if (e.code === 'KeyF') edgePick = true
+  if (e.code === 'KeyG') edgeDemo = true
 }
 
 function onKeyUp(e: KeyboardEvent) {
@@ -65,7 +68,8 @@ export function sampleKeys(): KeyState {
     forward, yawRate, lift,
     toggleMode: edgeMode, toggleChase: edgeChase,
     reset: edgeReset, toggleSit: edgeSit, togglePick: edgePick,
+    toggleDemo: edgeDemo,
   }
-  edgeMode = edgeChase = edgeReset = edgeSit = edgePick = false
+  edgeMode = edgeChase = edgeReset = edgeSit = edgePick = edgeDemo = false
   return out
 }

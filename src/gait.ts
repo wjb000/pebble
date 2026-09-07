@@ -1,7 +1,7 @@
 /**
  * Legacy gait clock kept for sim state; wheeled Pebble ignores biped visuals.
  *
- * Joint layout mirrors public Microduck leg stack:
+ * Joint layout mirrors legacy biped leg stack (unused on wheeled Pebble):
  *   hip_yaw → hip_roll → hip_pitch → knee → ankle
  * Left 0–4 / right 9–13; neck/head 5–8 driven lightly for screen aim.
  * Mouth/beak = 15th XL330 (visual in Pebble head).

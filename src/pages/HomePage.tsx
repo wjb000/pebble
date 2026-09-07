@@ -41,7 +41,7 @@ export function HomePage() {
           </p>
           <p className="draft-banner">{HEIGHT_NOTE}</p>
           <p className="draft-banner">
-            House chores: floor pick, wipe, dishes assist, laundry basket/washer-assist. Tip risk real — ballast required. Draft / not for sale. Not official Pollen.
+            House chores: floor pick, wipe, dishes assist, laundry basket/washer-assist. Tip margin ≈1.22× with outriggers + 4 kg ballast; MGN12 required. Draft / not for sale. Not official Pollen.
           </p>
         </div>
       </section>

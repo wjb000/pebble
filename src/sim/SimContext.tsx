@@ -11,6 +11,10 @@ import {
 } from './train'
 import { SCREW_ELEVATOR } from '../robot/dims'
 import {
+  restoringMoment_Nm, tipMargin, tipMoment_Nm, wouldTip,
+} from '../robot/stability'
+import { stepChoreDemo } from './choreDemo'
+import {
   BOX_PICK_RANGE, BOX_START_X, BOX_START_Y, DT,
   START_THETA, START_X, START_Y, type SimState,
 } from './types'
@@ -27,6 +31,19 @@ export function useSim(): SimApi {
   const ctx = useContext(SimCtx)
   if (!ctx) throw new Error('useSim must be used within SimProvider')
   return ctx
+}
+
+/** Effective tip reach (m): idle tuck < held < demo wipe/extended. */
+function estimateReachM(s: {
+  boxHeld: boolean
+  wipeContact: boolean
+  armShoulderRad: number
+  demoActive: boolean
+}): number {
+  if (s.wipeContact) return 0.38
+  if (s.boxHeld) return 0.28
+  if (s.demoActive && Math.abs(s.armShoulderRad) > 0.4) return 0.35
+  return 0.12 + Math.min(0.28, Math.abs(s.armShoulderRad) * 0.25)
 }
 
 export function SimProvider({ children }: { children: ReactNode }) {
@@ -101,22 +118,42 @@ export function SimProvider({ children }: { children: ReactNode }) {
         let boxY = prev.boxY
         let boxHeld = prev.boxHeld
         let carriageAglMm = prev.carriageAglMm
+        let demoActive = prev.demoActive
+        let demoPhase = prev.demoPhase
+        let demoT = prev.demoT
+        let armShoulderRad = prev.armShoulderRad
+        let armElbowRad = prev.armElbowRad
+        let wipeContact = prev.wipeContact
+        let tipOver = prev.tipOver
 
         if (keys.toggleMode) mode = mode === 'auto' ? 'teleop' : 'auto'
         if (keys.toggleChase) chaseCam = !chaseCam
         if (keys.toggleSit) sitting = !sitting
+        if (keys.toggleDemo) {
+          demoActive = !demoActive
+          if (demoActive) {
+            demoPhase = 'idle'
+            demoT = 0
+            mode = 'auto'
+          } else {
+            demoPhase = 'idle'
+            wipeContact = false
+          }
+        }
         if (keys.reset) {
           x = START_X; y = START_Y; theta = START_THETA; phase = 0
           sitting = false; sitTarget.current = 0; odo = 0
           ballX = -0.55; ballY = 0.2; ballVx = 0; ballVy = 0
           boxX = BOX_START_X; boxY = BOX_START_Y; boxHeld = false
           carriageAglMm = SCREW_ELEVATOR.default_agl_mm
+          demoActive = false; demoPhase = 'idle'; demoT = 0
+          armShoulderRad = 0; armElbowRad = 0; wipeContact = false
+          tipOver = false
           trajRef.current.resetClock()
         }
 
-        if (keys.togglePick) {
+        if (keys.togglePick && !demoActive) {
           if (boxHeld) {
-            // Drop ahead of robot
             const reach = 0.28
             boxX = x + Math.cos(theta) * reach
             boxY = y + Math.sin(theta) * reach
@@ -130,9 +167,29 @@ export function SimProvider({ children }: { children: ReactNode }) {
 
         sitTarget.current = sitting ? 1 : 0
 
-        // Lead-screw elevator Q/E — hard clamp soft limits
+        // Chore demo overrides teleop drive / lift
+        if (demoActive && !tipOver) {
+          const patch = stepChoreDemo({
+            x, y, theta, carriageAglMm, boxX, boxY, boxHeld,
+            armShoulderRad, armElbowRad, wipeContact, demoPhase, demoT, demoActive,
+          }, DT)
+          x = patch.x ?? x
+          y = patch.y ?? y
+          theta = patch.theta ?? theta
+          carriageAglMm = patch.carriageAglMm ?? carriageAglMm
+          boxX = patch.boxX ?? boxX
+          boxY = patch.boxY ?? boxY
+          boxHeld = patch.boxHeld ?? boxHeld
+          armShoulderRad = patch.armShoulderRad ?? armShoulderRad
+          armElbowRad = patch.armElbowRad ?? armElbowRad
+          wipeContact = patch.wipeContact ?? wipeContact
+          demoPhase = patch.demoPhase ?? demoPhase
+          demoT = patch.demoT ?? demoT
+        }
+
+        // Lead-screw elevator Q/E — hard clamp soft limits (manual when not demo)
         let liftAtLimit = false
-        if (keys.lift !== 0) {
+        if (!demoActive && keys.lift !== 0) {
           const rate = 280 // mm/s
           const next = carriageAglMm + keys.lift * rate * DT
           if (next <= SCREW_ELEVATOR.min_agl_mm || next >= SCREW_ELEVATOR.max_agl_mm) {
@@ -148,37 +205,57 @@ export function SimProvider({ children }: { children: ReactNode }) {
             carriageAglMm >= SCREW_ELEVATOR.max_agl_mm - 0.5
         }
 
-        // Tip-risk slowdown: high carriage → cut drive/yaw (poka-yoke)
+        // Tip-risk slowdown: high carriage → cut drive/yaw (UX poka-yoke ONLY)
         const span = SCREW_ELEVATOR.max_agl_mm - SCREW_ELEVATOR.min_agl_mm
         const liftFrac = span > 0
           ? (carriageAglMm - SCREW_ELEVATOR.min_agl_mm) / span
           : 0
-        // At max height keep ~45% speed; below mid-travel full speed
         const tipSlowdown = liftFrac <= 0.55 ? 1 : 1 - (liftFrac - 0.55) / 0.45 * 0.55
+
+        // Tip PHYSICS (separate from slowdown)
+        const tipReachM = estimateReachM({ boxHeld, wipeContact, armShoulderRad, demoActive })
+        const tipMomentNm = Math.round(tipMoment_Nm(tipReachM) * 100) / 100
+        const restoreMomentNm = Math.round(restoringMoment_Nm() * 100) / 100
+        const tipMarginLive = Math.round(tipMargin(tipReachM) * 100) / 100
+        const wouldTipNow = wouldTip(tipReachM)
+        if (wouldTipNow) tipOver = true
+        // Clear tipOver only on reset (handled above)
 
         const sitBlend = prev.sitBlend + (sitTarget.current - prev.sitBlend) * Math.min(1, DT * 4)
 
         let steering = { forward: 0, yawRate: 0 }
-        if (mode === 'teleop' || keys.forward !== 0 || keys.yawRate !== 0) {
-          steering = { forward: keys.forward, yawRate: keys.yawRate }
-          if (keys.forward !== 0 || keys.yawRate !== 0) mode = 'teleop'
-        } else {
-          steering = brainRef.current.step({
-            robot_x: x, robot_y: y, robot_theta: theta,
-            beacon_x: ballX, beacon_y: ballY,
-          })
-        }
-        // Apply tip slowdown to commanded steering
-        steering = {
-          forward: steering.forward * tipSlowdown,
-          yawRate: steering.yawRate * tipSlowdown,
+        if (!demoActive) {
+          if (mode === 'teleop' || keys.forward !== 0 || keys.yawRate !== 0) {
+            steering = { forward: keys.forward, yawRate: keys.yawRate }
+            if (keys.forward !== 0 || keys.yawRate !== 0) mode = 'teleop'
+          } else {
+            steering = brainRef.current.step({
+              robot_x: x, robot_y: y, robot_theta: theta,
+              beacon_x: ballX, beacon_y: ballY,
+            })
+          }
+          steering = {
+            forward: steering.forward * tipSlowdown,
+            yawRate: steering.yawRate * tipSlowdown,
+          }
         }
 
-        const integrated = integratePose({ ...prev, x, y, theta, phase, odo }, steering, DT, sitBlend)
-        const ball = nudgeBall({ ...prev, ...integrated, ballX, ballY, ballVx, ballVy }, DT)
+        // Freeze drive when tipped
+        if (tipOver) {
+          steering = { forward: 0, yawRate: 0 }
+        }
 
-        // Keep held box tracking robot (ChoreProps also mirrors for render)
-        if (boxHeld) {
+        const integrated = demoActive || tipOver
+          ? { x, y, theta, phase, odo, v: 0, omega: 0, steering, pose: prev.pose, cadence: 0 }
+          : integratePose({ ...prev, x, y, theta, phase, odo }, steering, DT, sitBlend)
+
+        const ball = nudgeBall({
+          ...prev,
+          ...integrated,
+          ballX, ballY, ballVx, ballVy,
+        }, DT)
+
+        if (boxHeld && !demoActive) {
           const reach = 0.28
           boxX = integrated.x + Math.cos(integrated.theta) * reach
           boxY = integrated.y + Math.sin(integrated.theta) * reach
@@ -187,6 +264,9 @@ export function SimProvider({ children }: { children: ReactNode }) {
         const next: SimState = {
           ...prev, ...integrated, ...ball,
           boxX, boxY, boxHeld, carriageAglMm, liftAtLimit, tipSlowdown,
+          tipMargin: tipMarginLive, tipMomentNm, restoreMomentNm,
+          wouldTip: wouldTipNow, tipOver, tipReachM,
+          demoActive, demoPhase, demoT, armShoulderRad, armElbowRad, wipeContact,
           mode, chaseCam, sitting, sitBlend, fps: stateRef.current.fps,
         }
         lastActionRef.current = steering

@@ -42,6 +42,9 @@ export function Scene({ colourId }: { colourId: string }) {
         robotX={state.x}
         robotY={state.y}
         robotTheta={state.theta}
+        carriageAglMm={state.carriageAglMm}
+        wipeContact={state.wipeContact}
+        demoPhase={state.demoPhase}
       />
       <Ball x={state.ballX} y={state.ballY} />
       <Pebble
@@ -50,6 +53,9 @@ export function Scene({ colourId }: { colourId: string }) {
         theta={state.theta}
         colour={colour}
         carriageAglMm={state.carriageAglMm}
+        tipOver={state.tipOver}
+        armShoulderRad={state.armShoulderRad}
+        armElbowRad={state.armElbowRad}
       />
       <ContactShadows position={[0, 0.001, 0]} opacity={0.55} scale={6} blur={2.6} far={2.5} />
       <ChaseCamera />

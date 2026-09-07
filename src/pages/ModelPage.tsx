@@ -6,7 +6,8 @@ import { useMemo, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, OrbitControls } from '@react-three/drei'
 import { COLOURWAYS } from '../product'
-import { CHORE_ENVELOPE, HEIGHT_NOTE, OVERALL_HEIGHT_MM, SCREW_ELEVATOR, mmToM } from '../robot/dims'
+import { CHORE_ENVELOPE, HEIGHT_NOTE, MGN12, OUTRIGGERS, OVERALL_HEIGHT_MM, SCREW_ELEVATOR, mmToM } from '../robot/dims'
+import { TIP_SUMMARY } from '../robot/stability'
 import { RobotAssembly } from '../components/RobotAssembly'
 import { MESH_ATTRIBUTION } from '../components/ImportedRobots'
 
@@ -43,7 +44,7 @@ export function ModelPage() {
             shadow-camera-bottom={-2}
           />
           <directionalLight position={[-2.2, 2.8, -1.8]} intensity={0.4} />
-          <RobotAssembly colour={colour} carriageAglMm={carriageAglMm} />
+          <RobotAssembly colour={colour} carriageAglMm={carriageAglMm} showWipe />
           <ContactShadows position={[0, 0.001, 0]} opacity={0.5} scale={4} blur={2.4} far={2.0} />
           <OrbitControls
             makeDefault
@@ -77,16 +78,17 @@ export function ModelPage() {
               {OVERALL_HEIGHT_MM} mm chore stack · lift @ {carriageAglMm} mm AGL · orbit / pan / zoom
             </div>
             <div className="model-caption-sub">
-              <strong>Bought (not printed):</strong> 2040 extrusion (~1010 mm) + T8 screw cylinder.
-              Do not print the column.
+              <strong>Bought (not printed):</strong> 2040 extrusion (~1010 mm) + T8 screw +{' '}
+              <strong>{MGN12.profile} rail REQUIRED</strong> + outriggers ({OUTRIGGERS.support_width_mm} mm) +{' '}
+              {TIP_SUMMARY.ballast_kg} kg ballast. Do not print the column / rail / screw.
             </div>
             <div className="model-caption-sub">
-              <strong>Printed:</strong> perceptron chassis · Prusa Z/carriage · 4040 L/R (blue/orange) ·
-              cam 1:1 · 2× SO-101.
+              <strong>Printed:</strong> perceptron chassis · Prusa Z/carriage (GPL-2.0) · keyed 4040 L/R lugs ·
+              cam 1:1 · 2× SO-101 · soft pads + wipe.
             </div>
             <div className="model-caption-sub">
               Reach: floor → counters ~{CHORE_ENVELOPE.counter_mm} · washer rim ~{CHORE_ENVELOPE.washer_rim_mm} ·
-              SO-101 ~{CHORE_ENVELOPE.so101_reach_mm} mm. Not 5′8″ — cost cut.
+              SO-101 ~{CHORE_ENVELOPE.so101_reach_mm} mm. Tip margin ≈{TIP_SUMMARY.margin}×.
             </div>
             <div className="model-caption-sub">{HEIGHT_NOTE}</div>
             <div className="model-caption-attr">{MESH_ATTRIBUTION}</div>

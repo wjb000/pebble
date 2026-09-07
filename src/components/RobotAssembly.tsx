@@ -19,15 +19,34 @@ function MeshFallback() {
 export function RobotAssembly({
   colour,
   carriageAglMm = SCREW_ELEVATOR.default_agl_mm,
+  armShoulderRad = 0,
+  armElbowRad = 0,
+  showWipe = true,
 }: {
   colour: Colourway
   carriageAglMm?: number
+  armShoulderRad?: number
+  armElbowRad?: number
+  showWipe?: boolean
 }) {
   return (
     <Suspense fallback={<MeshFallback />}>
       <WheeledChassis colour={colour} carriageAglMm={carriageAglMm} />
-      <SO101FollowerArm side="L" colour={colour} carriageAglMm={carriageAglMm} />
-      <SO101FollowerArm side="R" colour={colour} carriageAglMm={carriageAglMm} />
+      <SO101FollowerArm
+        side="L"
+        colour={colour}
+        carriageAglMm={carriageAglMm}
+        shoulderRad={armShoulderRad}
+        elbowRad={armElbowRad}
+      />
+      <SO101FollowerArm
+        side="R"
+        colour={colour}
+        carriageAglMm={carriageAglMm}
+        shoulderRad={armShoulderRad}
+        elbowRad={armElbowRad}
+        showWipe={showWipe}
+      />
     </Suspense>
   )
 }

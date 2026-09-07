@@ -9,7 +9,8 @@
     "min_agl_mm": 160,
     "max_agl_mm": 950,
     "travel_mm": 790,
-    "default_agl_mm": 850
+    "default_agl_mm": 850,
+    "anti_rotation": "MGN12H REQUIRED"
   },
   "chore_envelope": {
     "counter_mm": 900,
@@ -20,7 +21,11 @@
   "shoulder_span_mm": 190,
   "track_mm": 160,
   "wheelbase_mm": 140,
+  "support_width_mm": 400,
+  "ballast_kg": 4.0,
+  "tip_margin": 1.22,
+  "mgn12_required": true,
   "print_unique_skus": 16,
   "arms": 2,
-  "height_note": "1200 mm = base 108 + extrusion 1010 + head 82; chore reach not 5′8″"
+  "height_note": "1200 mm = base 108 + extrusion 1010 + head 82; chore reach"
 }

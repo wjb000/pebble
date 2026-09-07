@@ -1,7 +1,7 @@
-// Pebble CAD twin — Microduck-class body + 2× SO-101 arms
+// Pebble CAD twin — chore-class body + 2× SO-101 arms
 // MUST MATCH src/robot/dims.ts (hardcoded constants below).
 // Units: millimeters. Open in OpenSCAD: File → Open → F5 preview / F6 render.
-// NOT an official Pollen / Microduck product — public specs only.
+// NOT an official Pollen / legacy-ref product — public specs only.
 
 // ===== must match dims.ts =====
 XL330_L = 20.0;
@@ -220,6 +220,6 @@ module pebble() {
 
 echo(str("STANDING_HEIGHT_MM = ", STANDING_HEIGHT, " (must be 250)"));
 echo(str("HIP_HEIGHT_MM = ", HIP_HEIGHT));
-echo("must match dims.ts — Microduck body + SO-101 arms");
+echo("must match dims.ts — legacy-ref body + SO-101 arms");
 
 pebble();
