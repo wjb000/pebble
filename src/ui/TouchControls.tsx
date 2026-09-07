@@ -18,9 +18,9 @@ export function TouchControls() {
     <div className="touch-pad" aria-label="Touch teleop">
       <button type="button" className="touch-btn" {...hold('forward', 1)}>↑</button>
       <div className="touch-row">
-        <button type="button" className="touch-btn" {...hold('yawRate', 1)}>←</button>
+        <button type="button" className="touch-btn" {...hold('yawRate', -1)}>←</button>
         <button type="button" className="touch-btn" {...hold('forward', -1)}>↓</button>
-        <button type="button" className="touch-btn" {...hold('yawRate', -1)}>→</button>
+        <button type="button" className="touch-btn" {...hold('yawRate', 1)}>→</button>
       </div>
     </div>
   )

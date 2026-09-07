@@ -106,7 +106,7 @@ export function MicroduckBody({ colour }: { colour: Colourway }) {
 
 /**
  * One SO-101 follower arm from URDF-baked GLB (meters, Z-up, reach +X).
- * Mounted on Microduck flanks: left +X, right -X; both reach body +Z when idle.
+ * Mounted on Microduck flanks: left -X, right +X; both reach body +Z when idle.
  * Same orientation both sides (no mirrored negative scale).
  */
 export function SO101FollowerArm({
@@ -118,7 +118,7 @@ export function SO101FollowerArm({
 }) {
   const left = side === 'L'
   // Body +X = left after Microduck facing fix
-  const shoulderX = mmToM(ARM.shoulder_span) * 0.5 * (left ? 1 : -1)
+  const shoulderX = mmToM(ARM.shoulder_span) * 0.5 * (left ? -1 : 1)
   const shoulderY = mmToM(SHOULDER_HEIGHT_MM)
   const shoulderZ = mmToM(ARM.mount_forward)
 

@@ -47,8 +47,8 @@ export function sampleKeys(): KeyState {
   let yawRate = 0
   if (pressed.has('KeyW') || pressed.has('ArrowUp')) forward += 1
   if (pressed.has('KeyS') || pressed.has('ArrowDown')) forward -= 1
-  if (pressed.has('KeyA') || pressed.has('ArrowLeft')) yawRate += 1
-  if (pressed.has('KeyD') || pressed.has('ArrowRight')) yawRate -= 1
+  if (pressed.has('KeyA') || pressed.has('ArrowLeft')) yawRate -= 1
+  if (pressed.has('KeyD') || pressed.has('ArrowRight')) yawRate += 1
   forward += touchBias.forward
   yawRate += touchBias.yawRate
   forward = Math.max(-1, Math.min(1, forward))
