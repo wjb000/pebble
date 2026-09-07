@@ -130,14 +130,32 @@ export function SimProvider({ children }: { children: ReactNode }) {
 
         sitTarget.current = sitting ? 1 : 0
 
-        // Lead-screw elevator Q/E
+        // Lead-screw elevator Q/E — hard clamp soft limits
+        let liftAtLimit = false
         if (keys.lift !== 0) {
           const rate = 280 // mm/s
+          const next = carriageAglMm + keys.lift * rate * DT
+          if (next <= SCREW_ELEVATOR.min_agl_mm || next >= SCREW_ELEVATOR.max_agl_mm) {
+            liftAtLimit = true
+          }
           carriageAglMm = Math.max(
             SCREW_ELEVATOR.min_agl_mm,
-            Math.min(SCREW_ELEVATOR.max_agl_mm, carriageAglMm + keys.lift * rate * DT),
+            Math.min(SCREW_ELEVATOR.max_agl_mm, next),
           )
+        } else {
+          liftAtLimit =
+            carriageAglMm <= SCREW_ELEVATOR.min_agl_mm + 0.5 ||
+            carriageAglMm >= SCREW_ELEVATOR.max_agl_mm - 0.5
         }
+
+        // Tip-risk slowdown: high carriage → cut drive/yaw (poka-yoke)
+        const span = SCREW_ELEVATOR.max_agl_mm - SCREW_ELEVATOR.min_agl_mm
+        const liftFrac = span > 0
+          ? (carriageAglMm - SCREW_ELEVATOR.min_agl_mm) / span
+          : 0
+        // At max height keep ~45% speed; below mid-travel full speed
+        const tipSlowdown = liftFrac <= 0.55 ? 1 : 1 - (liftFrac - 0.55) / 0.45 * 0.55
+
         const sitBlend = prev.sitBlend + (sitTarget.current - prev.sitBlend) * Math.min(1, DT * 4)
 
         let steering = { forward: 0, yawRate: 0 }
@@ -149,6 +167,11 @@ export function SimProvider({ children }: { children: ReactNode }) {
             robot_x: x, robot_y: y, robot_theta: theta,
             beacon_x: ballX, beacon_y: ballY,
           })
+        }
+        // Apply tip slowdown to commanded steering
+        steering = {
+          forward: steering.forward * tipSlowdown,
+          yawRate: steering.yawRate * tipSlowdown,
         }
 
         const integrated = integratePose({ ...prev, x, y, theta, phase, odo }, steering, DT, sitBlend)
@@ -163,7 +186,7 @@ export function SimProvider({ children }: { children: ReactNode }) {
 
         const next: SimState = {
           ...prev, ...integrated, ...ball,
-          boxX, boxY, boxHeld, carriageAglMm,
+          boxX, boxY, boxHeld, carriageAglMm, liftAtLimit, tipSlowdown,
           mode, chaseCam, sitting, sitBlend, fps: stateRef.current.fps,
         }
         lastActionRef.current = steering

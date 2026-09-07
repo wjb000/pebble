@@ -16,5 +16,7 @@ export function createInitialState(): SimState {
     ballX: -0.55, ballY: 0.2, ballVx: 0, ballVy: 0,
     boxX: BOX_START_X, boxY: BOX_START_Y, boxHeld: false,
     carriageAglMm: SCREW_ELEVATOR.default_agl_mm,
+    liftAtLimit: false,
+    tipSlowdown: 1,
   }
 }

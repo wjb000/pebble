@@ -32,6 +32,10 @@ export type SimState = {
   boxHeld: boolean
   /** Lead-screw carriage AGL (mm) */
   carriageAglMm: number
+  /** True when carriage is hard-clamped at min or max AGL */
+  liftAtLimit: boolean
+  /** Tip-risk drive scale 0..1 (lower when carriage high) */
+  tipSlowdown: number
 }
 
 /** ~4 m half-width playground */

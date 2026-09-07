@@ -37,11 +37,11 @@ export function SimPage() {
               <div className="splash-inner">
                 <div className="splash-brand">PEBBLE</div>
                 <p className="splash-sub">
-                  OSS compose · W/S drive · A/D yaw · Q/E lift · F pick · Space reset · Tab auto
+                  W/S drive · A/D turn · Q/E lift · F pick · Space e-stop/reset
                 </p>
                 <div className="splash-cta">DRIVE</div>
                 <div className="splash-keys">
-                  perceptron_bot + Prusa carriage + 2× SO-101 · training hooks on window.__PEBBLE_TRAIN__
+                  Soft lift limits · tip slowdown when carriage high · ballast required IRL · dual SO-101
                 </div>
               </div>
             </button>

@@ -15,3 +15,8 @@ Draft twin ≈ **$740** (arms DIY ~$250 dominate). Not for sale · not official 
 - Model: [/pebble/model](https://wjb000.github.io/pebble/model)
 - Dims: `src/robot/dims.ts`
 - Print: `print/{base,lift,head,SO101}/` + NOTICE files (SO101 = **2×**)
+
+## Poka-yoke
+
+- **Space** in sim = e-stop / reset · Q/E soft lift limits · tip slowdown when carriage high
+- **IRL:** power off while wiring · do not skip ballast · L/R keyed blue/orange · see `docs/ASSEMBLY.md`

@@ -45,6 +45,46 @@ export function DocsPage() {
       </section>
 
       <section className="section">
+        <h2>Poka-yoke (foolproof)</h2>
+        <p className="callout-danger">
+          <strong>Power OFF while wiring.</strong> Hardware e-stop on the motor rail.
+          In sim, <kbd>Space</kbd> = e-stop / reset.
+        </p>
+        <p className="callout-warn">
+          <strong>Do not skip ballast</strong> — LiPo + scrap steel low in the bay.
+          Tall dual-arm stack tips; sim slows drive when the carriage is high.
+        </p>
+        <ul className="checklist">
+          <li>
+            <strong>Keyed L/R:</strong> L = +X <span style={{ color: '#38bdf8' }}>blue</span> tick · R = −X{' '}
+            <span style={{ color: '#f97316' }}>orange</span> tick on 4040 mounts (match IRL tape).
+          </li>
+          <li>
+            <strong>Can&apos;t-wire-wrong:</strong> blue/orange heat-shrink on arm plugs; motor rail ≠ TTL logic — never cross.
+          </li>
+          <li>
+            <strong>Soft lift limits:</strong> Q/E clamped to {SCREW_ELEVATOR.min_agl_mm}–{SCREW_ELEVATOR.max_agl_mm} mm AGL · HUD shows LIMIT.
+          </li>
+          <li>
+            <strong>Tip slowdown:</strong> high carriage cuts drive/yaw in sim — crawl IRL with arms raised.
+          </li>
+          <li>
+            <strong>Bring-up:</strong> logic → one arm jog → other arm → screw crawl → wheels last. Full checklist in{' '}
+            <code>docs/ASSEMBLY.md</code>.
+          </li>
+        </ul>
+        <pre className="code-block">{`        [cam boom → +Z]
+              |
+         2040 extrusion (BOUGHT)
+              |
+     L(+X,blue)  carriage  R(−X,orange)
+              |
+           T8 screw (BOUGHT, axis X=${SCREW_AXIS_X_MM})
+              |
+         perceptron base + ballast`}</pre>
+      </section>
+
+      <section className="section">
         <h2>Print library (upstream only)</h2>
         <ul className="doc-list">
           <li><strong>Base</strong> ({PRINT_UNIQUE_SKUS} structure SKUs total): <code>print/base/</code> ← perceptron_bot</li>
@@ -58,10 +98,10 @@ export function DocsPage() {
 
       <section className="section">
         <h2>Locomotion + lift</h2>
-        <pre className="code-block">{`steering = { forward, yawRate }  // WASD / arrows — tank (sim)
-lift: Q raise / E lower  // carriage ${SCREW_ELEVATOR.min_agl_mm}→${SCREW_ELEVATOR.max_agl_mm} mm AGL (sim)
-F = pick/drop box
-/model = OrbitControls only · fixed lift @ ${SCREW_ELEVATOR.default_agl_mm} mm`}</pre>
+        <pre className="code-block">{`steering = { forward, yawRate }  // WASD — tip-slowed when carriage high
+lift: Q/E soft-limited ${SCREW_ELEVATOR.min_agl_mm}→${SCREW_ELEVATOR.max_agl_mm} mm AGL
+Space = e-stop / reset · F = pick/drop
+/model = orbit only · bought vs printed captions · fixed lift @ ${SCREW_ELEVATOR.default_agl_mm} mm`}</pre>
         <table className="spec-table">
           <tbody>
             <tr><th>V_MAX</th><td>{V_MAX} m/s</td></tr>

@@ -72,10 +72,16 @@ export function ModelPage() {
             </div>
           </div>
           <div className="model-caption">
-            <div>{OVERALL_HEIGHT_MM} mm · lift @ {carriageAglMm} mm AGL</div>
+            <div>{OVERALL_HEIGHT_MM} mm · lift fixed @ {carriageAglMm} mm AGL · orbit / pan / zoom</div>
             <div className="model-caption-sub">
-              Bought envelopes: 2040 extrusion box + T8 screw cylinder. {HEIGHT_NOTE}
+              <strong>Bought (not printed):</strong> metal-ish 2040 extrusion box + T8 lead-screw cylinder.
+              {' '}Do not 3D-print the tall column — buy aluminium stock.
             </div>
+            <div className="model-caption-sub">
+              <strong>Printed (PLA grey):</strong> perceptron chassis · Prusa Z/carriage · 4040 L/R mounts ·
+              SO-ARM cam 1:1 · 2× SO-101. L = +X blue tick · R = −X orange tick.
+            </div>
+            <div className="model-caption-sub">{HEIGHT_NOTE}</div>
             <div className="model-caption-attr">{MESH_ATTRIBUTION}</div>
           </div>
         </div>

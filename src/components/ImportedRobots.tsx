@@ -265,6 +265,15 @@ export function WheeledChassis({
           scale={[-1, 1, 1]}
           roughness={0.5}
         />
+        {/* Poka-yoke L/R colour ticks — keyed visual so arms can't swap silently */}
+        <mesh position={[shoulderX - screwX, mmToM(12), mmToM(ARM.mount_z_mm + 8)]}>
+          <boxGeometry args={[mmToM(18), mmToM(6), mmToM(6)]} />
+          <meshStandardMaterial color="#38bdf8" roughness={0.4} />
+        </mesh>
+        <mesh position={[-(shoulderX - screwX), mmToM(12), mmToM(ARM.mount_z_mm + 8)]}>
+          <boxGeometry args={[mmToM(18), mmToM(6), mmToM(6)]} />
+          <meshStandardMaterial color="#f97316" roughness={0.4} />
+        </mesh>
       </group>
 
       {/* SO-ARM overhead cam — TRUE 1:1 scale; boom forward (+Z) */}

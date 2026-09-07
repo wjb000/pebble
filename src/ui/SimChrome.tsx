@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { COLOURWAYS } from '../product'
+import { SCREW_ELEVATOR } from '../robot/dims'
 import { useSim } from '../sim/SimContext'
 
 type Props = {
@@ -42,9 +43,20 @@ export function SimChrome({ colourId, onColour }: Props) {
           <span className={mode === 'TELEOP' ? 'mode-on' : 'mode-off'}>TELEOP</span>
         </div>
         <div className="hud-label" style={{ marginTop: '0.4rem' }}>LIFT</div>
-        <div>{Math.round(state.carriageAglMm)} mm</div>
+        <div>
+          {Math.round(state.carriageAglMm)} mm
+          {state.liftAtLimit ? (
+            <span className="hud-limit"> · LIMIT</span>
+          ) : null}
+        </div>
+        <div className="hud-label" style={{ marginTop: '0.25rem' }}>
+          {SCREW_ELEVATOR.min_agl_mm}–{SCREW_ELEVATOR.max_agl_mm} soft limits
+        </div>
+        {state.tipSlowdown < 0.999 && (
+          <div className="hud-tip">TIP SLOW {Math.round(state.tipSlowdown * 100)}%</div>
+        )}
       </div>
-      <div className="sim-mesh-foot">OSS compose · perceptron + Prusa Z · 2× SO-101 · Q/E lift</div>
+      <div className="sim-mesh-foot">OSS compose · perceptron + Prusa Z · 2× SO-101 · Q/E lift · Space e-stop</div>
     </>
   )
 }
