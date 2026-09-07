@@ -9,8 +9,8 @@ export function DocsPage() {
       <header className="page-header">
         <h1>Docs</h1>
         <p className="lede">
-          Pebble = cheap home chore bot: low wheeled base (~{BASE.diameter_mm} mm) + mast eye + 1× LeRobot SO-101.
-          Not an official Pollen product. Assembly notes: <code>docs/ASSEMBLY.md</code>.
+          Pebble = cheap home chore bot: low wheeled base (~{BASE.diameter_mm} mm octagon) + mast eye + 1× LeRobot SO-101.
+          Not an official Pollen product. Assembly / print list: <code>docs/ASSEMBLY.md</code>.
         </p>
       </header>
 
@@ -23,6 +23,16 @@ export function DocsPage() {
           <li><strong>Arm (v1):</strong> 1× SO-101 · {SO101.dof} DOF · reach ~{SO101.reach_mm} mm · ~{SO101.mass_g} g — dual optional</li>
           <li><strong>Mast / envelope height:</strong> ~{STANDING_HEIGHT_MM} mm</li>
           <li>Source of truth: <code>src/robot/dims.ts</code></li>
+        </ul>
+      </section>
+
+      <section className="section">
+        <h2>Print library</h2>
+        <ul className="doc-list">
+          <li><strong>Base:</strong> <code>print/base/</code> — octagon plates, standoffs, motor pods, mast, shelf, hubs, arm pad (sim loads same STLs from <code>public/assets/base/</code>)</li>
+          <li><strong>SO-101 follower:</strong> <code>print/SO101/</code> from <a href="https://github.com/TheRobotStudio/SO-ARM100" target="_blank" rel="noreferrer">TheRobotStudio/SO-ARM100</a> (Apache-2.0)</li>
+          <li><strong>Filament:</strong> base ~350–450 g + arm ~300–400 g PLA @ ~20% infill</li>
+          <li><strong>Bought (not printed):</strong> rubber tires, gearmotors, caster, CSI/USB cam, Pi, LiPo, fasteners</li>
         </ul>
       </section>
 
@@ -53,7 +63,7 @@ export function DocsPage() {
         <ul className="doc-list">
           <li>Docs: <a href="https://huggingface.co/docs/lerobot/en/so101" target="_blank" rel="noreferrer">LeRobot SO-101</a></li>
           <li>Actuators: Feetech STS3215 ×6 per arm</li>
-          <li>Idle pose in browser sim; drive via <code>so101_follower</code> on hardware</li>
+          <li>Browser sim: idle GLB baked from printable URDF STLs; drive via <code>so101_follower</code> on hardware</li>
           <li>Draft twin with 1 arm ≈ ${Math.round(bomSubtotal('arm'))} (see BOM)</li>
         </ul>
         <p className="draft-banner">{STABILITY_NOTE}</p>

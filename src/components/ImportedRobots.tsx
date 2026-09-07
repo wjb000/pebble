@@ -1,13 +1,17 @@
 /**
- * Pebble visual twin: procedural wheeled chassis (honest placeholder) + SO-101 GLB.
- * Microduck biped mesh is NOT the product visual anymore (asset may remain on disk).
+ * Pebble visual twin: printable base STLs + SO-101 follower GLB.
  *
- * Frame convention (Pebble / Three.js body):
- *   +Y up, +Z forward, +X left (robotics FLU after Z-up→Y-up + yaw).
- * SO-101 URDF/GLB is meters, Z-up, reach along +X.
+ * Base: public/assets/base/*.stl (same files as print/base/) via STLLoader, mm→m ×0.001.
+ * Arm: public/assets/so101/follower_idle.glb — baked from TheRobotStudio/SO-ARM100
+ *      Simulation/SO101 URDF visual STLs (printable meshes) at idle pose.
+ *
+ * Frame: +Y up, +Z forward, +X left. Rubber tires / caster ball / CSI cam = bought.
  */
 import { useMemo } from 'react'
 import { useGLTF } from '@react-three/drei'
+import { useLoader } from '@react-three/fiber'
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
+import type { BufferGeometry } from 'three'
 import type { Colourway } from '../product'
 import { ARM, BASE, CAMERA, MAST, mmToM } from '../robot/dims'
 
@@ -15,6 +19,57 @@ const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//
 
 /** SO-101 follower baked from Simulation/SO101 URDF visuals (meters, Z-up) */
 export const SO101_GLB = asset('assets/so101/follower_idle.glb')
+
+const baseUrl = (file: string) => asset(`assets/base/${file}`)
+
+/** Printable parts loaded for the chassis assembly (must exist under public/assets/base/). */
+export const BASE_STL = {
+  bottom: baseUrl('chassis_bottom_plate.stl'),
+  top: baseUrl('chassis_top_plate.stl'),
+  standoffs: baseUrl('standoffs_assembled.stl'),
+  motorL: baseUrl('motor_pod_left.stl'),
+  motorR: baseUrl('motor_pod_right.stl'),
+  caster: baseUrl('caster_mount.stl'),
+  mast: baseUrl('mast.stl'),
+  shelf: baseUrl('camera_shelf.stl'),
+  armPad: baseUrl('so101_mount_pad.stl'),
+  hub: baseUrl('wheel_hub.stl'),
+} as const
+
+function StlPart({
+  url,
+  color,
+  position,
+  rotation,
+  roughness = 0.5,
+  metalness = 0.08,
+}: {
+  url: string
+  color: string
+  position?: [number, number, number]
+  rotation?: [number, number, number]
+  roughness?: number
+  metalness?: number
+}) {
+  const geom = useLoader(STLLoader, url) as BufferGeometry
+  const geo = useMemo(() => {
+    const g = geom.clone()
+    g.computeVertexNormals()
+    return g
+  }, [geom])
+  return (
+    <mesh
+      geometry={geo}
+      scale={0.001}
+      position={position ?? [0, 0, 0]}
+      rotation={rotation ?? [0, 0, 0]}
+      castShadow
+      receiveShadow
+    >
+      <meshStandardMaterial color={color} roughness={roughness} metalness={metalness} />
+    </mesh>
+  )
+}
 
 function SO101Glb({ color }: { color: string }) {
   const { scene } = useGLTF(SO101_GLB)
@@ -40,55 +95,64 @@ function SO101Glb({ color }: { color: string }) {
 
 useGLTF.preload(SO101_GLB)
 
-/** Low round-ish differential-drive chassis + mast eye (procedural placeholder). */
+/**
+ * Printable wheeled chassis assembled from real STLs (print/base ≡ public/assets/base).
+ * Bought rubber tires shown as dark cylinders (not printed).
+ */
 export function WheeledChassis({ colour }: { colour: Colourway }) {
-  const r = mmToM(BASE.diameter_mm) * 0.5
   const h = mmToM(BASE.height_mm)
   const wheelR = mmToM(BASE.wheel_diameter_mm) * 0.5
   const wheelW = mmToM(BASE.wheel_width_mm)
   const track = mmToM(BASE.track_mm) * 0.5
   const mastH = mmToM(MAST.height_mm)
-  const mastR = mmToM(MAST.diameter_mm) * 0.5
   const camW = mmToM(CAMERA.W)
   const camH = mmToM(CAMERA.H)
   const camD = mmToM(CAMERA.D)
+  const casterR = mmToM(BASE.caster_diameter_mm) * 0.5
+  const casterZ = -mmToM(BASE.diameter_mm) * 0.38
 
   return (
     <group>
-      {/* Shell — flat cylinder (honest placeholder chassis) */}
-      <mesh position={[0, h * 0.5, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[r, r * 0.98, h, 32]} />
-        <meshStandardMaterial color={colour.primary} roughness={0.5} metalness={0.08} />
-      </mesh>
-      {/* Top lid slightly inset */}
-      <mesh position={[0, h + 0.002, 0]} receiveShadow>
-        <cylinderGeometry args={[r * 0.92, r * 0.92, 0.006, 32]} />
-        <meshStandardMaterial color={colour.belly} roughness={0.55} metalness={0.05} />
-      </mesh>
-      {/* Drive wheels */}
+      <StlPart url={BASE_STL.bottom} color={colour.primary} />
+      <StlPart url={BASE_STL.top} color={colour.belly} />
+      <StlPart url={BASE_STL.standoffs} color={colour.dark} roughness={0.45} metalness={0.15} />
+      <StlPart url={BASE_STL.motorL} color={colour.primary} />
+      <StlPart url={BASE_STL.motorR} color={colour.primary} />
+      <StlPart url={BASE_STL.caster} color={colour.dark} />
+      {/* Mast sits on top plate; STL local Y origin at mast base */}
+      <StlPart url={BASE_STL.mast} color={colour.dark} position={[0, h, 0]} roughness={0.4} metalness={0.2} />
+      <StlPart
+        url={BASE_STL.shelf}
+        color={colour.belly}
+        position={[0, h + mastH, mmToM(6)]}
+      />
+      <StlPart url={BASE_STL.armPad} color={colour.accent} position={[0, h, 0]} />
+
+      {/* Printed hubs + bought rubber tires */}
       {([-1, 1] as const).map((side) => (
-        <mesh
-          key={side}
-          position={[side * track, wheelR, 0]}
-          rotation={[0, 0, Math.PI / 2]}
-          castShadow
-        >
-          <cylinderGeometry args={[wheelR, wheelR, wheelW, 20]} />
-          <meshStandardMaterial color={colour.dark} roughness={0.7} metalness={0.15} />
-        </mesh>
+        <group key={side} position={[side * track, wheelR, 0]}>
+          <StlPart
+            url={BASE_STL.hub}
+            color={colour.dark}
+            position={[0, -wheelR * 0.15, 0]}
+            rotation={[0, 0, Math.PI / 2]}
+          />
+          {/* Bought tire (not printed) — envelope only */}
+          <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[wheelR, wheelR, wheelW, 20]} />
+            <meshStandardMaterial color="#1a1a1a" roughness={0.85} metalness={0.05} />
+          </mesh>
+        </group>
       ))}
-      {/* Front caster */}
-      <mesh position={[0, mmToM(BASE.caster_diameter_mm) * 0.5, r * 0.55]} castShadow>
-        <sphereGeometry args={[mmToM(BASE.caster_diameter_mm) * 0.5, 12, 12]} />
+
+      {/* Bought caster ball */}
+      <mesh position={[0, casterR, casterZ]} castShadow>
+        <sphereGeometry args={[casterR, 12, 12]} />
         <meshStandardMaterial color={colour.dark} roughness={0.65} />
       </mesh>
-      {/* Mast */}
-      <mesh position={[0, h + mastH * 0.5, mmToM(MAST.offset_forward_mm)]} castShadow>
-        <cylinderGeometry args={[mastR, mastR * 1.1, mastH, 12]} />
-        <meshStandardMaterial color={colour.dark} roughness={0.4} metalness={0.2} />
-      </mesh>
-      {/* Camera eye */}
-      <group position={[0, h + mastH + camH * 0.5, mastR + camD * 0.2]}>
+
+      {/* Bought CSI/USB camera on shelf */}
+      <group position={[0, h + mastH + mmToM(MAST.shelf_t_mm) + camH * 0.5, mmToM(10)]}>
         <mesh castShadow>
           <boxGeometry args={[camW, camH, camD]} />
           <meshStandardMaterial color={colour.face} roughness={0.35} metalness={0.25} />
@@ -131,4 +195,4 @@ export function SO101FollowerArm({
 }
 
 export const MESH_ATTRIBUTION =
-  'Placeholder wheeled chassis (procedural) + SO-101 GLB (TheRobotStudio/SO-ARM100). Not Microduck product visual.'
+  'Printable base STLs (print/base) + SO-101 GLB baked from TheRobotStudio/SO-ARM100 printable URDF meshes. Tires/caster/cam bought. Not Microduck.'

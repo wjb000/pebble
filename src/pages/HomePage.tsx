@@ -35,7 +35,7 @@ export function HomePage() {
           <p className="lede" style={{ marginTop: '1rem', maxWidth: '38rem' }}>
             Near-term chores: pick small objects off the floor / table edge, wipe surfaces within reach,
             nudge a laundry basket — <strong>not</strong> folding laundry. Wheels so it can traverse
-            home floors without tipping like a biped.
+            home floors without tipping like a biped. Sim uses real printable base STLs + SO-101 mesh.
           </p>
           <p className="draft-banner">
             Draft / not for sale. Mast height ~{STANDING_HEIGHT_MM} mm. Not official Pollen.

@@ -1,9 +1,9 @@
 /**
- * Pebble dimensions — documentation / mounts / BOM (millimeters / grams).
+ * Pebble dimensions — documentation / mounts / BOM / print twin (millimeters / grams).
  * Product: low wheeled differential-drive base + mast camera + 1× LeRobot SO-101 (v1).
  * Dual SO-101 is an optional upgrade. NOT official Pollen / Microduck.
- * Visual on /sim: procedural placeholder chassis + real SO-101 GLB.
- * Three.js converts mm → m only at render (mmToM).
+ * Visual on /sim: printable base STLs (public/assets/base/) + SO-101 follower GLB
+ * baked from upstream printable URDF meshes. Three.js converts mm → m only at render (mmToM).
  */
 
 export const MM = 1
@@ -11,27 +11,40 @@ export const mmToM = (mm: number) => mm * 0.001
 export const mToMm = (m: number) => m * 1000
 
 /**
- * Low round-ish wheeled base (Roomba-class thinking) — draft printable twin.
- * Diameter ~320 mm, shell height ~80 mm; stable under ~800 g arm.
+ * Printable octagonal differential base — matches print/base/*.stl
+ * Flat-to-flat diameter, 3.5 mm plates, standoffs between top/bottom.
  */
 export const BASE = {
-  diameter_mm: 320,
-  height_mm: 80,
+  diameter_mm: 280,
+  plate_thickness_mm: 3.5,
+  standoff_height_mm: 55,
+  standoff_od_mm: 10,
+  standoff_qty: 6,
+  /** Overall plate stack (bottom + standoffs + top) */
+  height_mm: 62,
   wheel_diameter_mm: 70,
   wheel_width_mm: 22,
-  track_mm: 280,
+  track_mm: 240,
   caster_diameter_mm: 28,
-  note: 'Differential-drive; procedural placeholder in sim until CAD shell lands',
+  motor_pod_l_mm: 55,
+  motor_pod_w_mm: 32,
+  motor_pod_h_mm: 38,
+  arm_pad_t_mm: 4,
+  note:
+    'Printable octagon plates + pods + mast; rubber tires / motors / caster bought (not printed)',
 } as const
 
-/** Mast for the single cheap eye */
+/** Mast for the single cheap eye — print/base/mast.stl + camera_shelf.stl */
 export const MAST = {
   height_mm: 180,
   diameter_mm: 18,
   offset_forward_mm: 0,
+  shelf_w_mm: 40,
+  shelf_d_mm: 28,
+  shelf_t_mm: 3,
 } as const
 
-/** Tiny CSI/USB camera on mast top */
+/** Tiny CSI/USB camera on mast shelf (bought module) */
 export const CAMERA = {
   W: 18,
   H: 14,
@@ -58,6 +71,7 @@ export const STS3215 = {
 /**
  * LeRobot SO-101 follower arm — Hugging Face LeRobot / TheRobotStudio SO-ARM100.
  * Docs: https://huggingface.co/docs/lerobot/en/so101 · so101_follower
+ * Printables: print/SO101/ (upstream Individual + Follower plate)
  */
 export const SO101 = {
   joints: [
@@ -81,18 +95,19 @@ export const SO101 = {
   diy_usd_hi: 200,
   sts3215_qty: 6,
   source:
-    'LeRobot SO-101 / so101_follower; URDF so101_new_calib.urdf; HF docs/lerobot/en/so101',
+    'LeRobot SO-101 / so101_follower; URDF so101_new_calib.urdf; HF docs/lerobot/en/so101; print/SO101/',
 } as const
 
 /**
  * Default v1: one SO-101 on the right/front of the base (reachable for floor/table-edge).
  * Body frame: +Y up, +Z forward, +X left.
+ * Mount pad STL bakes XZ; mount_y = top of top plate + pad thickness.
  */
 export const ARM = {
   /** Lateral offset of shoulder mount from base center (mm); +X = left */
   mount_x_mm: -90,
-  /** Height of mount top above floor (mm) ≈ base height */
-  mount_y_mm: 78,
+  /** Height of mount top above floor (mm) = base height + pad */
+  mount_y_mm: 66,
   /** Forward offset along +Z (mm) */
   mount_z_mm: 40,
   default_count: 1,
@@ -160,10 +175,10 @@ export const PEBBLE_DIMS = {
   stability_note: STABILITY_NOTE,
   units: 'mm / g',
   digital_twin_rule:
-    'visual = procedural wheeled chassis (placeholder) + SO-101 GLB; dims.ts documents mounts/BOM',
+    'visual = printable base STLs (public/assets/base) + SO-101 GLB baked from upstream printable URDF STLs; dims.ts = print = BOM',
   sources: [
-    'Roomba-class differential-drive home base (cost-first)',
-    'SO-101 URDF so101_new_calib.urdf + HF docs/lerobot/en/so101',
+    'Pebble print/base octagon diff-drive (authored numpy-stl)',
+    'SO-101 URDF so101_new_calib.urdf + TheRobotStudio/SO-ARM100 STL/SO101 + HF docs/lerobot/en/so101',
   ],
 } as const
 

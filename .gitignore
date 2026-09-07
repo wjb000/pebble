@@ -28,3 +28,6 @@ public/assets/microduck/mjcf_assets/
 public/assets/so101/urdf_assets/
 public/assets/so101/follower_idle.stl
 public/robot/
+
+public/assets/microduck/body_assembled.stl
+print/SO101/Follower/Ender_Follower_SO101.stl

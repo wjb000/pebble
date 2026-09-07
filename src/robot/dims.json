@@ -1,9 +1,19 @@
 {
   "product": "Pebble — wheeled base + eye + 1x SO-101 (not official Pollen)",
-  "standing_height_mm": 274,
-  "body_width_mm": 320,
+  "standing_height_mm": 256,
+  "body_width_mm": 280,
   "units": "mm / g",
-  "base": { "diameter_mm": 320, "height_mm": 80 },
-  "arm": { "default_count": 1 },
+  "base": {
+    "diameter_mm": 280,
+    "plate_thickness_mm": 3.5,
+    "standoff_height_mm": 55,
+    "height_mm": 62
+  },
+  "arm": { "default_count": 1, "mount_x_mm": -90, "mount_y_mm": 66, "mount_z_mm": 40 },
+  "print": {
+    "base": "print/base/",
+    "so101": "print/SO101/",
+    "sim_assets_base": "public/assets/base/"
+  },
   "stability_note": "Wheeled low base; one SO-101 v1 default; dual optional."
 }

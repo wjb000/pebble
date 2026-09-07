@@ -106,7 +106,7 @@ export const BOM: BomRow[] = [
     usd_arm: 30,
     usd_dual: 30,
     vendor: 'Amazon / Pololu-class / AliExpress',
-    notes: '2× cheap geared DC motors + rubber wheels. Roomba-class thinking.',
+    notes: '2× cheap geared DC motors + bought rubber tires on printed hubs.',
   },
   {
     category: 'Locomotion',
@@ -176,7 +176,7 @@ export const BOM: BomRow[] = [
     usd_arm: 30,
     usd_dual: 35,
     vendor: 'Amazon filament',
-    notes: 'Low round-ish shell, mast for cam, arm mount boss. DIY twin.',
+    notes: 'Print print/base/*.stl (~350-450 g PLA). Tires/motors/caster bought.',
   },
   {
     category: 'Actuation (arm)',

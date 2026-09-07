@@ -39,6 +39,16 @@ export function BomPage() {
       </header>
 
       <section className="section">
+        <h2>Print list</h2>
+        <ul className="doc-list">
+          <li><strong>Base</strong> (<code>print/base/</code>): top/bottom octagon plates, 6× standoffs, L/R motor pods, caster mount, mast, camera shelf, SO-101 pad, 2× wheel hubs — ~350–450 g PLA</li>
+          <li><strong>SO-101 follower</strong> (<code>print/SO101/</code>): Individual STLs or Prusa plate pack from TheRobotStudio/SO-ARM100 — ~300–400 g PLA</li>
+          <li><strong>Bought:</strong> rubber tires (hubs printed), gearmotors, caster, camera, Pi, LiPo, fasteners / arm kit electronics</li>
+          <li>Sim maps <code>public/assets/base/*.stl</code> 1:1 with print files; arm GLB from upstream printable URDF meshes</li>
+        </ul>
+      </section>
+
+      <section className="section">
         <h2>Key specs</h2>
         <table className="spec-table">
           <tbody>

@@ -1,9 +1,44 @@
 # Pebble assembly — wheeled base + SO-101 arm
 
-Digital twin: `src/robot/dims.ts` is source of truth for mounts / BOM. Sim shows a **procedural placeholder chassis** + real SO-101 GLB until a printed shell CAD lands.
+Digital twin: `src/robot/dims.ts` is source of truth for mounts / BOM / print dims.
+**Sim shows the actual printable parts:** base STLs from `print/base/` (= `public/assets/base/`) + SO-101 follower GLB baked from upstream printable URDF meshes.
 
 **Product:** Pebble — **low differential-drive wheeled base + mast camera + 1× LeRobot SO-101** (v1). Dual arms optional.
 **Not** an official Pollen Robotics / Microduck product. Microduck biped is **not** the locomotion for this goal.
+
+## Print list
+
+### Base (authored — `print/base/`)
+
+| File | Qty | Notes |
+|------|-----|-------|
+| `chassis_bottom_plate.stl` | 1 | Octagon ~280 mm flat-to-flat, 3.5 mm |
+| `chassis_top_plate.stl` | 1 | Same |
+| `standoff.stl` | 6 | 55 mm tall |
+| `motor_pod_left.stl` / `motor_pod_right.stl` | 1 each | Gearmotor bays |
+| `caster_mount.stl` | 1 | Rear caster pocket |
+| `mast.stl` | 1 | ~180 mm |
+| `camera_shelf.stl` | 1 | On mast top |
+| `so101_mount_pad.stl` | 1 | Front-right arm pad |
+| `wheel_hub.stl` | 2 | Hubs only |
+
+**Filament (base):** ~350–450 g PLA @ ~20% infill (slicer will confirm).
+
+### SO-101 follower (upstream — `print/SO101/`)
+
+Print Individual parts **or** `Follower/Prusa_Follower_SO101.stl` plate pack.
+See `print/SO101/README.md` → [TheRobotStudio/SO-ARM100](https://github.com/TheRobotStudio/SO-ARM100) (Apache-2.0).
+Upstream `3DPRINT.md`: PLA+, ~20% infill.
+
+**Filament (arm):** ~300–400 g PLA typical for follower set.
+
+### Bought (not printed)
+
+- Rubber tires / complete wheels (~70 mm OD) — hubs are printed
+- Geared DC motors (diff-drive pair) + motor driver
+- Swivel caster (~28 mm)
+- CSI/USB camera module
+- Pi Zero-class SBC, LiPo, fasteners, SO-101 servos / kit electronics
 
 ## Safety (read before power)
 
@@ -15,13 +50,14 @@ Digital twin: `src/robot/dims.ts` is source of truth for mounts / BOM. Sim shows
 
 ## Assembly order
 
-1. **Print / build low round-ish chassis** — diff-drive bay, battery tray, Pi bay, arm mount boss, mast socket.
-2. **Wheels + motors + driver** — two geared motors + wheels; caster(s); TB6612/L298N-class driver. Tank `{forward, yawRate}`.
-3. **Compute + eye** — Pi Zero 2 W (or similar) in base; CSI/USB cam on mast.
-4. **Power** — 2S/3S LiPo; separate BEC/hub for STS3215 arm bus.
-5. **SO-101 arm (v1 = one)** — build follower per LeRobot SO-101 docs. Mount side/front for floor / table-edge reach.
-6. **Optional second arm** — only after base proves stable; update power budget.
-7. **Brain hook** — locomotion same as browser sim. Arms: LeRobot `so101_follower`.
+1. **Print base set** from `print/base/` — plates, standoffs, pods, mast, shelf, hubs, arm pad.
+2. **Print / obtain SO-101 follower** from `print/SO101/` (or buy printed enclosure).
+3. **Wheels + motors + driver** — mount gearmotors in pods; press hubs; fit **bought** rubber tires; install caster in rear mount. Tank `{forward, yawRate}`.
+4. **Compute + eye** — Pi in base bay; CSI/USB cam on mast shelf.
+5. **Power** — 2S/3S LiPo; separate BEC/hub for STS3215 arm bus.
+6. **SO-101 arm (v1 = one)** — assemble per LeRobot SO-101 docs; bolt to `so101_mount_pad` (front-right).
+7. **Optional second arm** — only after base proves stable; update power budget.
+8. **Brain hook** — locomotion same as browser sim. Arms: LeRobot `so101_follower`.
 
 ## What it can do (honest)
 
@@ -41,5 +77,7 @@ See `/bom`: Base kit vs + 1 arm (v1) vs optional second arm. Draft street USD; a
 
 - Dims: `src/robot/dims.ts`
 - Mass: `src/robot/mass.ts`
-- Browser body: `src/components/Pebble.tsx`
+- Print base: `print/base/` (+ sim copies in `public/assets/base/`)
+- Print arm: `print/SO101/`
+- Browser body: `src/components/Pebble.tsx` / `ImportedRobots.tsx`
 - BOM UI: `/bom`

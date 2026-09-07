@@ -1,5 +1,5 @@
 /**
- * Pebble visual = procedural wheeled chassis + mast eye + 1× SO-101 follower.
+ * Pebble visual = printable wheeled base STLs + mast eye + 1× SO-101 follower GLB.
  */
 import { Suspense, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
