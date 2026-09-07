@@ -49,7 +49,7 @@ export const START_Y = -1.2
 export const START_THETA = Math.PI / 2
 export const BEACON_X = 1.2
 export const BEACON_Y = 1.3
-export const BOX_START_X = 0.35
-export const BOX_START_Y = 0.15
+export const BOX_START_X = 0.95
+export const BOX_START_Y = 0.25
 /** Pick radius (m) — robot center to box */
 export const BOX_PICK_RANGE = 0.42

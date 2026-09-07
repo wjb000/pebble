@@ -4,8 +4,9 @@ import { OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { useSim } from '../sim/SimContext'
+import { OVERALL_HEIGHT_MM, mmToM } from '../robot/dims'
 
-/** Frame ~5′8″ wheeled twin + dual SO-101 on lead-screw carriage. */
+/** Frame ~1200 mm chore twin + dual SO-101 on lead-screw carriage. */
 export function ChaseCamera() {
   const { state, notifyOrbitDetach } = useSim()
   const controls = useRef<OrbitControlsImpl>(null)
@@ -13,6 +14,7 @@ export function ChaseCamera() {
   const dragging = useRef(false)
   const desired = useRef(new THREE.Vector3())
   const look = useRef(new THREE.Vector3())
+  const midY = mmToM(OVERALL_HEIGHT_MM) * 0.55
 
   useEffect(() => {
     const el = controls.current
@@ -28,11 +30,10 @@ export function ChaseCamera() {
   }, [notifyOrbitDetach])
 
   useFrame((_, dt) => {
-    // Look at mid-torso of taller bot
-    const target = look.current.set(state.x, 0.95, state.y)
+    const target = look.current.set(state.x, midY, state.y)
     if (state.chaseCam && !dragging.current) {
-      const back = 2.8
-      const height = 1.55
+      const back = 2.4
+      const height = midY + 0.45
       const yaw = -state.theta + Math.PI / 2
       desired.current.set(
         state.x - Math.sin(yaw) * back,
@@ -54,8 +55,8 @@ export function ChaseCamera() {
       ref={controls}
       makeDefault
       enablePan={false}
-      minDistance={0.7}
-      maxDistance={5.5}
+      minDistance={0.6}
+      maxDistance={5}
       maxPolarAngle={Math.PI * 0.48}
       dampingFactor={0.08}
     />

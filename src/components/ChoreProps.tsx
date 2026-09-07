@@ -1,4 +1,9 @@
-/** Minimal chore props: flat table surface + small box (kinematic pick when held). */
+import { DoubleSide } from 'three'
+
+/**
+ * House-chore props: counter + sink + plate, laundry basket + cloth + washer rim.
+ * F pick/drop moves the active item (plate proxy) with the robot when held.
+ */
 export function ChoreProps({
   boxX,
   boxY,
@@ -14,36 +19,81 @@ export function ChoreProps({
   robotY: number
   robotTheta: number
 }) {
-  // When held, park box slightly ahead/right of robot (gripper proxy)
-  let bx = boxX
-  let by = boxY
-  let byElev = 0.04
+  let itemX = boxX
+  let itemZ = boxY
+  let itemY = 0.04
   if (boxHeld) {
     const reach = 0.28
-    bx = robotX + Math.cos(robotTheta) * reach
-    by = robotY + Math.sin(robotTheta) * reach
-    byElev = 0.14
+    itemX = robotX + Math.cos(robotTheta) * reach
+    itemZ = robotY + Math.sin(robotTheta) * reach
+    itemY = 0.55
   }
 
   return (
     <group>
-      {/* Flat table / surface within reach */}
-      <mesh position={[0.85, 0.22, 0.35]} castShadow receiveShadow>
-        <boxGeometry args={[0.55, 0.04, 0.4]} />
-        <meshStandardMaterial color="#3f4654" roughness={0.7} metalness={0.08} />
+      {/* Counter island ~900 mm */}
+      <mesh position={[1.05, 0.45, 0.15]} castShadow receiveShadow>
+        <boxGeometry args={[0.65, 0.9, 0.42]} />
+        <meshStandardMaterial color="#3a414d" roughness={0.75} metalness={0.06} />
       </mesh>
-      <mesh position={[0.7, 0.1, 0.35]} castShadow>
-        <boxGeometry args={[0.05, 0.2, 0.05]} />
-        <meshStandardMaterial color="#2a303a" roughness={0.8} />
+      <mesh position={[1.05, 0.91, 0.15]} castShadow receiveShadow>
+        <boxGeometry args={[0.68, 0.04, 0.45]} />
+        <meshStandardMaterial color="#c4b8a8" roughness={0.55} metalness={0.08} />
       </mesh>
-      <mesh position={[1.0, 0.1, 0.35]} castShadow>
-        <boxGeometry args={[0.05, 0.2, 0.05]} />
-        <meshStandardMaterial color="#2a303a" roughness={0.8} />
+      {/* Sink lip + basin */}
+      <mesh position={[1.18, 0.88, 0.0]} castShadow>
+        <boxGeometry args={[0.26, 0.05, 0.2]} />
+        <meshStandardMaterial color="#9aa3ad" roughness={0.35} metalness={0.45} />
       </mesh>
-      {/* Small box to pick (E when close) */}
-      <mesh position={[bx, byElev, by]} castShadow>
-        <boxGeometry args={[0.06, 0.06, 0.06]} />
-        <meshStandardMaterial color={boxHeld ? '#f97316' : '#e2e8f0'} roughness={0.45} />
+      <mesh position={[1.18, 0.82, 0.0]}>
+        <boxGeometry args={[0.2, 0.07, 0.14]} />
+        <meshStandardMaterial color="#1e2430" roughness={0.5} metalness={0.3} />
+      </mesh>
+
+      {/* Pickable item: plate when near counter spawn, shown as plate disc */}
+      <mesh position={[itemX, boxHeld ? itemY : Math.max(itemY, 0.95), itemZ]} castShadow>
+        <cylinderGeometry args={[0.055, 0.055, 0.014, 24]} />
+        <meshStandardMaterial color={boxHeld ? '#f97316' : '#e8eef6'} roughness={0.4} />
+      </mesh>
+
+      {/* Floor cloth (static visual — laundry) */}
+      {!boxHeld && (
+        <mesh position={[-0.4, 0.012, 0.65]} rotation={[-Math.PI / 2, 0, 0.35]} castShadow>
+          <planeGeometry args={[0.14, 0.1]} />
+          <meshStandardMaterial color="#64748b" roughness={0.92} side={DoubleSide} />
+        </mesh>
+      )}
+      {boxHeld && (
+        <mesh
+          position={[itemX + 0.02, itemY - 0.02, itemZ]}
+          rotation={[-Math.PI / 2, 0, 0.2]}
+          castShadow
+        >
+          <planeGeometry args={[0.12, 0.08]} />
+          <meshStandardMaterial color="#38bdf8" roughness={0.9} side={DoubleSide} />
+        </mesh>
+      )}
+
+      {/* Laundry basket */}
+      <group position={[-0.85, 0, 0.35]}>
+        <mesh position={[0, 0.18, 0]} castShadow receiveShadow>
+          <cylinderGeometry args={[0.15, 0.13, 0.36, 16]} />
+          <meshStandardMaterial color="#d97706" roughness={0.7} metalness={0.05} transparent opacity={0.82} />
+        </mesh>
+        <mesh position={[0, 0.36, 0]}>
+          <torusGeometry args={[0.148, 0.012, 8, 20]} />
+          <meshStandardMaterial color="#b45309" roughness={0.6} />
+        </mesh>
+      </group>
+
+      {/* Open washer (~900 mm rim) */}
+      <mesh position={[-1.3, 0.45, -0.2]} castShadow receiveShadow>
+        <boxGeometry args={[0.48, 0.9, 0.48]} />
+        <meshStandardMaterial color="#4b5563" roughness={0.55} metalness={0.25} />
+      </mesh>
+      <mesh position={[-1.3, 0.92, -0.2]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.15, 0.022, 10, 24]} />
+        <meshStandardMaterial color="#94a3b8" roughness={0.4} metalness={0.35} />
       </mesh>
     </group>
   )

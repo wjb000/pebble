@@ -41,7 +41,7 @@ export function SimPage() {
                 </p>
                 <div className="splash-cta">DRIVE</div>
                 <div className="splash-keys">
-                  Soft lift limits · tip slowdown when carriage high · ballast required IRL · dual SO-101
+                  Floor · wipe · dishes · laundry-assist · soft limits · tip slowdown · dual SO-101
                 </div>
               </div>
             </button>

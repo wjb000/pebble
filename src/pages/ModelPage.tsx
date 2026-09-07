@@ -1,12 +1,12 @@
 /**
- * /model — clean orbit/pan/zoom viewer of the assembled robot only.
- * Shared RobotAssembly with Sim. Fixed default carriage AGL. No physics/WASD/train/chase.
+ * /model — clean orbit viewer of assembled robot only (no kitchen props).
+ * Shared RobotAssembly with Sim. Fixed default AGL. No physics/WASD.
  */
 import { useMemo, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, OrbitControls } from '@react-three/drei'
 import { COLOURWAYS } from '../product'
-import { HEIGHT_NOTE, OVERALL_HEIGHT_MM, SCREW_ELEVATOR } from '../robot/dims'
+import { CHORE_ENVELOPE, HEIGHT_NOTE, OVERALL_HEIGHT_MM, SCREW_ELEVATOR, mmToM } from '../robot/dims'
 import { RobotAssembly } from '../components/RobotAssembly'
 import { MESH_ATTRIBUTION } from '../components/ImportedRobots'
 
@@ -17,6 +17,7 @@ export function ModelPage() {
     [colourId],
   )
   const carriageAglMm = SCREW_ELEVATOR.default_agl_mm
+  const midY = mmToM(OVERALL_HEIGHT_MM) * 0.55
 
   return (
     <div className="model-page">
@@ -24,7 +25,7 @@ export function ModelPage() {
         <Canvas
           shadows
           dpr={[1, 2]}
-          camera={{ position: [1.6, 1.35, 2.4], fov: 40, near: 0.02, far: 40 }}
+          camera={{ position: [1.4, 1.1, 2.1], fov: 40, near: 0.02, far: 40 }}
           gl={{ antialias: true, toneMappingExposure: 1.1 }}
           style={{ width: '100%', height: '100%', background: '#0a0b0e' }}
         >
@@ -32,24 +33,24 @@ export function ModelPage() {
           <ambientLight intensity={0.35} />
           <directionalLight
             castShadow
-            position={[3.2, 5.5, 2.2]}
+            position={[3.2, 4.5, 2.2]}
             intensity={1.4}
             shadow-mapSize={[1024, 1024]}
             shadow-camera-far={14}
             shadow-camera-left={-3}
             shadow-camera-right={3}
-            shadow-camera-top={4}
+            shadow-camera-top={3}
             shadow-camera-bottom={-2}
           />
           <directionalLight position={[-2.2, 2.8, -1.8]} intensity={0.4} />
           <RobotAssembly colour={colour} carriageAglMm={carriageAglMm} />
-          <ContactShadows position={[0, 0.001, 0]} opacity={0.5} scale={5} blur={2.4} far={2.2} />
+          <ContactShadows position={[0, 0.001, 0]} opacity={0.5} scale={4} blur={2.4} far={2.0} />
           <OrbitControls
             makeDefault
-            target={[0, 0.85, 0]}
+            target={[0, midY, 0]}
             enablePan
-            minDistance={0.6}
-            maxDistance={6}
+            minDistance={0.5}
+            maxDistance={5}
             maxPolarAngle={Math.PI * 0.49}
             dampingFactor={0.08}
           />
@@ -72,14 +73,20 @@ export function ModelPage() {
             </div>
           </div>
           <div className="model-caption">
-            <div>{OVERALL_HEIGHT_MM} mm · lift fixed @ {carriageAglMm} mm AGL · orbit / pan / zoom</div>
-            <div className="model-caption-sub">
-              <strong>Bought (not printed):</strong> metal-ish 2040 extrusion box + T8 lead-screw cylinder.
-              {' '}Do not 3D-print the tall column — buy aluminium stock.
+            <div>
+              {OVERALL_HEIGHT_MM} mm chore stack · lift @ {carriageAglMm} mm AGL · orbit / pan / zoom
             </div>
             <div className="model-caption-sub">
-              <strong>Printed (PLA grey):</strong> perceptron chassis · Prusa Z/carriage · 4040 L/R mounts ·
-              SO-ARM cam 1:1 · 2× SO-101. L = +X blue tick · R = −X orange tick.
+              <strong>Bought (not printed):</strong> 2040 extrusion (~1010 mm) + T8 screw cylinder.
+              Do not print the column.
+            </div>
+            <div className="model-caption-sub">
+              <strong>Printed:</strong> perceptron chassis · Prusa Z/carriage · 4040 L/R (blue/orange) ·
+              cam 1:1 · 2× SO-101.
+            </div>
+            <div className="model-caption-sub">
+              Reach: floor → counters ~{CHORE_ENVELOPE.counter_mm} · washer rim ~{CHORE_ENVELOPE.washer_rim_mm} ·
+              SO-101 ~{CHORE_ENVELOPE.so101_reach_mm} mm. Not 5′8″ — cost cut.
             </div>
             <div className="model-caption-sub">{HEIGHT_NOTE}</div>
             <div className="model-caption-attr">{MESH_ATTRIBUTION}</div>

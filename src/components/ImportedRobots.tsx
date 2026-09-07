@@ -331,4 +331,4 @@ export function SO101FollowerArm({
 
 export const MESH_ATTRIBUTION =
   `OSS compose: perceptron_bot base (MIT) + Prusa Z/x-end carriage (GPL-2.0) + SO-ARM100 cam/4040/SO-101 (Apache-2.0). ` +
-  `Overall ${OVERALL_HEIGHT_MM} mm via bought 2040 extrusion. Bought envelopes: extrusion box + T8 screw. Q/E lead-screw elevator.`
+  `Overall ${OVERALL_HEIGHT_MM} mm chore stack (not 5′8″). Bought: extrusion + T8. Q/E 160→950. Soft pads + wipe.`

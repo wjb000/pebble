@@ -1,20 +1,26 @@
 {
-  "overall_height_mm": 1730,
-  "height_stack_mm": 1730,
+  "overall_height_mm": 1200,
+  "height_stack_mm": 1200,
   "base_height_mm": 108,
-  "extrusion_length_mm": 1540,
+  "extrusion_length_mm": 1010,
   "head_stack_h_mm": 82,
   "screw_axis_x_mm": 22,
   "screw_elevator": {
     "min_agl_mm": 160,
-    "max_agl_mm": 1250,
-    "travel_mm": 1090,
-    "default_agl_mm": 900
+    "max_agl_mm": 950,
+    "travel_mm": 790,
+    "default_agl_mm": 850
+  },
+  "chore_envelope": {
+    "counter_mm": 900,
+    "sink_rim_mm": 860,
+    "washer_rim_mm": 900,
+    "so101_reach_mm": 500
   },
   "shoulder_span_mm": 190,
   "track_mm": 160,
   "wheelbase_mm": 140,
   "print_unique_skus": 16,
   "arms": 2,
-  "height_note": "1730 mm = base 108 + extrusion 1540 + head stack 82; printable OSS meshes are shorter"
+  "height_note": "1200 mm = base 108 + extrusion 1010 + head 82; chore reach not 5′8″"
 }

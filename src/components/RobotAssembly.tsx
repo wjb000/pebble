@@ -1,16 +1,16 @@
 /**
  * Shared assembled robot — used by Sim (Pebble) and /model viewer.
- * Keep identical so Model tab and Sim twin never drift.
  */
 import { Suspense } from 'react'
 import type { Colourway } from '../product'
-import { SCREW_ELEVATOR } from '../robot/dims'
+import { OVERALL_HEIGHT_MM, SCREW_ELEVATOR, mmToM } from '../robot/dims'
 import { SO101FollowerArm, WheeledChassis } from './ImportedRobots'
 
 function MeshFallback() {
+  const h = mmToM(OVERALL_HEIGHT_MM)
   return (
-    <mesh position={[0, 0.85, 0]}>
-      <cylinderGeometry args={[0.14, 0.18, 1.7, 16]} />
+    <mesh position={[0, h * 0.5, 0]}>
+      <cylinderGeometry args={[0.12, 0.16, h, 16]} />
       <meshStandardMaterial color="#334155" wireframe />
     </mesh>
   )

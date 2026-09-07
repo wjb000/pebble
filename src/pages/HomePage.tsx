@@ -41,7 +41,7 @@ export function HomePage() {
           </p>
           <p className="draft-banner">{HEIGHT_NOTE}</p>
           <p className="draft-banner">
-            Draft / not for sale. Tip risk real on a narrow base + tall stack. Not official Pollen.
+            House chores: floor pick, wipe, dishes assist, laundry basket/washer-assist. Tip risk real — ballast required. Draft / not for sale. Not official Pollen.
           </p>
         </div>
       </section>

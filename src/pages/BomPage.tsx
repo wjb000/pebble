@@ -21,7 +21,7 @@ export function BomPage() {
         <h1>BOM / Specs</h1>
         <p className="lede">
           Base (perceptron + extrusion + screw elevator) vs +1 arm vs <strong>+2× SO-101 (default product)</strong>.
-          Round <strong>draft</strong> street USD — not for sale.
+          Min dual target ~$650–670 (chore stack, not 5′8″). Round <strong>draft</strong> street USD — not for sale.
         </p>
         <div className="fact-grid" style={{ marginTop: '1.2rem' }}>
           <div className="fact-card">
