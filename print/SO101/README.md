@@ -41,8 +41,8 @@ See also upstream `3DPRINT.md` for Craftcloud3d / PCBWay settings (PLA+, ~20% in
 
 ## Browser twin
 
-- `/sim` and `/model` share `RobotAssembly` → `public/assets/so101/follower_idle.glb` (**two** instances, L/R).
-- GLB is baked from the same upstream URDF visual STLs at an idle pose — not handmade primitives.
+- `/sim` and `/model` share `RobotAssembly` → dual **bought SO-101 kits** as bright link-envelope arms (L blue / R orange). `follower_idle.glb` is kept in-repo for attribution only — **not loaded** by the twin.
+- BOM still quotes real SO-101 DIY kits + STS3215×12 — envelopes are visual, not a cost-down.
 - Attribution: `public/assets/so101/NOTICE.md`.
 
 Pebble is **not** Microduck. Product = wheeled perceptron base + Prusa lead-screw carriage + **2×** SO-101 + SO-ARM overhead cam. Legacy Microduck assets live under `refs/quarantine/` and are unused.
