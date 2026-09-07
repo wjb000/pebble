@@ -1,19 +1,21 @@
 {
-  "product": "Pebble — wheeled base + eye + 1x SO-101 (not official Pollen)",
-  "standing_height_mm": 256,
-  "body_width_mm": 280,
+  "product": "Pebble — wheeled base + torso/head + 2x SO-101 (not official Pollen)",
+  "standing_height_mm": 717,
+  "shoulder_height_mm": 527,
+  "body_width_mm": 340,
   "units": "mm / g",
   "base": {
-    "diameter_mm": 280,
+    "diameter_mm": 340,
     "plate_thickness_mm": 3.5,
-    "standoff_height_mm": 55,
-    "height_mm": 62
+    "standoff_height_mm": 70,
+    "height_mm": 77
   },
-  "arm": { "default_count": 1, "mount_x_mm": -90, "mount_y_mm": 66, "mount_z_mm": 40 },
+  "torso": { "height_mm": 450, "width_mm": 95, "depth_mm": 75 },
+  "arm": { "default_count": 2, "mount_x_mm": 125, "mount_y_mm": 527, "mount_z_mm": 0 },
   "print": {
     "base": "print/base/",
     "so101": "print/SO101/",
     "sim_assets_base": "public/assets/base/"
   },
-  "stability_note": "Wheeled low base; one SO-101 v1 default; dual optional."
+  "stability_note": "Wide base + ballast required; dual SO-101 + height raises tip risk. Draft not for sale."
 }

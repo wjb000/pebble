@@ -37,11 +37,11 @@ export function SimPage() {
               <div className="splash-inner">
                 <div className="splash-brand">PEBBLE</div>
                 <p className="splash-sub">
-                  Wheeled chore twin · W/S forward · A/D yaw · E pick box · Space reset · Tab auto
+                  Humanoid wheeled twin · W/S forward · A/D yaw · E pick box · Space reset · Tab auto
                 </p>
                 <div className="splash-cta">DRIVE</div>
                 <div className="splash-keys">
-                  Placeholder chassis + SO-101 GLB (TheRobotStudio/SO-ARM100)
+                  Printable base/torso/head STLs + 2x SO-101 GLB (TheRobotStudio/SO-ARM100)
                   · training hooks on window.__PEBBLE_TRAIN__
                 </div>
               </div>

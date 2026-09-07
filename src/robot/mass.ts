@@ -5,27 +5,31 @@
 import { BATTERY, PI_ZERO, SO101, STS3215, STABILITY_NOTE } from './dims'
 
 export const MASS_G = {
-  wheeled_base_structure: 450,
+  wheeled_base_structure: 550,
+  torso_head_structure: 350,
   motors_wheels: 180,
   motor_driver: 40,
+  ballast: 800,
   sts3215_each: STS3215.mass_g,
   so101_each: SO101.mass_g,
   so101_pair: SO101.mass_g * 2,
   pi_zero: 20,
-  battery_lipo: 120,
-  camera_mast: 60,
-  mount_plate: 80,
-  wiring_misc: 50,
+  battery_lipo: 150,
+  camera_screen: 120,
+  mount_plate: 60,
+  wiring_misc: 70,
 } as const
 
 export function estimateBaseOnly_g(): number {
   return (
     MASS_G.wheeled_base_structure +
+    MASS_G.torso_head_structure +
     MASS_G.motors_wheels +
     MASS_G.motor_driver +
+    MASS_G.ballast +
     MASS_G.pi_zero +
     MASS_G.battery_lipo +
-    MASS_G.camera_mast +
+    MASS_G.camera_screen +
     MASS_G.wiring_misc
   )
 }
@@ -35,7 +39,7 @@ export function estimateWithOneArm_g(): number {
 }
 
 export function estimateWithDualArms_g(): number {
-  return estimateBaseOnly_g() + MASS_G.so101_pair + MASS_G.mount_plate * 1.4
+  return estimateBaseOnly_g() + MASS_G.so101_pair + MASS_G.mount_plate * 2
 }
 
 export const TORQUE_NOTE = STABILITY_NOTE

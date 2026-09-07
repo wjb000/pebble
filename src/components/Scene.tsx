@@ -15,7 +15,7 @@ export function Scene({ colourId }: { colourId: string }) {
     <Canvas
       shadows
       dpr={[1, 2]}
-      camera={{ position: [0, 0.7, 1.5], fov: 42, near: 0.02, far: 30 }}
+      camera={{ position: [0, 1.05, 2.0], fov: 42, near: 0.02, far: 40 }}
       gl={{ antialias: true, toneMappingExposure: 1.1 }}
       style={{ width: '100%', height: '100%', background: '#0a0b0e' }}
     >
@@ -27,11 +27,11 @@ export function Scene({ colourId }: { colourId: string }) {
         position={[3.5, 6, 2.5]}
         intensity={1.45}
         shadow-mapSize={[1024, 1024]}
-        shadow-camera-far={12}
-        shadow-camera-left={-3}
-        shadow-camera-right={3}
-        shadow-camera-top={3}
-        shadow-camera-bottom={-3}
+        shadow-camera-far={16}
+        shadow-camera-left={-4}
+        shadow-camera-right={4}
+        shadow-camera-top={4}
+        shadow-camera-bottom={-4}
       />
       <directionalLight position={[-2.5, 3, -2]} intensity={0.35} />
       <Arena />

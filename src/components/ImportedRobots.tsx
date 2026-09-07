@@ -1,11 +1,11 @@
 /**
- * Pebble visual twin: printable base STLs + SO-101 follower GLB.
+ * Pebble visual twin: printable base/torso/head STLs + 2× SO-101 follower GLB.
  *
- * Base: public/assets/base/*.stl (same files as print/base/) via STLLoader, mm→m ×0.001.
- * Arm: public/assets/so101/follower_idle.glb — baked from TheRobotStudio/SO-ARM100
- *      Simulation/SO101 URDF visual STLs (printable meshes) at idle pose.
+ * Base/torso/head: public/assets/base/*.stl (same as print/base/) via STLLoader, mm→m ×0.001.
+ * Arms: public/assets/so101/follower_idle.glb — baked from TheRobotStudio/SO-ARM100
+ *      Simulation/SO101 URDF visual STLs (printable meshes) at idle pose; remounted to hang −Y.
  *
- * Frame: +Y up, +Z forward, +X left. Rubber tires / caster ball / CSI cam = bought.
+ * Frame: +Y up, +Z forward, +X left. Rubber tires / caster ball / CSI cam / face screen = bought.
  */
 import { useMemo } from 'react'
 import { useGLTF } from '@react-three/drei'
@@ -13,7 +13,7 @@ import { useLoader } from '@react-three/fiber'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
 import type { BufferGeometry } from 'three'
 import type { Colourway } from '../product'
-import { ARM, BASE, CAMERA, MAST, mmToM } from '../robot/dims'
+import { ARM, BASE, CAMERA, HEAD, TORSO, mmToM } from '../robot/dims'
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
 
@@ -22,7 +22,7 @@ export const SO101_GLB = asset('assets/so101/follower_idle.glb')
 
 const baseUrl = (file: string) => asset(`assets/base/${file}`)
 
-/** Printable parts loaded for the chassis assembly (must exist under public/assets/base/). */
+/** Printable parts loaded for the chassis + humanoid upper body. */
 export const BASE_STL = {
   bottom: baseUrl('chassis_bottom_plate.stl'),
   top: baseUrl('chassis_top_plate.stl'),
@@ -30,10 +30,14 @@ export const BASE_STL = {
   motorL: baseUrl('motor_pod_left.stl'),
   motorR: baseUrl('motor_pod_right.stl'),
   caster: baseUrl('caster_mount.stl'),
-  mast: baseUrl('mast.stl'),
-  shelf: baseUrl('camera_shelf.stl'),
-  armPad: baseUrl('so101_mount_pad.stl'),
   hub: baseUrl('wheel_hub.stl'),
+  torso: baseUrl('torso_column.stl'),
+  shoulderL: baseUrl('shoulder_pod_left.stl'),
+  shoulderR: baseUrl('shoulder_pod_right.stl'),
+  neck: baseUrl('head_neck.stl'),
+  bezel: baseUrl('head_bezel.stl'),
+  screenBack: baseUrl('screen_backplate.stl'),
+  camMount: baseUrl('camera_mount.stl'),
 } as const
 
 function StlPart({
@@ -96,20 +100,26 @@ function SO101Glb({ color }: { color: string }) {
 useGLTF.preload(SO101_GLB)
 
 /**
- * Printable wheeled chassis assembled from real STLs (print/base ≡ public/assets/base).
- * Bought rubber tires shown as dark cylinders (not printed).
+ * Printable wheeled chassis + torso column + head (bezel / screen / cam).
+ * Bought rubber tires + face display panel shown as envelopes (not printed).
  */
 export function WheeledChassis({ colour }: { colour: Colourway }) {
   const h = mmToM(BASE.height_mm)
   const wheelR = mmToM(BASE.wheel_diameter_mm) * 0.5
   const wheelW = mmToM(BASE.wheel_width_mm)
   const track = mmToM(BASE.track_mm) * 0.5
-  const mastH = mmToM(MAST.height_mm)
+  const torsoH = mmToM(TORSO.height_mm)
+  const neckH = mmToM(HEAD.neck_h_mm)
+  const bezelH = mmToM(HEAD.bezel_h_mm)
   const camW = mmToM(CAMERA.W)
   const camH = mmToM(CAMERA.H)
   const camD = mmToM(CAMERA.D)
   const casterR = mmToM(BASE.caster_diameter_mm) * 0.5
   const casterZ = -mmToM(BASE.diameter_mm) * 0.38
+  const shoulderY = h + torsoH
+  const shoulderX = mmToM(ARM.mount_x_mm)
+  const headCenterY = shoulderY + neckH + bezelH * 0.5
+  const foreheadY = shoulderY + neckH + bezelH + mmToM(HEAD.cam_rise_mm) * 0.35
 
   return (
     <group>
@@ -119,14 +129,57 @@ export function WheeledChassis({ colour }: { colour: Colourway }) {
       <StlPart url={BASE_STL.motorL} color={colour.primary} />
       <StlPart url={BASE_STL.motorR} color={colour.primary} />
       <StlPart url={BASE_STL.caster} color={colour.dark} />
-      {/* Mast sits on top plate; STL local Y origin at mast base */}
-      <StlPart url={BASE_STL.mast} color={colour.dark} position={[0, h, 0]} roughness={0.4} metalness={0.2} />
+
+      {/* Torso column sits on top plate; STL local Y origin at column base */}
+      <StlPart url={BASE_STL.torso} color={colour.primary} position={[0, h, 0]} />
+
+      {/* Shoulder pods at shoulder line */}
       <StlPart
-        url={BASE_STL.shelf}
-        color={colour.belly}
-        position={[0, h + mastH, mmToM(6)]}
+        url={BASE_STL.shoulderL}
+        color={colour.accent}
+        position={[shoulderX, shoulderY, 0]}
       />
-      <StlPart url={BASE_STL.armPad} color={colour.accent} position={[0, h, 0]} />
+      <StlPart
+        url={BASE_STL.shoulderR}
+        color={colour.accent}
+        position={[-shoulderX, shoulderY, 0]}
+      />
+
+      {/* Neck + head bezel + screen backplate */}
+      <StlPart url={BASE_STL.neck} color={colour.dark} position={[0, shoulderY, 0]} />
+      <StlPart
+        url={BASE_STL.screenBack}
+        color={colour.dark}
+        position={[0, headCenterY, -mmToM(4)]}
+      />
+      <StlPart
+        url={BASE_STL.bezel}
+        color={colour.belly}
+        position={[0, headCenterY, mmToM(2)]}
+      />
+
+      {/* Bought face screen (dark quad — not printed) */}
+      <mesh position={[0, headCenterY, mmToM(HEAD.bezel_t_mm) * 0.55 + mmToM(3)]} castShadow>
+        <boxGeometry args={[mmToM(HEAD.screen_w_mm), mmToM(HEAD.screen_h_mm), mmToM(2)]} />
+        <meshStandardMaterial color={colour.face} roughness={0.25} metalness={0.35} />
+      </mesh>
+
+      {/* Forehead camera mount + bought CSI cam */}
+      <StlPart
+        url={BASE_STL.camMount}
+        color={colour.dark}
+        position={[0, foreheadY, mmToM(8)]}
+      />
+      <group position={[0, foreheadY + mmToM(8), mmToM(14)]}>
+        <mesh castShadow>
+          <boxGeometry args={[camW, camH, camD]} />
+          <meshStandardMaterial color={colour.face} roughness={0.35} metalness={0.25} />
+        </mesh>
+        <mesh position={[0, 0, camD * 0.55]}>
+          <circleGeometry args={[camH * 0.28, 16]} />
+          <meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={0.35} />
+        </mesh>
+      </group>
 
       {/* Printed hubs + bought rubber tires */}
       {([-1, 1] as const).map((side) => (
@@ -137,7 +190,6 @@ export function WheeledChassis({ colour }: { colour: Colourway }) {
             position={[0, -wheelR * 0.15, 0]}
             rotation={[0, 0, Math.PI / 2]}
           />
-          {/* Bought tire (not printed) — envelope only */}
           <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
             <cylinderGeometry args={[wheelR, wheelR, wheelW, 20]} />
             <meshStandardMaterial color="#1a1a1a" roughness={0.85} metalness={0.05} />
@@ -150,25 +202,14 @@ export function WheeledChassis({ colour }: { colour: Colourway }) {
         <sphereGeometry args={[casterR, 12, 12]} />
         <meshStandardMaterial color={colour.dark} roughness={0.65} />
       </mesh>
-
-      {/* Bought CSI/USB camera on shelf */}
-      <group position={[0, h + mastH + mmToM(MAST.shelf_t_mm) + camH * 0.5, mmToM(10)]}>
-        <mesh castShadow>
-          <boxGeometry args={[camW, camH, camD]} />
-          <meshStandardMaterial color={colour.face} roughness={0.35} metalness={0.25} />
-        </mesh>
-        <mesh position={[0, 0, camD * 0.55]}>
-          <circleGeometry args={[camH * 0.28, 16]} />
-          <meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={0.35} />
-        </mesh>
-      </group>
     </group>
   )
 }
 
 /**
- * One SO-101 follower arm from URDF-baked GLB (meters, Z-up, reach +X).
- * Mounted on wheeled base right/front (+X is left → mount_x negative = right).
+ * One SO-101 follower arm from URDF-baked GLB (meters, Z-up).
+ * Remounted so idle hang is downward along −Y (grippers toward floor), bases at shoulders.
+ * L = +X (left flank), R = −X (right flank).
  */
 export function SO101FollowerArm({
   colour,
@@ -178,16 +219,24 @@ export function SO101FollowerArm({
   side?: 'L' | 'R'
 }) {
   const left = side === 'L'
-  const shoulderX = mmToM(left ? -ARM.mount_x_mm : ARM.mount_x_mm)
+  const shoulderX = mmToM(left ? ARM.mount_x_mm : -ARM.mount_x_mm)
   const shoulderY = mmToM(ARM.mount_y_mm)
   const shoulderZ = mmToM(ARM.mount_z_mm)
 
   return (
     <group position={[shoulderX, shoulderY, shoulderZ]}>
-      {/* Z-up→Y-up, then yaw so URDF +X reach → body +Z forward */}
-      <group rotation={[0, -Math.PI / 2, 0]}>
-        <group rotation={[-Math.PI / 2, 0, 0]}>
-          <SO101Glb color={colour.dark} />
+      {/*
+        Nested remount:
+        1) Z-up → Y-up
+        2) Yaw so URDF +X reach was body-forward (+Z) in prior single-arm layout
+        3) Pitch +π/2 so that forward reach tips down to −Y (gravity hang)
+        4) Left side yaw π so elbow/geometry mirrors on the left flank
+      */}
+      <group rotation={[Math.PI / 2, left ? Math.PI : 0, 0]}>
+        <group rotation={[0, -Math.PI / 2, 0]}>
+          <group rotation={[-Math.PI / 2, 0, 0]}>
+            <SO101Glb color={colour.dark} />
+          </group>
         </group>
       </group>
     </group>
@@ -195,4 +244,4 @@ export function SO101FollowerArm({
 }
 
 export const MESH_ATTRIBUTION =
-  'Printable base STLs (print/base) + SO-101 GLB baked from TheRobotStudio/SO-ARM100 printable URDF meshes. Tires/caster/cam bought. Not Microduck.'
+  'Printable base/torso/head STLs (print/base) + 2× SO-101 GLB baked from TheRobotStudio/SO-ARM100 printable URDF meshes. Tires/caster/cam/screen bought. Not Microduck.'

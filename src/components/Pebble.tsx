@@ -1,5 +1,5 @@
 /**
- * Pebble visual = printable wheeled base STLs + mast eye + 1× SO-101 follower GLB.
+ * Pebble visual = printable wheeled base + torso/head STLs + 2× SO-101 follower GLB (hanging).
  */
 import { Suspense, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
@@ -23,8 +23,8 @@ type Props = {
 
 function MeshFallback() {
   return (
-    <mesh position={[0, 0.06, 0]}>
-      <cylinderGeometry args={[0.12, 0.12, 0.06, 16]} />
+    <mesh position={[0, 0.25, 0]}>
+      <cylinderGeometry args={[0.14, 0.16, 0.5, 16]} />
       <meshStandardMaterial color="#334155" wireframe />
     </mesh>
   )
@@ -35,7 +35,6 @@ export function Pebble({ x, y, theta, pose, colour }: Props) {
   useFrame(() => {
     if (!root.current) return
     // Physics (x,y) -> Three (x,z); yaw maps body +Z to heading theta
-    // Wheeled: ignore biped bob (keep tiny for continuity)
     root.current.position.set(x, pose.bob * 0.15, y)
     root.current.rotation.y = -theta + Math.PI / 2
   })
@@ -44,6 +43,7 @@ export function Pebble({ x, y, theta, pose, colour }: Props) {
     <group ref={root}>
       <Suspense fallback={<MeshFallback />}>
         <WheeledChassis colour={colour} />
+        <SO101FollowerArm side="L" colour={colour} />
         <SO101FollowerArm side="R" colour={colour} />
       </Suspense>
     </group>

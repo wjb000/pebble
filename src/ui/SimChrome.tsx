@@ -42,7 +42,7 @@ export function SimChrome({ colourId, onColour }: Props) {
           <span className={mode === 'TELEOP' ? 'mode-on' : 'mode-off'}>TELEOP</span>
         </div>
       </div>
-      <div className="sim-mesh-foot">print/base STLs · SO-101 GLB</div>
+      <div className="sim-mesh-foot">print/base STLs · 2x SO-101 GLB</div>
     </>
   )
 }

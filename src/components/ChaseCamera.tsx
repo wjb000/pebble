@@ -5,7 +5,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { useSim } from '../sim/SimContext'
 
-/** Frame low wheeled chassis + SO-101 arm. */
+/** Frame taller wheeled humanoid + dual hanging SO-101 arms. */
 export function ChaseCamera() {
   const { state, notifyOrbitDetach } = useSim()
   const controls = useRef<OrbitControlsImpl>(null)
@@ -28,10 +28,11 @@ export function ChaseCamera() {
   }, [notifyOrbitDetach])
 
   useFrame((_, dt) => {
-    const target = look.current.set(state.x, 0.12, state.y)
+    // Look at mid-torso of taller bot
+    const target = look.current.set(state.x, 0.38, state.y)
     if (state.chaseCam && !dragging.current) {
-      const back = 1.25
-      const height = 0.62
+      const back = 1.85
+      const height = 1.05
       const yaw = -state.theta + Math.PI / 2
       desired.current.set(
         state.x - Math.sin(yaw) * back,
@@ -53,8 +54,8 @@ export function ChaseCamera() {
       ref={controls}
       makeDefault
       enablePan={false}
-      minDistance={0.45}
-      maxDistance={4}
+      minDistance={0.7}
+      maxDistance={5.5}
       maxPolarAngle={Math.PI * 0.48}
       dampingFactor={0.08}
     />

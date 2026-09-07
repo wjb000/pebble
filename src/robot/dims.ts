@@ -1,8 +1,8 @@
 /**
  * Pebble dimensions — documentation / mounts / BOM / print twin (millimeters / grams).
- * Product: low wheeled differential-drive base + mast camera + 1× LeRobot SO-101 (v1).
- * Dual SO-101 is an optional upgrade. NOT official Pollen / Microduck.
- * Visual on /sim: printable base STLs (public/assets/base/) + SO-101 follower GLB
+ * Product: wheeled differential base + vertical torso + head (screen+cam) + 2× LeRobot SO-101.
+ * NOT official Pollen / Microduck.
+ * Visual on /sim: printable base/torso/head STLs (public/assets/base/) + SO-101 follower GLB
  * baked from upstream printable URDF meshes. Three.js converts mm → m only at render (mmToM).
  */
 
@@ -12,29 +12,65 @@ export const mToMm = (m: number) => m * 1000
 
 /**
  * Printable octagonal differential base — matches print/base/*.stl
- * Flat-to-flat diameter, 3.5 mm plates, standoffs between top/bottom.
+ * Wider / taller bay for dual-arm tip resistance + ballast.
  */
 export const BASE = {
-  diameter_mm: 280,
+  diameter_mm: 340,
   plate_thickness_mm: 3.5,
-  standoff_height_mm: 55,
-  standoff_od_mm: 10,
-  standoff_qty: 6,
+  standoff_height_mm: 70,
+  standoff_od_mm: 12,
+  standoff_qty: 8,
   /** Overall plate stack (bottom + standoffs + top) */
-  height_mm: 62,
+  height_mm: 77,
   wheel_diameter_mm: 70,
   wheel_width_mm: 22,
-  track_mm: 240,
+  track_mm: 280,
   caster_diameter_mm: 28,
   motor_pod_l_mm: 55,
-  motor_pod_w_mm: 32,
-  motor_pod_h_mm: 38,
-  arm_pad_t_mm: 4,
+  motor_pod_w_mm: 34,
+  motor_pod_h_mm: 40,
   note:
-    'Printable octagon plates + pods + mast; rubber tires / motors / caster bought (not printed)',
+    'Wider octagon + taller bay for dual SO-101; rubber tires / motors / caster bought; add ballast in bay',
 } as const
 
-/** Mast for the single cheap eye — print/base/mast.stl + camera_shelf.stl */
+/**
+ * Vertical torso column — print/base/torso_column.stl
+ * Sits on top plate; top ≈ shoulder line.
+ */
+export const TORSO = {
+  height_mm: 450,
+  width_mm: 95,
+  depth_mm: 75,
+  note: 'Printable column; shoulders at base.height + torso.height',
+} as const
+
+/**
+ * Head: neck + face bezel + screen backplate + forehead camera mount.
+ * Screen panel is a dark quad in sim (bought display); bezel/backplate printed.
+ */
+export const HEAD = {
+  neck_h_mm: 45,
+  bezel_w_mm: 130,
+  bezel_h_mm: 120,
+  bezel_t_mm: 8,
+  screen_w_mm: 110,
+  screen_h_mm: 75,
+  screen_t_mm: 3,
+  cam_mount_w_mm: 28,
+  cam_mount_h_mm: 18,
+  cam_mount_d_mm: 22,
+  cam_rise_mm: 25,
+} as const
+
+/** Tiny CSI/USB camera on forehead mount (bought module) */
+export const CAMERA = {
+  W: 18,
+  H: 14,
+  D: 12,
+  rise: 2,
+} as const
+
+/** @deprecated Mast replaced by torso+head; kept for legacy STL filenames */
 export const MAST = {
   height_mm: 180,
   diameter_mm: 18,
@@ -44,17 +80,8 @@ export const MAST = {
   shelf_t_mm: 3,
 } as const
 
-/** Tiny CSI/USB camera on mast shelf (bought module) */
-export const CAMERA = {
-  W: 18,
-  H: 14,
-  D: 12,
-  rise: 2,
-} as const
-
 /**
  * Feetech STS3215 — used on SO-101 arms.
- * Datasheet case mm; ~55 g; ~19 kg·cm @ 6–7.4 V.
  */
 export const STS3215 = {
   L: 45.2,
@@ -64,14 +91,13 @@ export const STS3215 = {
   torque_kgcm: 19,
   bus: 'TTL' as const,
   qty_per_arm: 6,
-  /** Optional dual-arm upgrade */
   qty_arms_pair: 12,
 } as const
 
 /**
  * LeRobot SO-101 follower arm — Hugging Face LeRobot / TheRobotStudio SO-ARM100.
  * Docs: https://huggingface.co/docs/lerobot/en/so101 · so101_follower
- * Printables: print/SO101/ (upstream Individual + Follower plate)
+ * Printables: print/SO101/
  */
 export const SO101 = {
   joints: [
@@ -99,23 +125,27 @@ export const SO101 = {
 } as const
 
 /**
- * Default v1: one SO-101 on the right/front of the base (reachable for floor/table-edge).
+ * Default product: two SO-101s at shoulder height, idle hang along flanks (grippers toward floor).
  * Body frame: +Y up, +Z forward, +X left.
- * Mount pad STL bakes XZ; mount_y = top of top plate + pad thickness.
+ * Shoulder AGL ≈ BASE.height + TORSO.height = 527 mm → downward reach ≈ floor, up/forward ≈ counter (~900 mm).
  */
 export const ARM = {
-  /** Lateral offset of shoulder mount from base center (mm); +X = left */
-  mount_x_mm: -90,
-  /** Height of mount top above floor (mm) = base height + pad */
-  mount_y_mm: 66,
-  /** Forward offset along +Z (mm) */
-  mount_z_mm: 40,
-  default_count: 1,
-  optional_second: true,
+  /** Lateral span of shoulder mount from center (mm); +X = left */
+  mount_x_mm: 125,
+  /** Height of shoulder mount above floor (mm) */
+  mount_y_mm: 527,
+  /** Forward offset along +Z (mm) — 0 = hang along flanks */
+  mount_z_mm: 0,
+  default_count: 2,
+  optional_second: false,
 } as const
 
-/** Overall visual height: base + mast + cam */
-export const STANDING_HEIGHT_MM = BASE.height_mm + MAST.height_mm + CAMERA.H
+/** Shoulder line above floor */
+export const SHOULDER_HEIGHT_MM = BASE.height_mm + TORSO.height_mm
+
+/** Overall visual height: base + torso + neck + bezel + cam rise */
+export const STANDING_HEIGHT_MM =
+  BASE.height_mm + TORSO.height_mm + HEAD.neck_h_mm + HEAD.bezel_h_mm + HEAD.cam_rise_mm
 
 export const BODY_WIDTH_MM = BASE.diameter_mm
 
@@ -132,23 +162,18 @@ export const BATTERY = {
   W: 50,
   H: 22,
   D: 35,
-  note: '2S/3S LiPo envelope; chemistry TBD at build',
+  note: '2S/3S LiPo envelope + ballast space in taller bay; chemistry TBD',
 } as const
 
 /**
- * Wheeled base carries arm mass better than a biped — still mind tip on ramps / rugs.
- * Dual arms optional; v1 ships one arm for cost + balance.
+ * Dual arms + taller COM raise tip risk — wide base + ballast required.
  */
 export const STABILITY_NOTE =
-  'Wheeled low base is the product locomotion (not Microduck biped). One SO-101 (~800 g) is the v1 default; dual arms optional. Mind rugs, thresholds, and arm reach when extended.'
+  'Wheeled wide base + ballast in bay is required: dual SO-101 (~1.6 kg arms) on a ~527 mm shoulder raises tip risk on rugs, ramps, and thresholds. Draft — not for sale. Not a Microduck biped.'
 
-/** @deprecated alias — wheeled product; kept so old imports compile briefly */
+/** @deprecated alias */
 export const TOPHEAVY_NOTE = STABILITY_NOTE
 
-/**
- * Legacy XL330 datasheet kept only as reference (NOT part of v1 BOM).
- * Previous Microduck-class biped framing dropped for this home-chore goal.
- */
 export const XL330 = {
   L: 20.0,
   W: 34.0,
@@ -157,15 +182,17 @@ export const XL330 = {
   torque_nm: 0.52,
   bus: 'TTL' as const,
   qty_body: 0,
-  note: 'Not used on wheeled Pebble v1 — retained for archive only',
+  note: 'Not used on wheeled Pebble — retained for archive only',
 } as const
 
 export const PEBBLE_DIMS = {
-  product: 'Pebble — wheeled base + eye + 1× SO-101 (not official Pollen)',
+  product: 'Pebble — wheeled base + torso/head + 2× SO-101 (not official Pollen)',
   standing_height_mm: STANDING_HEIGHT_MM,
+  shoulder_height_mm: SHOULDER_HEIGHT_MM,
   body_width_mm: BODY_WIDTH_MM,
   base: BASE,
-  mast: MAST,
+  torso: TORSO,
+  head: HEAD,
   camera: CAMERA,
   sts3215: STS3215,
   so101: SO101,
@@ -175,9 +202,9 @@ export const PEBBLE_DIMS = {
   stability_note: STABILITY_NOTE,
   units: 'mm / g',
   digital_twin_rule:
-    'visual = printable base STLs (public/assets/base) + SO-101 GLB baked from upstream printable URDF STLs; dims.ts = print = BOM',
+    'visual = printable base/torso/head STLs (public/assets/base) + SO-101 GLB baked from upstream printable URDF STLs; dims.ts = print = BOM',
   sources: [
-    'Pebble print/base octagon diff-drive (authored numpy-stl)',
+    'Pebble print/base humanoid stack (authored numpy-stl)',
     'SO-101 URDF so101_new_calib.urdf + TheRobotStudio/SO-ARM100 STL/SO101 + HF docs/lerobot/en/so101',
   ],
 } as const

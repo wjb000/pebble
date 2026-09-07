@@ -1,5 +1,5 @@
-/** Pebble — cheap wheeled home chore bot + 1× LeRobot SO-101 (draft / not for sale).
- *  NOT an official Pollen Robotics product. Cost is the primary design constraint. */
+/** Pebble — wheeled humanoid home chore bot + 2× LeRobot SO-101 (draft / not for sale).
+ *  NOT an official Pollen Robotics product. Cost is a primary design constraint. */
 
 export type Colourway = {
   id: string
@@ -66,13 +66,13 @@ export const COLOURWAYS: Colourway[] = [
 ]
 
 export const ONE_LINER =
-  'Dead-simple home chore bot: low wheeled base + camera eye + one LeRobot SO-101 arm. Draft / not for sale. Not official Pollen.'
+  'Dead-simple home chore bot: wheeled base + torso/head (screen+cam) + two LeRobot SO-101 arms that hang like a person. Floor→counter reach. Draft / not for sale. Not official Pollen.'
 
 export const FAST_FACTS = [
   { label: 'Base', value: 'Diff-drive wheels' },
-  { label: 'Eye', value: '1× CSI/USB cam' },
-  { label: 'Arm (v1)', value: '1× SO-101' },
-  { label: 'Target', value: 'Sub-$400–600 DIY' },
+  { label: 'Head', value: 'Screen + cam' },
+  { label: 'Arms', value: '2× SO-101' },
+  { label: 'Reach', value: 'Floor→~900 mm' },
   { label: 'Status', value: 'Draft / not for sale' },
 ]
 
@@ -82,11 +82,11 @@ export type BomRow = {
   category: string
   part: string
   qty: number | string
-  /** Draft street USD for base-kit column (wheels + eye + compute) */
+  /** Draft street USD for base-kit column (wheels + torso/head + compute) */
   usd_base: number
-  /** Draft street USD for base + 1× SO-101 (default product) */
+  /** Draft street USD for base + 1× SO-101 (half kit / debug) */
   usd_arm: number
-  /** Draft street USD for base + 2× SO-101 (optional upgrade) */
+  /** Draft street USD for base + 2× SO-101 (default product) */
   usd_dual: number
   vendor: string
   notes: string
@@ -94,8 +94,8 @@ export type BomRow = {
 
 /**
  * Purchasable BOM — round draft USD street prices (hobby, 2025–2026).
- * Columns: Base kit | + 1 arm (v1) | + 2nd arm (optional).
- * Aggressive DIY twin aims sub-$400–600 with one arm — not a $1.4k biped stack.
+ * Columns: Base kit | + 1 arm | + 2 arms (default product).
+ * Dual-arm twin rises vs prior one-arm ~$376 — honesty, not sticker shock theater.
  */
 export const BOM: BomRow[] = [
   {
@@ -116,7 +116,7 @@ export const BOM: BomRow[] = [
     usd_arm: 8,
     usd_dual: 8,
     vendor: 'Amazon',
-    notes: 'Front/rear caster so low base stays stable with arm mass.',
+    notes: 'Rear caster; wide base + ballast for dual-arm tip resistance.',
   },
   {
     category: 'Driver',
@@ -134,7 +134,7 @@ export const BOM: BomRow[] = [
     qty: 1,
     usd_base: 0,
     usd_arm: 25,
-    usd_dual: 40,
+    usd_dual: 45,
     vendor: 'Feetech hub / Amazon BEC',
     notes: 'Separate rail from wheel motors. Dual arms need more headroom.',
   },
@@ -150,63 +150,73 @@ export const BOM: BomRow[] = [
   },
   {
     category: 'Sensors',
-    part: 'CSI / USB camera (mast or head)',
+    part: 'CSI / USB camera (forehead)',
     qty: 1,
     usd_base: 18,
     usd_arm: 18,
     usd_dual: 18,
     vendor: 'Pi Camera / Amazon USB',
-    notes: 'One cheap eye. Optional bumper/cliff later — not faked in UI.',
+    notes: 'One cheap eye on head mast/forehead.',
+  },
+  {
+    category: 'Sensors',
+    part: 'Face screen (small HDMI/USB display)',
+    qty: 1,
+    usd_base: 35,
+    usd_arm: 35,
+    usd_dual: 35,
+    vendor: 'Amazon / Waveshare-class',
+    notes: 'Bought panel behind printed bezel — dark quad in sim.',
   },
   {
     category: 'Power',
-    part: '2S/3S LiPo + charger',
+    part: '2S/3S LiPo + charger + ballast weight',
     qty: 1,
-    usd_base: 35,
-    usd_arm: 40,
-    usd_dual: 45,
-    vendor: 'Hobby LiPo',
-    notes: 'Bigger pack as arms draw more. Draft — chemistry TBD at build.',
+    usd_base: 40,
+    usd_arm: 45,
+    usd_dual: 55,
+    vendor: 'Hobby LiPo + steel shot / lead alternative',
+    notes: 'Bigger pack + bay ballast as arms + height raise tip risk.',
   },
   {
     category: 'Structure',
-    part: 'PLA chassis + mast (printed)',
+    part: 'PLA chassis + torso + head (printed)',
     qty: 1,
-    usd_base: 25,
-    usd_arm: 30,
-    usd_dual: 35,
+    usd_base: 45,
+    usd_arm: 50,
+    usd_dual: 55,
     vendor: 'Amazon filament',
-    notes: 'Print print/base/*.stl (~350-450 g PLA). Tires/motors/caster bought.',
+    notes: 'Print print/base/*.stl (~550–750 g PLA). Wider base for dual arms.',
   },
   {
     category: 'Actuation (arm)',
     part: 'LeRobot SO-101 follower kit (DIY)',
-    qty: '1 (v1) / 2 opt.',
+    qty: '2 (default)',
     usd_base: 0,
     usd_arm: 150,
     usd_dual: 300,
     vendor: 'HF docs/lerobot/en/so101 · TheRobotStudio/SO-ARM100',
-    notes: '6× STS3215 each, reach ~500 mm, ~800 g/arm, DIY ~$100–200. v1 = one arm.',
+    notes: '6× STS3215 each, reach ~500 mm, ~800 g/arm, DIY ~$100–200. Product = two arms.',
   },
   {
     category: 'Structure',
-    part: 'SO-101 mount plate + fasteners',
-    qty: 1,
+    part: 'SO-101 shoulder pods + fasteners',
+    qty: 2,
     usd_base: 0,
     usd_arm: 15,
-    usd_dual: 25,
+    usd_dual: 28,
     vendor: 'Print / metal plate',
-    notes: 'Side/front mount on wheeled base — stable vs biped tip risk.',
+    notes: 'L/R shoulder pods on torso — hang idle along flanks.',
   },
   {
     category: 'Fasteners',
     part: 'M2/M3 screws + wiring + XT30',
     qty: 1,
-    usd_base: 20,
-    usd_arm: 30,
-    usd_dual: 40,
+    usd_base: 25,
+    usd_arm: 35,
+    usd_dual: 45,
     vendor: 'Amazon fastener / wiring kit',
-    notes: 'Wheel harness + arm bus + heat-shrink.',
+    notes: 'Wheel harness + dual arm bus + heat-shrink.',
   },
 ]
 
@@ -221,12 +231,14 @@ export function bomSubtotal(column: BomColumn): number {
 }
 
 export const SPECS = [
-  { key: 'What', value: 'Cheap home helper — wheeled base + eye + SO-101 arm' },
-  { key: 'Locomotion', value: 'Low differential-drive base (Roomba-class); tank {forward, yawRate}' },
-  { key: 'Why wheels', value: 'Traverse home floors, stable with arm mass, cheap, less tip/stuck than biped' },
-  { key: 'Eye', value: '1× cheap CSI/USB camera on mast/head; bumper/cliff optional later' },
-  { key: 'Arm (v1)', value: '1× LeRobot SO-101 (6 DOF, STS3215 ×6); dual arms optional upgrade' },
-  { key: 'Near-term chores', value: 'Pick/place small items, wipe within reach, nudge laundry basket — not folding laundry' },
-  { key: 'Cost target', value: 'Aggressive DIY twin sub-$400–600 with one arm (draft street prices)' },
-  { key: 'Status', value: 'Draft — not for sale. Not official Pollen / Microduck.' },
+  { key: 'What', value: 'Cheap home helper — wheeled base + torso/head + 2× SO-101 arms' },
+  { key: 'Locomotion', value: 'Wide differential-drive base; tank {forward, yawRate}; ballast in bay' },
+  { key: 'Why wheels', value: 'Traverse home floors, not stuck; humanoid upper body for chores' },
+  { key: 'Head', value: 'Printed bezel + bought face screen + CSI/USB cam on forehead' },
+  { key: 'Arms', value: '2× LeRobot SO-101 (6 DOF, STS3215 ×6 each); idle hang along flanks' },
+  { key: 'Reach', value: 'Shoulders ~527 mm AGL; ~500 mm reach → floor and ~US counter (900 mm)' },
+  { key: 'Height', value: '~717 mm overall with head (draft twin)' },
+  { key: 'Near-term chores', value: 'Pick/place floor→counter, wipe within reach, nudge laundry — not folding laundry' },
+  { key: 'Cost target', value: 'Draft DIY twin with dual arms ~mid-$500s–$650 street (rises vs one-arm)' },
+  { key: 'Status', value: 'Draft — not for sale. Tip risk: wide base + ballast. Not official Pollen.' },
 ]

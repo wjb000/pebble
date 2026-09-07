@@ -19,8 +19,8 @@ export function BomPage() {
       <header className="page-header">
         <h1>BOM / Specs</h1>
         <p className="lede">
-          Base kit (wheels + eye + Pi) vs + 1× SO-101 (v1 default) vs optional second arm.
-          Round <strong>draft</strong> street USD — not for sale. Aggressive DIY twin aims sub-$400–600 with one arm.
+          Base kit (wheels + torso/head + Pi) vs + 1× SO-101 vs <strong>+ 2× SO-101 (default product)</strong>.
+          Round <strong>draft</strong> street USD — not for sale. Dual-arm twin rises vs prior one-arm ~$376.
         </p>
         <div className="fact-grid" style={{ marginTop: '1.2rem' }}>
           <div className="fact-card">
@@ -28,11 +28,11 @@ export function BomPage() {
             <div className="fact-value">{money(base)}</div>
           </div>
           <div className="fact-card">
-            <div className="fact-label">+ 1 arm (v1)</div>
+            <div className="fact-label">+ 1 arm</div>
             <div className="fact-value">{money(arm)}</div>
           </div>
           <div className="fact-card">
-            <div className="fact-label">+ 2nd arm (opt.)</div>
+            <div className="fact-label">+ 2 arms (default)</div>
             <div className="fact-value">{money(dual)}</div>
           </div>
         </div>
@@ -41,10 +41,10 @@ export function BomPage() {
       <section className="section">
         <h2>Print list</h2>
         <ul className="doc-list">
-          <li><strong>Base</strong> (<code>print/base/</code>): top/bottom octagon plates, 6× standoffs, L/R motor pods, caster mount, mast, camera shelf, SO-101 pad, 2× wheel hubs — ~350–450 g PLA</li>
-          <li><strong>SO-101 follower</strong> (<code>print/SO101/</code>): Individual STLs or Prusa plate pack from TheRobotStudio/SO-ARM100 — ~300–400 g PLA</li>
-          <li><strong>Bought:</strong> rubber tires (hubs printed), gearmotors, caster, camera, Pi, LiPo, fasteners / arm kit electronics</li>
-          <li>Sim maps <code>public/assets/base/*.stl</code> 1:1 with print files; arm GLB from upstream printable URDF meshes</li>
+          <li><strong>Base + torso + head</strong> (<code>print/base/</code>): octagon plates, 8× standoffs, L/R motor pods, caster, torso column, L/R shoulder pods, neck, bezel, screen backplate, camera mount, 2× hubs — ~550–750 g PLA</li>
+          <li><strong>SO-101 follower ×2</strong> (<code>print/SO101/</code>): Individual STLs or Prusa plate pack from TheRobotStudio/SO-ARM100 — ~300–400 g PLA each</li>
+          <li><strong>Bought:</strong> rubber tires, gearmotors, caster, camera, face display, Pi, LiPo, ballast, fasteners / arm kit electronics</li>
+          <li>Sim maps <code>public/assets/base/*.stl</code> 1:1 with print files; arm GLBs from upstream printable URDF meshes</li>
         </ul>
       </section>
 
@@ -100,11 +100,11 @@ export function BomPage() {
               <td>{money(base)}</td>
             </tr>
             <tr>
-              <th>Subtotal + 1 arm (v1 twin)</th>
+              <th>Subtotal + 1 arm</th>
               <td>{money(arm)}</td>
             </tr>
             <tr>
-              <th>Subtotal + 2 arms (optional)</th>
+              <th>Subtotal + 2 arms (default twin)</th>
               <td>{money(dual)}</td>
             </tr>
           </tbody>

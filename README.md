@@ -1,5 +1,8 @@
 # Pebble
 
-Dead-simple home chore bot: wheeled base + eye + one SO-101 arm.
-Draft / not for sale. Print twin: print/base + print/SO101. Sim loads public/assets/base STLs + so101 GLB.
-Pages base /pebble/ when GITHUB_PAGES=true. Dims in src/robot/dims.ts.
+Draft wheeled humanoid home chore bot: wide diff-drive base + torso/head (screen+cam) + **2× LeRobot SO-101**.
+Not for sale. Not official Pollen.
+
+- Sim: [/pebble/sim](https://wjb000.github.io/pebble/sim)
+- Dims / twin: `src/robot/dims.ts`
+- Print: `print/base/` + `print/SO101/`
