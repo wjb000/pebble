@@ -4,13 +4,14 @@
  * Base:   public/assets/base/*  ← PedroS235/perceptron_bot (MIT)
  * Lift:   public/assets/lift/*  ← Prusa i3 Z + x-end carriage (GPL-2.0) + SO 4040 mount
  * Head:   public/assets/head/*  ← SO-ARM100 Overhead Cam (Apache-2.0) — 1:1, centered on column
- * Arms:   public/assets/so101/follower_idle.glb
+ * Arms:   SimpleSO101Arm — box/cylinder kit visual sized from SO101 + STS3215 (no GLB)
  *
  * Frame: +Y up, +Z forward, +X left. Perceptron CAD is Z-up → rotX(-π/2).
  * Bought envelopes: 2040 extrusion box + T8 lead-screw cylinder (captioned in Model tab).
+ *
+ * 8 bolt-up modules: base → outriggers/ballast → 2040 → T8/MGN → carriage → yoke L/R → SO-101 kits → head.
  */
 import { useMemo } from 'react'
-import { useGLTF } from '@react-three/drei'
 import { useLoader } from '@react-three/fiber'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
 import type { BufferGeometry } from 'three'
@@ -26,12 +27,12 @@ import {
   OVERALL_HEIGHT_MM,
   SCREW_AXIS_X_MM,
   SCREW_ELEVATOR,
+  SO101,
+  STS3215,
   mmToM,
 } from '../robot/dims'
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
-
-export const SO101_GLB = asset('assets/so101/follower_idle.glb')
 
 const baseUrl = (file: string) => asset(`assets/base/${file}`)
 const liftUrl = (file: string) => asset(`assets/lift/${file}`)
@@ -120,30 +121,6 @@ function StlPart({
     </mesh>
   )
 }
-
-function SO101Glb({ color }: { color: string }) {
-  const { scene } = useGLTF(SO101_GLB)
-  const cloned = useMemo(() => {
-    const c = scene.clone(true)
-    c.traverse((obj) => {
-      const mesh = obj as any
-      if (mesh.isMesh) {
-        mesh.castShadow = true
-        mesh.receiveShadow = true
-        mesh.material = mesh.material?.clone?.() ?? mesh.material
-        if (mesh.material) {
-          mesh.material.color?.set?.(color)
-          mesh.material.roughness = 0.45
-          mesh.material.metalness = 0.12
-        }
-      }
-    })
-    return c
-  }, [scene, color])
-  return <primitive object={cloned} />
-}
-
-useGLTF.preload(SO101_GLB)
 
 /**
  * Perceptron wheeled chassis + bought extrusion column + coax lead-screw stack +
@@ -300,6 +277,21 @@ export function WheeledChassis({
           </mesh>
         ))}
 
+
+        {/* Yoke crossbar — carriage→4040 reads as one printed bridge */}
+        <mesh
+          position={[
+            mmToM(-SCREW_AXIS_X_MM),
+            mmToM(-ARM.mount_face_drop_mm),
+            mmToM(ARM.mount_z_mm),
+          ]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry args={[mmToM(ARM.mount_x_mm * 2 + 8), mmToM(12), mmToM(30)]} />
+          <meshStandardMaterial color={colour.dark} roughness={0.52} metalness={0.08} />
+        </mesh>
+
         {/* Keyed L/R lugs — ride with carriage */}
         <mesh
           position={[
@@ -454,8 +446,8 @@ export function WheeledChassis({
 }
 
 /**
- * One SO-101 follower seated on the 4040 mount at current carriage AGL.
- * L = +X, R = −X. Soft pads + wipe visible. Demo joint offsets optional.
+ * One SO-101 kit seated on the 4040 mount at current carriage AGL.
+ * L = +X outboard, R = −X mirrored. Soft pads + wipe. No GLB.
  */
 export function SO101FollowerArm({
   colour,
@@ -487,27 +479,123 @@ export function SO101FollowerArm({
 
   return (
     <group position={[shoulderX, shoulderY, shoulderZ]}>
-      {/* Nested: yaw R 180° so +X_glb points outboard, then tip +Z_glb → −Y (hang) */}
+      {/* R yaw 180° so kit geometry faces outboard; arm hangs toward floor */}
       <group rotation={[0, left ? 0 : Math.PI, 0]}>
-        <group rotation={[Math.PI / 2 + shoulderRad * 0.15, 0, 0]}>
-          <group rotation={[elbowRad * 0.2, 0, 0]}>
-            <SO101Glb color={colour.dark} />
-            {/* Soft silicone/foam pads on gripper jaws */}
-            <mesh position={[0.02, 0.0, 0.075]} castShadow>
-              <boxGeometry args={[mmToM(18), mmToM(8), mmToM(14)]} />
-              <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
+        <SimpleSO101Arm
+          color={colour.dark}
+          left={left}
+          shoulderRad={shoulderRad}
+          elbowRad={elbowRad}
+          showWipe={showWipe && !left}
+        />
+      </group>
+    </group>
+  )
+}
+
+/**
+ * Bought-kit link envelopes — boxes/cylinders from SO101 + STS3215 dims (BOM still real kits).
+ * Pose: base_link on 4040 face; chain folds down (−Y) toward floor (home chore pose).
+ * No wild π/2 stacks that flatten into horizontal plates.
+ */
+function SimpleSO101Arm({
+  color,
+  left,
+  shoulderRad = 0,
+  elbowRad = 0,
+  showWipe = false,
+}: {
+  color: string
+  left: boolean
+  shoulderRad?: number
+  elbowRad?: number
+  showWipe?: boolean
+}) {
+  const m = mmToM
+  const servoL = m(STS3215.L)
+  const servoW = m(STS3215.W)
+  const servoH = m(STS3215.H)
+  const linkW = m(18)
+  const linkT = m(22)
+  const mat = { roughness: 0.45, metalness: 0.12 }
+
+  // Shoulder pitch: π flips child +Y → world −Y (hang). Small demo offsets only.
+  const hangPitch = Math.PI + shoulderRad * 0.2
+  const elbowBend = 0.4 + elbowRad * 0.25
+
+  return (
+    <group>
+      {/* base_link — seated on mount pad, height = SO101.base_z along +Y */}
+      <mesh position={[0, m(SO101.base_z) * 0.5, 0]} castShadow receiveShadow>
+        <boxGeometry args={[servoL, m(SO101.base_z), servoW]} />
+        <meshStandardMaterial color={color} {...mat} />
+      </mesh>
+      {/* shoulder pan barrel hint */}
+      <mesh position={[0, m(SO101.base_z) * 0.55, m(8)]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[m(10), m(10), m(14), 14]} />
+        <meshStandardMaterial color="#6b7280" roughness={0.35} metalness={0.55} />
+      </mesh>
+
+      {/* Hang chain from top of base toward floor */}
+      <group position={[0, m(SO101.base_z), 0]} rotation={[hangPitch, left ? 0.04 : -0.04, 0]}>
+        {/* shoulder_lift servo */}
+        <mesh position={[0, m(SO101.shoulder_lift_z) * 0.5, 0]} castShadow>
+          <boxGeometry args={[servoL * 0.95, m(SO101.shoulder_lift_z), servoW]} />
+          <meshStandardMaterial color={color} {...mat} />
+        </mesh>
+
+        <group position={[0, m(SO101.shoulder_lift_z), 0]}>
+          {/* upper_arm link */}
+          <mesh position={[0, m(SO101.upper_arm) * 0.5, 0]} castShadow>
+            <boxGeometry args={[linkW, m(SO101.upper_arm), linkT]} />
+            <meshStandardMaterial color={color} {...mat} />
+          </mesh>
+          {/* elbow joint */}
+          <mesh position={[0, m(SO101.upper_arm), 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[m(12), m(12), servoH * 0.7, 14]} />
+            <meshStandardMaterial color="#9ca3af" roughness={0.32} metalness={0.6} />
+          </mesh>
+
+          <group position={[0, m(SO101.upper_arm), 0]} rotation={[elbowBend, 0, 0]}>
+            {/* forearm */}
+            <mesh position={[0, m(SO101.forearm) * 0.5, 0]} castShadow>
+              <boxGeometry args={[linkW * 0.9, m(SO101.forearm), linkT * 0.9]} />
+              <meshStandardMaterial color={color} {...mat} />
             </mesh>
-            <mesh position={[-0.02, 0.0, 0.075]} castShadow>
-              <boxGeometry args={[mmToM(18), mmToM(8), mmToM(14)]} />
-              <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
-            </mesh>
-            {/* Microfiber wipe on R arm */}
-            {showWipe && !left && (
-              <mesh position={[0, -0.015, 0.095]} rotation={[0.4, 0, 0]} castShadow>
-                <boxGeometry args={[mmToM(40), mmToM(6), mmToM(28)]} />
-                <meshStandardMaterial color="#e2e8f0" roughness={0.95} metalness={0} />
+
+            <group position={[0, m(SO101.forearm), 0]}>
+              {/* wrist */}
+              <mesh position={[0, m(SO101.wrist) * 0.5, 0]} castShadow>
+                <boxGeometry args={[m(STS3215.W * 0.9), m(SO101.wrist), m(STS3215.H * 0.7)]} />
+                <meshStandardMaterial color={color} {...mat} />
               </mesh>
-            )}
+              {/* gripper jaws */}
+              <group position={[0, m(SO101.wrist + SO101.gripper * 0.35), 0]}>
+                <mesh position={[m(12), 0, 0]} castShadow>
+                  <boxGeometry args={[m(8), m(SO101.gripper * 0.7), m(16)]} />
+                  <meshStandardMaterial color="#4b5563" roughness={0.5} metalness={0.2} />
+                </mesh>
+                <mesh position={[m(-12), 0, 0]} castShadow>
+                  <boxGeometry args={[m(8), m(SO101.gripper * 0.7), m(16)]} />
+                  <meshStandardMaterial color="#4b5563" roughness={0.5} metalness={0.2} />
+                </mesh>
+                {/* Soft silicone/foam pads */}
+                <mesh position={[m(12), m(SO101.gripper * 0.2), 0]} castShadow>
+                  <boxGeometry args={[m(10), m(18), m(14)]} />
+                  <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
+                </mesh>
+                <mesh position={[m(-12), m(SO101.gripper * 0.2), 0]} castShadow>
+                  <boxGeometry args={[m(10), m(18), m(14)]} />
+                  <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
+                </mesh>
+                {showWipe && (
+                  <mesh position={[0, m(8), m(-18)]} rotation={[0.3, 0, 0]} castShadow>
+                    <boxGeometry args={[m(40), m(6), m(28)]} />
+                    <meshStandardMaterial color="#e2e8f0" roughness={0.95} metalness={0} />
+                  </mesh>
+                )}
+              </group>
+            </group>
           </group>
         </group>
       </group>
@@ -516,5 +604,5 @@ export function SO101FollowerArm({
 }
 
 export const MESH_ATTRIBUTION =
-  `OSS compose: perceptron_bot base (MIT) + Prusa Z/x-end carriage (GPL-2.0 — derivatives stay GPL) + SO-ARM100 cam/4040/SO-101 (Apache-2.0). ` +
-  `Overall ${OVERALL_HEIGHT_MM} mm chore stack. Bought: 2040 + T8 + MGN12H REQUIRED + outriggers + 4 kg ballast. Soft pads + wipe.`
+  `OSS compose: perceptron_bot base (MIT) + Prusa Z/x-end carriage (GPL-2.0 — derivatives stay GPL) + SO-ARM100 cam/4040 (Apache-2.0). ` +
+  `SO-101 = bought kits (twin link envelopes, no GLB). Overall ${OVERALL_HEIGHT_MM} mm. Bought REQUIRED: 2040 + T8 + MGN12H + outriggers + 4 kg ballast. Soft pads + wipe.`

@@ -80,6 +80,21 @@ export function DocsPage() {
       </section>
 
       <section className="section">
+        <h2>8 bolt-up modules</h2>
+        <ol className="doc-list">
+          <li>Base (perceptron plates + tires)</li>
+          <li>Outriggers + 4 kg ballast</li>
+          <li>2040 column</li>
+          <li>T8 + Prusa Z + MGN12H</li>
+          <li>Carriage sled + MGN block</li>
+          <li>Yoke / 4040 L+R keyed</li>
+          <li>SO-101 L/R <strong>bought kits</strong> (twin = link envelopes; BOM still kits + STS3215×12)</li>
+          <li>Head cam nest on column top</li>
+        </ol>
+        <p className="lede">See <code>docs/ASSEMBLY.md</code> — 8 modules, named mates, torque checklist (outriggers + ballast + MGN/T8 required).</p>
+      </section>
+
+      <section className="section">
         <h2>What it is</h2>
         <ul className="doc-list">
           <li><strong>Base:</strong> PedroS235/perceptron_bot ({BASE.footprint_mm} mm) MIT</li>

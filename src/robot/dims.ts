@@ -291,7 +291,7 @@ export const PEBBLE_DIMS = {
   stability_note: STABILITY_NOTE,
   units: 'mm / g',
   digital_twin_rule:
-    'visual = upstream OSS STLs + bought extrusion/leadscrew envelopes + SO-101 GLB; dims.ts = BOM',
+    'visual = upstream OSS STLs + bought extrusion/leadscrew envelopes + SimpleSO101Arm boxes; dims.ts = BOM',
   sources: [
     'PedroS235/perceptron_bot (MIT) — wheeled base STLs',
     'prusa3d/Original-Prusa-i3 (GPL-2.0) — Z mounts + x-end-motor carriage',

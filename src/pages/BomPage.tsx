@@ -55,7 +55,7 @@ export function BomPage() {
           <li><strong>Base STLs</strong> — <a href="https://github.com/PedroS235/perceptron_bot" target="_blank" rel="noreferrer">perceptron_bot</a> (MIT) → <code>print/base/</code></li>
           <li><strong>Lift STLs</strong> — <a href="https://github.com/prusa3d/Original-Prusa-i3" target="_blank" rel="noreferrer">Original-Prusa-i3</a> (<strong>GPL-2.0</strong> — derivatives stay GPL) + SO-ARM 4040 mount → <code>print/lift/</code></li>
           <li><strong>Head STLs</strong> — SO-ARM100 Overhead Cam (Apache-2.0) → <code>print/head/</code></li>
-          <li><strong>Arms</strong> — TheRobotStudio/SO-ARM100 (Apache-2.0) → <code>print/SO101/</code></li>
+          <li><strong>Arms</strong> — <strong>2× bought SO-101 kits</strong> + STS3215×12 (Apache-2.0 docs; twin uses link envelopes — not a cost-down). Optional DIY prints → <code>print/SO101/</code></li>
           <li><strong>{PRINT_UNIQUE_SKUS} structure SKUs</strong> + bought 2040 / T8 / <strong>MGN12H REQUIRED</strong> / NEMA17 / outriggers / ballast 4 kg / e-stop / tires / Pi / LiPo</li>
           <li>{HEIGHT_NOTE}</li>
         </ul>

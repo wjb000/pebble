@@ -15,8 +15,8 @@
 **File:** `4040_base_mount.stl`
 
 ## Bought (not printed) — called out in BOM
-- T8 / Tr8 lead screw (~1.1 m) + coupler + bearings — travel **160→950 mm AGL**
+- **T8 / Tr8 lead screw (~1.1 m) + coupler + bearings — REQUIRED** — travel **160→950 mm AGL**. Not optional.
 - 2040 aluminium extrusion column ~**1010 mm** → overall stack **~1200 mm** (chore envelope: counters / washer rim / floor)
 - **MGN12H linear rail + carriage — REQUIRED** (anti-rotation; carries dual-arm torque). Not optional.
 
-Printable lift meshes alone are short Prusa-scale parts; **purchased extrusion + T8 + MGN12** make the chore-height elevator.
+Printable lift meshes alone are short Prusa-scale parts; **purchased extrusion + T8 + MGN12** (both REQUIRED) make the chore-height elevator.

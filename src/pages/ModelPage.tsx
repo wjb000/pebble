@@ -78,13 +78,13 @@ export function ModelPage() {
               {OVERALL_HEIGHT_MM} mm chore stack · lift @ {carriageAglMm} mm AGL · orbit / pan / zoom
             </div>
             <div className="model-caption-sub">
-              <strong>Bought (not printed):</strong> 2040 extrusion (~1010 mm) + T8 screw +{' '}
-              <strong>{MGN12.profile} rail REQUIRED</strong> + outriggers ({OUTRIGGERS.support_width_mm} mm) +{' '}
-              {TIP_SUMMARY.ballast_kg} kg ballast. Do not print the column / rail / screw.
+              <strong>Bought (not printed):</strong> 2040 (~1010 mm) + <strong>T8 REQUIRED</strong> +{' '}
+              <strong>{MGN12.profile} REQUIRED</strong> + outriggers ({OUTRIGGERS.support_width_mm} mm, track 160 ≠ support) +{' '}
+              {TIP_SUMMARY.ballast_kg} kg ballast <strong>REQUIRED</strong> + <strong>2× SO-101 kits</strong> (STS3215×12).
             </div>
             <div className="model-caption-sub">
-              <strong>Printed:</strong> perceptron chassis · Prusa Z/carriage (GPL-2.0) · keyed 4040 L/R lugs ·
-              cam 1:1 · 2× SO-101 · soft pads + wipe.
+              <strong>Printed:</strong> perceptron chassis · Prusa Z/carriage (GPL-2.0) · yoke/4040 L/R keyed ·
+              cam 1:1 · soft pads + wipe. Twin arms = <em>link envelopes</em> only — BOM still costs real kits.
             </div>
             <div className="model-caption-sub">
               Reach: floor → counters ~{CHORE_ENVELOPE.counter_mm} · washer rim ~{CHORE_ENVELOPE.washer_rim_mm} ·

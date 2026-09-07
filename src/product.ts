@@ -246,7 +246,7 @@ export const BOM: BomRow[] = [
   },
   {
     category: 'Structure',
-    part: 'PLA/PETG — chassis + Prusa Z/carriage + cam/4040 + 2× SO-101 prints',
+    part: 'PLA/PETG — chassis + Prusa Z/carriage + cam/4040/yoke (SO-101 = bought kits; prints optional DIY)',
     qty: 1,
     usd_base: 50,
     usd_arm: 80,
@@ -262,7 +262,7 @@ export const BOM: BomRow[] = [
     usd_arm: 125,
     usd_dual: 250,
     vendor: 'Feetech / Amazon · HF docs/lerobot/en/so101',
-    notes: 'KEEP dual. ~$20–22/servo street. Dominates twin cost.',
+    notes: 'KEEP dual bought kits. STS3215×12 ~$20–22/servo. Dominates ~$715 dual. Twin envelopes ≠ cost-down.',
     quote: 'https://www.amazon.com/s?k=STS3215+servo',
   },
   {
@@ -319,7 +319,7 @@ export const SPECS = [
   { key: 'Lift upstream', value: 'Prusa i3 Z + x-end carriage (GPL-2.0) — derivatives must stay GPL; SO-ARM 4040 (Apache-2.0)' },
   { key: 'Head upstream', value: 'SO-ARM100 Overhead Cam 1:1 (Apache-2.0)' },
   { key: 'Screw elevator', value: 'T8 + MGN12 + NEMA17 coax SCREW_AXIS_X; Q/E soft limits; tip slowdown UX ≠ tip physics' },
-  { key: 'Arms', value: '2× SO-101 required; soft pads + microfiber wipe accessory' },
+  { key: 'Arms', value: '2× bought SO-101 kits required (STS3215×12); twin = link envelopes only — BOM unchanged; soft pads + wipe' },
   { key: 'Cost (draft)', value: 'Dual twin — see BOM (prior ~$655 + safety delta for outriggers/MGN/ballast/e-stop)' },
   { key: 'Status', value: 'Draft — not for sale. Ballast + outriggers + MGN + e-stop required.' },
 ]

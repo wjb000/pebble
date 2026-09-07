@@ -1,6 +1,6 @@
 /**
  * Shared assembled robot — used by Sim (Pebble) and /model viewer.
- * Arms ride inside WheeledChassis lift group (carriage → 4040 → SO-101).
+ * Arms = SimpleSO101Arm kits inside WheeledChassis lift group (carriage → yoke → SO-101).
  */
 import { Suspense } from 'react'
 import type { Colourway } from '../product'
