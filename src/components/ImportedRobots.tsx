@@ -3,7 +3,7 @@
  *
  * Base:   public/assets/base/*  ← PedroS235/perceptron_bot (MIT)
  * Lift:   public/assets/lift/*  ← Prusa i3 Z + x-end carriage (GPL-2.0) + SO 4040 mount
- * Head:   public/assets/head/*  ← SO-ARM100 Overhead Cam (Apache-2.0) — 1:1 scale
+ * Head:   public/assets/head/*  ← SO-ARM100 Overhead Cam (Apache-2.0) — 1:1, centered on column
  * Arms:   public/assets/so101/follower_idle.glb
  *
  * Frame: +Y up, +Z forward, +X left. Perceptron CAD is Z-up → rotX(-π/2).
@@ -241,7 +241,7 @@ export function WheeledChassis({
         roughness={0.55}
       />
 
-      {/* Lead-screw nut carriage (Prusa x-end-motor) at current AGL — coax */}
+      {/* Lead-screw nut carriage (Prusa x-end-motor) at current AGL — coax on screw */}
       <group position={[screwX, carriageY, 0]}>
         <StlPart
           url={LIFT_STL.carriage}
@@ -251,46 +251,60 @@ export function WheeledChassis({
           roughness={0.48}
           metalness={0.1}
         />
-        {/* L/R SO-ARM 4040 mounts on carriage — native mesh offset ~112 mm on X */}
-        <StlPart
-          url={LIFT_STL.mount4040}
-          color={colour.dark}
-          position={[shoulderX - screwX - mmToM(112), mmToM(-8), mmToM(ARM.mount_z_mm)]}
-          rotation={[0, Math.PI / 2, 0]}
-          roughness={0.5}
-        />
-        <StlPart
-          url={LIFT_STL.mount4040}
-          color={colour.dark}
-          position={[-(shoulderX - screwX) + mmToM(112), mmToM(-8), mmToM(ARM.mount_z_mm)]}
-          rotation={[0, -Math.PI / 2, 0]}
-          scale={[-1, 1, 1]}
-          roughness={0.5}
-        />
-        {/* Physical keyed L/R asymmetry — lug geometry differs (not just colour) */}
-        {/* L: rectangular key lug + blue */}
-        <mesh position={[shoulderX - screwX, mmToM(14), mmToM(ARM.mount_z_mm + 10)]} castShadow>
-          <boxGeometry args={[mmToM(22), mmToM(10), mmToM(8)]} />
-          <meshStandardMaterial color="#38bdf8" roughness={0.4} />
-        </mesh>
-        <mesh position={[shoulderX - screwX + mmToM(14), mmToM(18), mmToM(ARM.mount_z_mm + 10)]} castShadow>
-          <boxGeometry args={[mmToM(8), mmToM(16), mmToM(8)]} />
-          <meshStandardMaterial color="#0ea5e9" roughness={0.35} />
-        </mesh>
-        {/* R: triangular-ish wedge lug + orange (different silhouette) */}
-        <mesh position={[-(shoulderX - screwX), mmToM(14), mmToM(ARM.mount_z_mm + 10)]} castShadow>
-          <boxGeometry args={[mmToM(22), mmToM(10), mmToM(8)]} />
-          <meshStandardMaterial color="#f97316" roughness={0.4} />
-        </mesh>
-        <mesh
-          position={[-(shoulderX - screwX) - mmToM(12), mmToM(20), mmToM(ARM.mount_z_mm + 10)]}
-          rotation={[0, 0, Math.PI / 5]}
-          castShadow
-        >
-          <boxGeometry args={[mmToM(10), mmToM(20), mmToM(7)]} />
-          <meshStandardMaterial color="#ea580c" roughness={0.35} />
-        </mesh>
       </group>
+
+      {/*
+        L/R 4040 mounts — world-anchored to ARM.mount_* (not screwX parent).
+        Native STL centered then yawed so zmax arm-bolt face sits at ±mount_x, Z=mount_z.
+        L = +X, R = −X (mirrored). Face half = ARM.mount_face_half_mm.
+      */}
+      {([-1, 1] as const).map((sign) => {
+        const left = sign === 1
+        const half = mmToM(ARM.mount_face_half_mm)
+        const [cx, cy, cz] = ARM.mount_stl_center_mm
+        const drop = mmToM(ARM.mount_face_drop_mm)
+        const mz = mmToM(ARM.mount_z_mm)
+        // Inset group origin by face-half so zmax arm face lands on ±mount_x
+        const gx = sign * (shoulderX - half)
+        return (
+          <group
+            key={left ? 'm4040-L' : 'm4040-R'}
+            position={[gx, carriageY - drop, mz]}
+            rotation={[0, left ? Math.PI / 2 : -Math.PI / 2, 0]}
+          >
+            <StlPart
+              url={LIFT_STL.mount4040}
+              color={colour.dark}
+              position={[mmToM(-cx), mmToM(-cy), mmToM(-cz)]}
+              roughness={0.5}
+            />
+          </group>
+        )
+      })}
+
+      {/* Physical keyed L/R asymmetry — lug geometry differs (not just colour) */}
+      {/* L (+X): rectangular key lug + blue */}
+      <mesh position={[shoulderX, carriageY + mmToM(14), mmToM(ARM.mount_z_mm + 10)]} castShadow>
+        <boxGeometry args={[mmToM(22), mmToM(10), mmToM(8)]} />
+        <meshStandardMaterial color="#38bdf8" roughness={0.4} />
+      </mesh>
+      <mesh position={[shoulderX + mmToM(14), carriageY + mmToM(18), mmToM(ARM.mount_z_mm + 10)]} castShadow>
+        <boxGeometry args={[mmToM(8), mmToM(16), mmToM(8)]} />
+        <meshStandardMaterial color="#0ea5e9" roughness={0.35} />
+      </mesh>
+      {/* R (−X): triangular-ish wedge lug + orange */}
+      <mesh position={[-shoulderX, carriageY + mmToM(14), mmToM(ARM.mount_z_mm + 10)]} castShadow>
+        <boxGeometry args={[mmToM(22), mmToM(10), mmToM(8)]} />
+        <meshStandardMaterial color="#f97316" roughness={0.4} />
+      </mesh>
+      <mesh
+        position={[-shoulderX - mmToM(12), carriageY + mmToM(20), mmToM(ARM.mount_z_mm + 10)]}
+        rotation={[0, 0, Math.PI / 5]}
+        castShadow
+      >
+        <boxGeometry args={[mmToM(10), mmToM(20), mmToM(7)]} />
+        <meshStandardMaterial color="#ea580c" roughness={0.35} />
+      </mesh>
 
       {/* Outrigger feet — widen support to 400 mm (TIP.support_width) */}
       {([-1, 1] as const).map((side) => {
@@ -343,14 +357,17 @@ export function WheeledChassis({
         <meshStandardMaterial color="#9ca3af" roughness={0.32} metalness={0.7} />
       </mesh>
 
-      {/* SO-ARM overhead cam — TRUE 1:1 scale; boom forward (+Z) */}
-      <group position={[0, headY, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      {/* SO-ARM overhead cam — TRUE 1:1; boom root centered on column; +Y native → +Z forward */}
+      <group
+        position={[-mmToM(HEAD.stl_center_x_mm), headY, 0]}
+        rotation={[Math.PI / 2, 0, 0]}
+      >
         <StlPart url={HEAD_STL.bottom} color={colour.dark} roughness={0.48} metalness={0.1} />
         <StlPart url={HEAD_STL.middle} color={colour.dark} roughness={0.48} />
         <StlPart url={HEAD_STL.top} color={colour.accent} roughness={0.45} />
       </group>
-      {/* Readable screen + cam lens at boom tip (bought UVC module envelope) */}
-      <group position={[0, headY + mmToM(18), mmToM(HEAD.boom_length_mm * 0.85)]}>
+      {/* Face screen + UVC lens seated at boom tip (cam_mount_top max Y) */}
+      <group position={[0, headY + mmToM(HEAD.cam_rise_mm * 0.25), mmToM(HEAD.boom_tip_mm)]}>
         <mesh castShadow>
           <boxGeometry args={[mmToM(HEAD.screen_w_mm), mmToM(HEAD.screen_h_mm), mmToM(HEAD.screen_t_mm)]} />
           <meshStandardMaterial color={colour.face} roughness={0.3} metalness={0.2} />
@@ -359,7 +376,7 @@ export function WheeledChassis({
           <boxGeometry args={[mmToM(CAMERA.W), mmToM(CAMERA.H), mmToM(CAMERA.D)]} />
           <meshStandardMaterial color="#1e2430" roughness={0.35} metalness={0.3} />
         </mesh>
-        <mesh position={[0, 0, mmToM(HEAD.screen_t_mm * 0.5 + CAMERA.D + 1)]} rotation={[0, 0, 0]}>
+        <mesh position={[0, 0, mmToM(HEAD.screen_t_mm * 0.5 + CAMERA.D + 1)]}>
           <circleGeometry args={[mmToM(4), 20]} />
           <meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={0.4} />
         </mesh>
@@ -388,31 +405,35 @@ export function SO101FollowerArm({
   showWipe?: boolean
 }) {
   const left = side === 'L'
+  // base_link origin flush on 4040 arm-bolt face (±mount_x, AGL−drop, mount_z)
   const shoulderX = mmToM(left ? ARM.mount_x_mm : -ARM.mount_x_mm)
-  const shoulderY = mmToM(carriageAglMm - 8)
+  const shoulderY = mmToM(carriageAglMm - ARM.mount_face_drop_mm)
   const shoulderZ = mmToM(ARM.mount_z_mm)
 
   return (
     <group position={[shoulderX, shoulderY, shoulderZ]}>
-      <group rotation={[Math.PI / 2 + shoulderRad * 0.15, left ? 0 : Math.PI, left ? -Math.PI / 2 : Math.PI / 2]}>
-        <group rotation={[elbowRad * 0.2, 0, 0]}>
-          <SO101Glb color={colour.dark} />
-          {/* Soft silicone/foam pads on gripper jaws */}
-          <mesh position={[0.02, 0.0, 0.075]} castShadow>
-            <boxGeometry args={[mmToM(18), mmToM(8), mmToM(14)]} />
-            <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
-          </mesh>
-          <mesh position={[-0.02, 0.0, 0.075]} castShadow>
-            <boxGeometry args={[mmToM(18), mmToM(8), mmToM(14)]} />
-            <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
-          </mesh>
-          {/* Microfiber wipe on R arm */}
-          {showWipe && !left && (
-            <mesh position={[0, -0.015, 0.095]} rotation={[0.4, 0, 0]} castShadow>
-              <boxGeometry args={[mmToM(40), mmToM(6), mmToM(28)]} />
-              <meshStandardMaterial color="#e2e8f0" roughness={0.95} metalness={0} />
+      {/* Nested: yaw R 180° so +X_glb points outboard, then tip +Z_glb → −Y (hang) */}
+      <group rotation={[0, left ? 0 : Math.PI, 0]}>
+        <group rotation={[Math.PI / 2 + shoulderRad * 0.15, 0, 0]}>
+          <group rotation={[elbowRad * 0.2, 0, 0]}>
+            <SO101Glb color={colour.dark} />
+            {/* Soft silicone/foam pads on gripper jaws */}
+            <mesh position={[0.02, 0.0, 0.075]} castShadow>
+              <boxGeometry args={[mmToM(18), mmToM(8), mmToM(14)]} />
+              <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
             </mesh>
-          )}
+            <mesh position={[-0.02, 0.0, 0.075]} castShadow>
+              <boxGeometry args={[mmToM(18), mmToM(8), mmToM(14)]} />
+              <meshStandardMaterial color="#f472b6" roughness={0.85} metalness={0.02} />
+            </mesh>
+            {/* Microfiber wipe on R arm */}
+            {showWipe && !left && (
+              <mesh position={[0, -0.015, 0.095]} rotation={[0.4, 0, 0]} castShadow>
+                <boxGeometry args={[mmToM(40), mmToM(6), mmToM(28)]} />
+                <meshStandardMaterial color="#e2e8f0" roughness={0.95} metalness={0} />
+              </mesh>
+            )}
+          </group>
         </group>
       </group>
     </group>

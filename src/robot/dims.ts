@@ -141,9 +141,14 @@ export const HEAD = {
   cam_mount_h_mm: 40,
   cam_mount_d_mm: 50,
   cam_rise_mm: 20,
+  /** Native cam_mount_bottom STL bbox center X (mm) — subtract to center on column. */
+  stl_center_x_mm: 18.7,
+  /** Bottom boom length (native +Y); tip cam uses boom_tip_mm. */
   boom_length_mm: 231,
+  /** cam_mount_top native max Y — UVC tip after rotX(+π/2) → +Z forward. */
+  boom_tip_mm: 372,
   upstream: 'TheRobotStudio/SO-ARM100 Optional/Overhead_Cam_Mount_32x32_UVC_Module (Apache-2.0)',
-  note: 'Printed 1:1 — no visual scale hacks',
+  note: 'Printed 1:1 — no visual scale hacks; boom root centered on column top',
 } as const
 
 export const HEIGHT_STACK_MM =
@@ -199,11 +204,20 @@ export const SO101 = {
     'LeRobot SO-101 / so101_follower; URDF so101_new_calib.urdf; HF docs/lerobot/en/so101; print/SO101/',
 } as const
 
+/**
+ * Shoulder mounts — SO-101 base_link seats on 4040 arm-bolt face.
+ * 4040_base_mount.stl native bbox center ≈ (112.43, -0.17, -53); Z span 42 mm
+ * (zmin extrusion / zmax arm face). After centering, arm face at +z = 21 mm.
+ */
 export const ARM = {
   mount_x_mm: 95,
   mount_y_mm: SCREW_ELEVATOR.default_agl_mm,
   mount_z_mm: 28,
   mount_face_drop_mm: 8,
+  /** Native 4040 STL bbox center (mm) — applied as pre-offset before yaw. */
+  mount_stl_center_mm: [112.43, -0.17, -53.0] as const,
+  /** Distance from centered origin to arm-bolt face (half of 42 mm Z span). */
+  mount_face_half_mm: 21,
   default_count: 2,
   optional_second: false,
   shoulder_span_mm: 190,
