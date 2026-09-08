@@ -1,5 +1,5 @@
 /**
- * Pebble visual = HouseHand v3 omni deck + telescoping torso + 2× SO-101.
+ * Pebble visual = LeKiwi omni base + 1× SO-101 (real CAD).
  * Pose is world x/y/theta only — tipOver applies a visual lean freeze.
  */
 import { useRef } from 'react'

@@ -1,19 +1,18 @@
-# SO-101 follower printable parts (upstream) — **print 2×**
+# SO-101 follower printable parts (upstream) — **print 1×**
 
 Copied from local checkout of **[TheRobotStudio/SO-ARM100](https://github.com/TheRobotStudio/SO-ARM100)**  
 (`robosim/SO-ARM100` on this machine). License: **Apache-2.0** — see `LICENSE.Apache-2.0.txt`.
 
-Pebble’s default product mounts **two** LeRobot SO-101 followers on the printed shoulder bar
-(via L/R `4040_Base_Mount`). **Print a full follower set twice** (or two Follower plate packs).
+The twin is **LeKiwi + one SO-101**. Print a full follower set once (or one Follower plate pack).
 
 Upstream paths:
 - Individual printables: `STL/SO101/Individual/*.stl`
 - Follower plate packs: `STL/SO101/Follower/*.stl` (Prusa / Ender beds)
 - Sim / URDF visuals: `Simulation/SO101/assets/*.stl` + `so101_new_calib.urdf`
 
-## What to print (per follower arm — do this **twice**)
+## What to print (one follower arm)
 
-Print the **Individual** parts (or one **Follower** plate pack) **×2**:
+Print the **Individual** parts (or one **Follower** plate pack):
 
 | File | Role |
 |------|------|
@@ -33,18 +32,16 @@ Print the **Individual** parts (or one **Follower** plate pack) **×2**:
 | `Individual/Trigger_SO101.stl` | Leader trigger (not needed for follower-only) |
 | `Individual/Wrist_Roll_SO101.stl` | Leader wrist roll variant |
 
-**Follower plate packs** (`Follower/Prusa_Follower_SO101.stl` or `Ender_Follower_SO101.stl`) print the whole follower set on one bed — run **two** plates for dual-arm Pebble.
+**Follower plate packs** (`Follower/Prusa_Follower_SO101.stl` or `Ender_Follower_SO101.stl`) print the whole follower set on one bed.
 
-Also print **2×** `print/lift/4040_base_mount.stl` (or upstream SO-ARM `Optional/4040_Base_Mount`).
+Also print `print/lekiwi/` for the omni base.
 
 See also upstream `3DPRINT.md` for Craftcloud3d / PCBWay settings (PLA+, ~20% infill).
 
 ## Browser twin
 
-- `/sim` and `/model` load **real URDF STLs**: LeKiwi omni base + 2× SO-101 (`so101_new_calib.urdf` + `public/assets/so101/meshes/`).
-- Print the same geometry from this folder (Individual ×2). `follower_idle.glb` is reference only.
-
-Pebble is **not** Microduck. Product = HouseHand v3 omni deck + nested telescoping torso + **2×** SO-101 + SO-ARM overhead cam. Legacy Microduck assets live under `refs/quarantine/` and are unused.
+- `/sim` and `/model` load the **LeKiwi URDF** (omni base + the one SO-101 already in that CAD).
+- Print the arm from this folder (Individual ×1). `follower_idle.glb` is reference only.
 
 ## Filament (BOM)
 

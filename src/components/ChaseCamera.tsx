@@ -4,9 +4,9 @@ import { OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { useSim } from '../sim/SimContext'
-import { mmToM } from '../robot/dims'
+import { kitLookHeightM } from '../kit/catalog'
 
-/** Frame the real LeKiwi + dual SO-101 CAD (~400 mm class), not a fake 1100 mm envelope. */
+/** Frame the twin: LeKiwi omni + dual SO-101 + gimbal. */
 export function ChaseCamera() {
   const { state, notifyOrbitDetach } = useSim()
   const controls = useRef<OrbitControlsImpl>(null)
@@ -14,7 +14,7 @@ export function ChaseCamera() {
   const dragging = useRef(false)
   const desired = useRef(new THREE.Vector3())
   const look = useRef(new THREE.Vector3())
-  const midY = mmToM(180)
+  const midY = kitLookHeightM()
 
   useEffect(() => {
     const el = controls.current
@@ -32,7 +32,7 @@ export function ChaseCamera() {
   useFrame((_, dt) => {
     const target = look.current.set(state.x, midY, state.y)
     if (state.chaseCam && !dragging.current) {
-      const back = 1.15
+      const back = 1.25
       const height = midY + 0.28
       const yaw = -state.theta + Math.PI / 2
       desired.current.set(

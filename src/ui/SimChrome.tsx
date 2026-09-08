@@ -56,7 +56,7 @@ export function SimChrome({ colourId, onColour }: Props) {
           <div className="hud-tip">TIP SLOW {Math.round(state.tipSlowdown * 100)}%</div>
         )}
       </div>
-        <div className="sim-mesh-foot">HouseHand v3 · omni mecanum · nested lift · 2× SO-101 · Q/E telescope · Space e-stop</div>
+        <div className="sim-mesh-foot">Q/E arm · Space e-stop</div>
     </>
   )
 }

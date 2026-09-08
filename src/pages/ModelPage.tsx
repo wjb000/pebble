@@ -7,13 +7,16 @@ import { Canvas } from '@react-three/fiber'
 import { ContactShadows, OrbitControls } from '@react-three/drei'
 import { PCFShadowMap } from 'three'
 import { COLOURWAYS } from '../product'
-import { CHORE_ENVELOPE, TELESCOPE, mmToM } from '../robot/dims'
+import { CHORE_ENVELOPE, TELESCOPE } from '../robot/dims'
 import { TIP_SUMMARY } from '../robot/stability'
 import { RobotAssembly } from '../components/RobotAssembly'
-import { MESH_ATTRIBUTION } from '../components/ImportedRobots'
+import { meshAttribution } from '../components/ImportedRobots'
+import { kitCaption, kitLookHeightM } from '../kit/catalog'
+import { useKit } from '../kit/KitContext'
 
 export function ModelPage() {
   const [colourId, setColourId] = useState(COLOURWAYS[0].id)
+  const { kit } = useKit()
   const colour = useMemo(
     () => COLOURWAYS.find((c) => c.id === colourId) ?? COLOURWAYS[0],
     [colourId],
@@ -26,7 +29,7 @@ export function ModelPage() {
         <Canvas
           shadows
           dpr={[1, 2]}
-          camera={{ position: [0.62, 0.38, 0.72], fov: 40, near: 0.02, far: 40 }}
+          camera={{ position: [2.05, 0.82, 2.25], fov: 36, near: 0.02, far: 40 }}
           gl={{ antialias: true, toneMappingExposure: 1.15 }}
           onCreated={({ gl }) => {
             gl.shadowMap.type = PCFShadowMap
@@ -55,10 +58,10 @@ export function ModelPage() {
           <ContactShadows position={[0, 0.001, 0]} opacity={0.5} scale={4} blur={2.4} far={2.0} />
           <OrbitControls
             makeDefault
-            target={[0, mmToM(160), 0]}
+            target={[0, kitLookHeightM(kit), 0]}
             enablePan
             minDistance={0.25}
-            maxDistance={3}
+            maxDistance={5}
             maxPolarAngle={Math.PI * 0.49}
             dampingFactor={0.08}
           />
@@ -82,21 +85,16 @@ export function ModelPage() {
           </div>
           <div className="model-caption">
             <div>
-              Real printable CAD · orbit / pan / zoom
+              {kitCaption(kit)}
             </div>
             <div className="model-caption-sub">
-              <strong>On screen = what you print/buy:</strong> LeKiwi omni base (Onshape STLs) + 2× SO-101
-              (so101_new_calib URDF STLs). Print <code>print/lekiwi/</code> and <code>print/SO101/Individual/</code> ×2.
-              Buy: 3× 4″ omnis, STS3215×15, Pi, battery.
+              Print: <code>print/lekiwi/</code>, <code>print/SO101/Individual/</code>, XLeRobot <code>hardware/</code>.
+              Humanoid stack: printable torso shell + XLe arm-base shoulders + neck.
             </div>
             <div className="model-caption-sub">
-              Nested-tube 1100 mm column in the BOM has no public CAD yet — it is not faked as boxes here.
-              Q/E articulates the real SO-101 joints.
+              Q/E articulates SO-101 joints. Reach ~{CHORE_ENVELOPE.so101_reach_mm} mm. Tip margin ≈{TIP_SUMMARY.margin}×.
             </div>
-            <div className="model-caption-sub">
-              Reach: floor pick with hanging SO-101 ~{CHORE_ENVELOPE.so101_reach_mm} mm. Tip margin ≈{TIP_SUMMARY.margin}×. No casters, no exposed rail.
-            </div>
-            <div className="model-caption-attr">{MESH_ATTRIBUTION}</div>
+            <div className="model-caption-attr">{meshAttribution(kit)}</div>
           </div>
         </div>
       </div>

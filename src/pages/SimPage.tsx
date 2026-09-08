@@ -41,7 +41,7 @@ export function SimPage() {
                 </p>
                 <div className="splash-cta">DRIVE</div>
                 <div className="splash-keys">
-                  HouseHand v3 · omni deck · telescoping torso · dual SO-101
+                  LeKiwi omni + 2× SO-101 + gimbal
                 </div>
               </div>
             </button>

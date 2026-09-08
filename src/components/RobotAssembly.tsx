@@ -1,6 +1,6 @@
 /**
  * Shared assembled robot — used by Sim (Pebble / HouseHand v3) and /model viewer.
- * Body = real LeKiwi URDF STLs + second SO-101 URDF STLs.
+ * Body = mix-and-match real URDFs (LeKiwi / XLeRobot / SO-101).
  */
 import { Suspense } from 'react'
 import type { Colourway } from '../product'
