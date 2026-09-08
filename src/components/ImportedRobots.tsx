@@ -1,14 +1,24 @@
 /**
  * Twin CAD — mix-and-match real URDFs.
- * LeKiwi base (SIGRobotics-UIUC) · XLe torso/shoulders/neck STLs (Vector-Wangel) · 2× SO-101 (TheRobotStudio)
+ * LeKiwi rover · printable torso · XLe armbase + neck + head gimbal · 2× SO-101
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLoader } from '@react-three/fiber'
-import { Box3, Group, LoadingManager, Mesh, MeshStandardMaterial, type BufferGeometry, type Object3D } from 'three'
+import {
+  Box3,
+  BufferAttribute,
+  BufferGeometry,
+  Group,
+  LoadingManager,
+  Mesh,
+  MeshStandardMaterial,
+  Vector3,
+  type Object3D,
+} from 'three'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
 import URDFLoader, { type URDFRobot } from 'urdf-loader'
 import type { Colourway } from '../product'
-import { ARM, OVERALL_HEIGHT_MM, TELESCOPE } from '../robot/dims'
+import { OVERALL_HEIGHT_MM, TELESCOPE } from '../robot/dims'
 import { kitCaption, type KitBuild } from '../kit/catalog'
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
@@ -17,11 +27,11 @@ const LEKIWI_URDF = asset('assets/lekiwi/LeKiwi.urdf')
 const LEKIWI_PATH = asset('assets/lekiwi/')
 const SO101_URDF = asset('assets/so101/so101_new_calib.urdf')
 const SO101_PATH = asset('assets/so101/')
-const XLE_TORSO_STL = asset('assets/xlerobot/hardware/torso_shell.stl') + '?v=2'
-const XLE_ARMBASE_STL = asset('assets/xlerobot/hardware/XLeRobot_035_armbase.stl')
-const XLE_NECK_STL = asset('assets/xlerobot/hardware/XLeRobot040_neck_refined.stl')
+const XLE_TORSO_STL = asset('assets/xlerobot/hardware/torso_shell.stl') + '?v=3'
+const XLE_ARMBASE_STL = asset('assets/xlerobot/hardware/XLeRobot_035_armbase.stl') + '?v=3'
+const XLE_NECK_STL = asset('assets/xlerobot/hardware/XLeRobot040_neck_refined.stl') + '?v=3'
+const XLE_HEAD_STL = asset('assets/xlerobot/hardware/Gimbal_mesh_all_d435.stl') + '?v=3'
 
-/** Bright L/R so dual SO-101 CAD reads on the dark /model stage. */
 const ARM_L_HEX = '#38bdf8'
 const ARM_R_HEX = '#f97316'
 
@@ -93,10 +103,10 @@ function mapSo101Arm(
   side: 'L' | 'R',
 ) {
   const t = liftT(carriageAglMm)
-  setJoint(robot, 'shoulder_pan', side === 'L' ? 0.45 : -0.45)
-  setJoint(robot, 'shoulder_lift', 0.55 - t * 0.7 + armShoulderRad * 0.35)
-  setJoint(robot, 'elbow_flex', 0.9 - t * 0.5 + armElbowRad * 0.4)
-  setJoint(robot, 'wrist_flex', -0.2)
+  setJoint(robot, 'shoulder_pan', side === 'L' ? 0.35 : -0.35)
+  setJoint(robot, 'shoulder_lift', 0.35 - t * 0.5 + armShoulderRad * 0.35)
+  setJoint(robot, 'elbow_flex', 0.85 - t * 0.4 + armElbowRad * 0.4)
+  setJoint(robot, 'wrist_flex', -0.15)
   setJoint(robot, 'wrist_roll', 0)
   setJoint(robot, 'gripper', 0.4)
 }
@@ -109,14 +119,25 @@ function isLeKiwiArmMesh(n: string) {
     n.includes('wrist') ||
     n.includes('jaw') ||
     n.includes('passive_horn') ||
-    n.includes('sts3215_03a')
+    n.includes('sts3215_03a') ||
+    n.includes('waveshare_mounting_plate_01')
   )
+}
+
+/** Onboard LeKiwi cam tower — hidden; twin uses the XLe gimbal head instead. */
+function isLeKiwiCamTower(n: string) {
+  return n.includes('camera-mount') || n.includes('camera-model') || n.includes('top-v2')
 }
 
 function applyLeKiwiVisibility(robot: URDFRobot, showBase: boolean, showArm: boolean) {
   robot.traverse((obj) => {
     if (!(obj instanceof Mesh)) return
-    const arm = isLeKiwiArmMesh(meshLabel(obj))
+    const n = meshLabel(obj)
+    if (isLeKiwiCamTower(n)) {
+      obj.visible = false
+      return
+    }
+    const arm = isLeKiwiArmMesh(n)
     obj.visible = arm ? showArm : showBase
   })
 }
@@ -131,7 +152,7 @@ function nearestUrdfLink(obj: Object3D, robot: URDFRobot) {
 }
 
 const ROS_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI]
-/** Same ROS→Three as the LeKiwi, plus 90° yaw so the shoulder pack faces the rover front. */
+/** Shoulder pack faces rover front. */
 const XLE_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI / 2]
 
 function visibleWorldBox(root: Object3D, skip?: (mesh: Mesh) => boolean) {
@@ -174,29 +195,116 @@ function meshBoxForLinks(robot: URDFRobot, names: string[]) {
 }
 
 const KIWI_PLATE_LINKS = ['base_plate_layer1-v5', 'base_plate_layer2-v3']
-const SIT_EPS = 0.001
+const SIT_EPS = 0.0005
 /** Half-span between SO-101 bases on the XLe 0.35 armbase (meters). */
-const MOUNT_HALF_M = ARM.shoulder_span_mm * 0.0005
+const MOUNT_HALF_M = 0.11
 
 function cadHeightMm(geom: BufferGeometry) {
   const b = geom.boundingBox
   if (!b) return 200
-  return Math.max(50, b.max.z - b.min.z)
+  return Math.max(20, b.max.z - b.min.z)
 }
 
-function useFootedStl(url: string) {
+/** Collapse empty Z-gaps in multi-island CAD so printed parts sit as one solid. */
+function collapseZGaps(geom: BufferGeometry, mergeGapMm = 8) {
+  const pos = geom.attributes.position
+  if (!pos || pos.count < 9) return geom
+
+  let zMin = Infinity
+  let zMax = -Infinity
+  for (let i = 0; i < pos.count; i++) {
+    const z = pos.getZ(i)
+    if (z < zMin) zMin = z
+    if (z > zMax) zMax = z
+  }
+  const span = zMax - zMin
+  if (!(span > 1)) return geom
+
+  const bins = 64
+  const counts = new Array<number>(bins).fill(0)
+  for (let i = 0; i < pos.count; i++) {
+    const t = (pos.getZ(i) - zMin) / span
+    counts[Math.min(bins - 1, Math.max(0, Math.floor(t * bins)))]++
+  }
+  const thr = Math.max(6, pos.count * 0.002)
+  const runs: Array<[number, number]> = []
+  let start: number | null = null
+  for (let i = 0; i <= bins; i++) {
+    const solid = i < bins && counts[i] > thr
+    if (solid) {
+      if (start === null) start = i
+    } else if (start !== null) {
+      runs.push([start, i - 1])
+      start = null
+    }
+  }
+  if (runs.length <= 1) return geom
+
+  // Merge nearly-adjacent runs, then pack remaining runs flush.
+  const merged: Array<[number, number]> = []
+  for (const run of runs) {
+    const prev = merged[merged.length - 1]
+    const gapMm = prev ? ((run[0] - prev[1] - 1) / bins) * span : Infinity
+    if (prev && gapMm <= mergeGapMm) prev[1] = run[1]
+    else merged.push([...run])
+  }
+  if (merged.length <= 1) return geom
+
+  const segments = merged.map(([lo, hi]) => {
+    const a = zMin + (lo / bins) * span
+    const b = zMin + ((hi + 1) / bins) * span
+    return { a, b, h: b - a }
+  })
+
+  const out = new Float32Array(pos.array.length)
+  out.set(pos.array as Float32Array)
+  for (let i = 0; i < pos.count; i++) {
+    const z = pos.getZ(i)
+    let packed = z
+    let cursor = segments[0].a
+    let placed = false
+    for (const seg of segments) {
+      if (z < seg.a - 0.5) {
+        packed = cursor
+        placed = true
+        break
+      }
+      if (z <= seg.b + 0.5) {
+        packed = cursor + (z - seg.a)
+        placed = true
+        break
+      }
+      cursor += seg.h
+    }
+    if (!placed) packed = cursor
+    out[i * 3 + 2] = packed
+  }
+
+  const clean = new BufferGeometry()
+  clean.setAttribute('position', new BufferAttribute(out, 3))
+  clean.computeBoundingBox()
+  clean.computeVertexNormals()
+  return clean
+}
+
+function footGeometry(geom: BufferGeometry) {
+  const g = geom.clone()
+  g.computeBoundingBox()
+  const b = g.boundingBox
+  if (b) {
+    g.translate(-(b.min.x + b.max.x) * 0.5, -(b.min.y + b.max.y) * 0.5, -b.min.z)
+  }
+  g.computeBoundingBox()
+  g.computeVertexNormals()
+  return g
+}
+
+function usePreparedStl(url: string, opts?: { collapseGaps?: boolean }) {
   const raw = useLoader(STLLoader, url) as BufferGeometry
   return useMemo(() => {
-    const g = raw.clone()
-    g.computeBoundingBox()
-    const b = g.boundingBox
-    if (b) {
-      g.translate(-(b.min.x + b.max.x) * 0.5, -(b.min.y + b.max.y) * 0.5, -b.min.z)
-    }
-    g.computeBoundingBox()
-    g.computeVertexNormals()
-    return g
-  }, [raw])
+    const solid = opts?.collapseGaps ? collapseZGaps(raw) : raw
+    return footGeometry(solid)
+  }, [raw, opts?.collapseGaps])
 }
 
 function useUrdf(url: string, workingPath: string, enabled: boolean) {
@@ -233,6 +341,21 @@ function useUrdf(url: string, workingPath: string, enabled: boolean) {
   return { robot, generation }
 }
 
+/** Move `obj` in parent-local space so its world Y shifts by `dy`. */
+function nudgeWorldY(obj: Object3D, dy: number) {
+  if (Math.abs(dy) < 1e-6) return
+  const parent = obj.parent
+  if (!parent) {
+    obj.position.y += dy
+    return
+  }
+  const world = new Vector3()
+  obj.getWorldPosition(world)
+  world.y += dy
+  parent.worldToLocal(world)
+  obj.position.copy(world)
+}
+
 export function WheeledChassis({
   colour,
   carriageAglMm,
@@ -248,21 +371,24 @@ export function WheeledChassis({
 }) {
   void showWipe
   const lekiwi = useUrdf(LEKIWI_URDF, LEKIWI_PATH, true)
-  const so101L = useUrdf(SO101_URDF, SO101_PATH, true)
-  const so101R = useUrdf(SO101_URDF, SO101_PATH, true)
-  const torsoGeom = useFootedStl(XLE_TORSO_STL)
-  const armbaseGeom = useFootedStl(XLE_ARMBASE_STL)
-  const neckGeom = useFootedStl(XLE_NECK_STL)
+  // Separate URLs so each arm gets its own Object3D tree (shared URL can steal meshes).
+  const so101L = useUrdf(`${SO101_URDF}?side=L`, SO101_PATH, true)
+  const so101R = useUrdf(`${SO101_URDF}?side=R`, SO101_PATH, true)
+  const torsoGeom = usePreparedStl(XLE_TORSO_STL)
+  const armbaseGeom = usePreparedStl(XLE_ARMBASE_STL, { collapseGaps: true })
+  const neckGeom = usePreparedStl(XLE_NECK_STL, { collapseGaps: true })
+  const headGeom = usePreparedStl(XLE_HEAD_STL)
   const torsoMm = cadHeightMm(torsoGeom)
   const armMm = cadHeightMm(armbaseGeom)
+  const neckMm = cadHeightMm(neckGeom)
   const rootRef = useRef<Group>(null)
   const kiwiRef = useRef<Group>(null)
-  const torsoRef = useRef<Group>(null)
+  const stackRef = useRef<Group>(null)
   const armbaseRef = useRef<Mesh>(null)
   const armLRef = useRef<Group>(null)
   const armRRef = useRef<Group>(null)
   const [floorY, setFloorY] = useState(0)
-  const [torsoPose, setTorsoPose] = useState({ x: 0, y: 0, z: 0 })
+  const [stackPose, setStackPose] = useState({ x: 0, y: 0, z: 0 })
 
   useLayoutEffect(() => {
     if (!lekiwi.robot) return
@@ -286,59 +412,63 @@ export function WheeledChassis({
   useLayoutEffect(() => {
     const root = rootRef.current
     const kiwiG = kiwiRef.current
-    const torso = torsoRef.current
+    const stack = stackRef.current
     const armL = armLRef.current
     const armR = armRRef.current
     if (!root) return
 
     root.position.y = 0
-    if (torso) torso.position.set(0, 0, 0)
+    if (stack) stack.position.set(0, 0, 0)
     root.updateWorldMatrix(true, true)
 
+    // 1) Park LeKiwi wheels on the floor.
     const wheels = kiwiG ? visibleWorldBox(kiwiG, (mesh) => isLeKiwiArmMesh(meshLabel(mesh))) : null
     const nextFloor = wheels ? -wheels.min.y : 0
     root.position.y = nextFloor
     root.updateWorldMatrix(true, true)
 
+    // 2) Sit humanoid stack on the LeKiwi top plate.
     const plateBox = lekiwi.robot ? meshBoxForLinks(lekiwi.robot, KIWI_PLATE_LINKS) : null
     const deck = kiwiG ? visibleWorldBox(kiwiG, (mesh) => isLeKiwiArmMesh(meshLabel(mesh))) : null
     const plateCx = plateBox ? (plateBox.min.x + plateBox.max.x) * 0.5 : 0
     const plateCz = plateBox ? (plateBox.min.z + plateBox.max.z) * 0.5 : 0
     const plateTop = plateBox?.max.y ?? deck?.max.y ?? 0
 
-    const nextTorso = {
+    const nextStack = {
       x: plateCx,
       y: plateTop - SIT_EPS - nextFloor,
       z: plateCz,
     }
-    if (torso) torso.position.set(nextTorso.x, nextTorso.y, nextTorso.z)
+    if (stack) stack.position.set(nextStack.x, nextStack.y, nextStack.z)
 
-    const stackTopM = (torsoMm + armMm) * 0.001
-    if (armL) armL.position.set(0, -MOUNT_HALF_M, stackTopM)
-    if (armR) armR.position.set(0, MOUNT_HALF_M, stackTopM)
+    // 3) Seat SO-101 base_link origins in the armbase shoulder holes (local ROS frame).
+    // Do not AABB-lift: hanging motors would float the whole arm above the deck.
+    const shoulderTopM = (torsoMm + armMm) * 0.001
+    if (armL) armL.position.set(0, -MOUNT_HALF_M, shoulderTopM)
+    if (armR) armR.position.set(0, MOUNT_HALF_M, shoulderTopM)
     root.updateWorldMatrix(true, true)
 
+    // Fine-tune so the base flange (near origin) kisses the armbase top.
     const shoulders = armbaseRef.current ? new Box3().setFromObject(armbaseRef.current) : null
     const mountTop =
-      shoulders && Number.isFinite(shoulders.max.y) && shoulders.max.y - shoulders.min.y > 0.02
+      shoulders && Number.isFinite(shoulders.max.y) && shoulders.max.y - shoulders.min.y > 0.01
         ? shoulders.max.y
-        : plateTop + stackTopM
+        : plateTop + shoulderTopM
 
-    const seat = (group: Group | null, robot: URDFRobot | null) => {
-      if (!group || !robot) return
+    const seatArmOrigin = (group: Group | null) => {
+      if (!group) return
       root.updateWorldMatrix(true, true)
-      const box = meshBoxForLinks(robot, ['base_link'])
-      if (!box) return
-      // Parent uses XLE_TO_THREE: local +Z is world up — nudge so base_link sits on the armbase.
-      group.position.z += mountTop - SIT_EPS - box.min.y
+      const world = new Vector3()
+      group.getWorldPosition(world)
+      nudgeWorldY(group, mountTop - SIT_EPS - world.y)
     }
-    seat(armL, so101L.robot)
-    seat(armR, so101R.robot)
+    seatArmOrigin(armL)
+    seatArmOrigin(armR)
 
     setFloorY((y) => (Math.abs(y - nextFloor) > 1e-4 ? nextFloor : y))
-    setTorsoPose((prev) => (
-      Math.abs(prev.x - nextTorso.x) > 1e-4 || Math.abs(prev.y - nextTorso.y) > 1e-4 || Math.abs(prev.z - nextTorso.z) > 1e-4
-        ? nextTorso
+    setStackPose((prev) => (
+      Math.abs(prev.x - nextStack.x) > 1e-4 || Math.abs(prev.y - nextStack.y) > 1e-4 || Math.abs(prev.z - nextStack.z) > 1e-4
+        ? nextStack
         : prev
     ))
   }, [
@@ -351,8 +481,10 @@ export function WheeledChassis({
     torsoGeom,
     armbaseGeom,
     neckGeom,
+    headGeom,
     torsoMm,
     armMm,
+    neckMm,
     carriageAglMm,
     armShoulderRad,
     armElbowRad,
@@ -365,18 +497,27 @@ export function WheeledChassis({
           <primitive object={lekiwi.robot} />
         </group>
       ) : null}
-      <group ref={torsoRef} rotation={XLE_TO_THREE} position={[torsoPose.x, torsoPose.y, torsoPose.z]}>
+
+      <group ref={stackRef} rotation={XLE_TO_THREE} position={[stackPose.x, stackPose.y, stackPose.z]}>
         <group scale={0.001}>
+          {/* Printable torso shell on the LeKiwi plate */}
           <mesh geometry={torsoGeom} castShadow receiveShadow>
             <meshStandardMaterial color={colour.primary} roughness={0.55} metalness={0.08} />
           </mesh>
+          {/* XLe dual-arm base plate / shoulder pack */}
           <mesh ref={armbaseRef} geometry={armbaseGeom} position={[0, 0, torsoMm]} castShadow receiveShadow>
-            <meshStandardMaterial color={colour.primary} roughness={0.52} metalness={0.1} />
+            <meshStandardMaterial color={colour.primary} roughness={0.5} metalness={0.1} />
           </mesh>
+          {/* Neck column */}
           <mesh geometry={neckGeom} position={[0, 0, torsoMm + armMm]} castShadow receiveShadow>
             <meshStandardMaterial color={colour.primary} roughness={0.52} metalness={0.1} />
           </mesh>
+          {/* Head / D435 gimbal on the neck */}
+          <mesh geometry={headGeom} position={[0, 0, torsoMm + armMm + neckMm]} castShadow receiveShadow>
+            <meshStandardMaterial color="#1f2937" roughness={0.35} metalness={0.25} />
+          </mesh>
         </group>
+
         {so101L.robot ? (
           <group ref={armLRef}>
             <primitive object={so101L.robot} />
@@ -395,10 +536,10 @@ export function WheeledChassis({
 export function meshAttribution(kit: KitBuild) {
   return (
     `${kitCaption(kit)}. ` +
-    `LeKiwi (SIGRobotics-UIUC) · XLeRobot (Vector-Wangel) · SO-101 (TheRobotStudio), Apache-2.0. ` +
+    `LeKiwi rover (SIGRobotics-UIUC) · XLeRobot arm-base / neck / gimbal (Vector-Wangel) · SO-101 (TheRobotStudio), Apache-2.0. ` +
     `Print: print/lekiwi/ · print/SO101/Individual/ · print/xlerobot/hardware/. ` +
-    `Humanoid stack: LeKiwi plate, printable torso shell, XLe arm-base shoulders, neck, 2× SO-101. ` +
-    `Torso shell is 120×320 mm (print/xlerobot/hardware/torso_shell.stl). BOM nested column ~${OVERALL_HEIGHT_MM} mm is optional.`
+    `Stack: LeKiwi plate → torso shell → XLe arm-base plate → 2× SO-101 → neck → D435 gimbal head. ` +
+    `Torso shell 120×320 mm. BOM nested column ~${OVERALL_HEIGHT_MM} mm optional.`
   )
 }
 
