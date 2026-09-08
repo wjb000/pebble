@@ -14,9 +14,8 @@
 **License:** Apache-2.0 (see `LICENSE.SO-ARM100.Apache-2.0.txt`)  
 **File:** `4040_base_mount.stl`
 
-## Bought (not printed) — called out in BOM
-- **T8 / Tr8 lead screw (~1.1 m) + coupler + bearings — REQUIRED** — travel **160→950 mm AGL**. Not optional.
-- 2040 aluminium extrusion column ~**1010 mm** → overall stack **~1200 mm** (chore envelope: counters / washer rim / floor)
-- **MGN12H linear rail + carriage — REQUIRED** (anti-rotation; carries dual-arm torque). Not optional.
+## Bought (not printed) — v3 BOM
+- Nested telescoping column + **internal** T8 (not an exposed MGN rail)
+- HouseHand v3 twin does **not** load the Prusa Z carriage STLs — only `4040_base_mount.stl`
 
-Printable lift meshes alone are short Prusa-scale parts; **purchased extrusion + T8 + MGN12** (both REQUIRED) make the chore-height elevator.
+Prusa Z meshes remain as a GPL-2.0 print archive.
