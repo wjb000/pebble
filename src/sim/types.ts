@@ -40,9 +40,9 @@ export type SimState = {
   boxY: number
   /** Kinematic attach when F pressed near box */
   boxHeld: boolean
-  /** Lead-screw carriage AGL (mm) */
+  /** Telescoping shoulder AGL (mm) — inner tube / shoulder bar height */
   carriageAglMm: number
-  /** True when carriage is hard-clamped at min or max AGL */
+  /** True when lift is hard-clamped at min or max AGL */
   liftAtLimit: boolean
   /** Tip-risk drive scale 0..1 (UX only — not tip physics) */
   tipSlowdown: number

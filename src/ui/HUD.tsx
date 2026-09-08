@@ -35,8 +35,8 @@ export function HUD() {
       </div>
       <div className="hud-tele">
         <div>{fmt(Math.abs(state.v))} M/S</div>
-        <div>FWD {fmt(state.steering.forward)} · YAW {fmt(state.steering.yawRate)}</div>
-        <div className="hud-estop-hint">SPACE = E-STOP · G = chore demo</div>
+        <div>FWD {fmt(state.steering.forward)} · STR {fmt(state.steering.strafe ?? 0)} · YAW {fmt(state.steering.yawRate)}</div>
+        <div className="hud-estop-hint">SPACE = E-STOP · G = chore demo · A/D strafe</div>
       </div>
     </div>
   )

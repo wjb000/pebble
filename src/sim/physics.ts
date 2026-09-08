@@ -3,12 +3,12 @@ import { steeringToSetpoints, type Steering } from '../steering'
 import { ARENA_HALF, type SimState } from './types'
 
 const BALL_R = 0.08
-const ROBOT_R = 0.18
+/** Half-diagonal of 400×450 mm deck + bumper */
+const ROBOT_R = 0.28
 
 /**
- * Unicycle integrate in the physics XY plane (mapped to Three.js XZ).
- * Motion is robot-local: forward along heading theta (CCW from +X).
- * Uses pre-step heading for translation (classic discrete unicycle).
+ * Holonomic integrate in the physics XY plane (mapped to Three.js XZ).
+ * Forward along heading theta (CCW from +X); strafe is robot-local left (+90°).
  */
 export function integratePose(
   state: SimState,
@@ -19,19 +19,21 @@ export function integratePose(
   const sitFactor = 1 - sitBlend * 0.95
   const setpoints = steeringToSetpoints(steering)
   const v = setpoints.v * sitFactor
+  const vStrafe = setpoints.vStrafe * sitFactor
   const omega = setpoints.omega * sitFactor
   const cadence = setpoints.cadence * sitFactor
-  // Translate along current heading, then yaw (tank / unicycle)
-  let x = state.x + Math.cos(state.theta) * v * dt
-  let y = state.y + Math.sin(state.theta) * v * dt
+  const c = Math.cos(state.theta)
+  const s = Math.sin(state.theta)
+  let x = state.x + (c * v - s * vStrafe) * dt
+  let y = state.y + (s * v + c * vStrafe) * dt
   let theta = state.theta + omega * dt
   theta = Math.atan2(Math.sin(theta), Math.cos(theta))
-  const limit = ARENA_HALF - 0.18
+  const limit = ARENA_HALF - ROBOT_R
   x = Math.max(-limit, Math.min(limit, x))
   y = Math.max(-limit, Math.min(limit, y))
   const phase = cadence > 0.05 ? advancePhase(state.phase, cadence, dt) : state.phase
   const pose: GaitPose = gaitPose(phase, sitBlend)
-  const odo = state.odo + Math.abs(v) * dt
+  const odo = state.odo + Math.hypot(v, vStrafe) * dt
   return { x, y, theta, v, omega, cadence, phase, pose, steering, odo }
 }
 

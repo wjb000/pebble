@@ -1,5 +1,6 @@
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows } from '@react-three/drei'
+import { PCFShadowMap } from 'three'
 import { useSim } from '../sim/SimContext'
 import { COLOURWAYS } from '../product'
 import { Arena } from './Arena'
@@ -16,12 +17,15 @@ export function Scene({ colourId }: { colourId: string }) {
       shadows
       dpr={[1, 2]}
       camera={{ position: [0, 1.15, 2.8], fov: 42, near: 0.02, far: 40 }}
-      gl={{ antialias: true, toneMappingExposure: 1.1 }}
+      gl={{ antialias: true, toneMappingExposure: 1.15 }}
+      onCreated={({ gl }) => {
+        gl.shadowMap.type = PCFShadowMap
+      }}
       style={{ width: '100%', height: '100%', background: '#0a0b0e' }}
     >
       <color attach="background" args={['#0a0b0e']} />
       <fog attach="fog" args={['#0a0b0e', 8, 18]} />
-      <ambientLight intensity={0.28} />
+      <ambientLight intensity={0.42} />
       <directionalLight
         castShadow
         position={[3.5, 6, 2.5]}

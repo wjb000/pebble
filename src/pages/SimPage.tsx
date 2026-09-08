@@ -37,11 +37,11 @@ export function SimPage() {
               <div className="splash-inner">
                 <div className="splash-brand">PEBBLE</div>
                 <p className="splash-sub">
-                  W/S drive · A/D turn · Q/E lift · F pick · Space e-stop/reset
+                  W/S drive · A/D strafe · ←/→ turn · Q/E lift · F pick · Space e-stop/reset
                 </p>
                 <div className="splash-cta">DRIVE</div>
                 <div className="splash-keys">
-                  Floor · wipe · dishes · laundry-assist · soft limits · tip slowdown · dual SO-101
+                  HouseHand v3 · omni deck · telescoping torso · dual SO-101
                 </div>
               </div>
             </button>

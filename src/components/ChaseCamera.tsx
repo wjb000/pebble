@@ -4,9 +4,9 @@ import { OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { useSim } from '../sim/SimContext'
-import { OVERALL_HEIGHT_MM, mmToM } from '../robot/dims'
+import { mmToM } from '../robot/dims'
 
-/** Frame ~1200 mm chore twin + dual SO-101 on lead-screw carriage. */
+/** Frame the real LeKiwi + dual SO-101 CAD (~400 mm class), not a fake 1100 mm envelope. */
 export function ChaseCamera() {
   const { state, notifyOrbitDetach } = useSim()
   const controls = useRef<OrbitControlsImpl>(null)
@@ -14,7 +14,7 @@ export function ChaseCamera() {
   const dragging = useRef(false)
   const desired = useRef(new THREE.Vector3())
   const look = useRef(new THREE.Vector3())
-  const midY = mmToM(OVERALL_HEIGHT_MM) * 0.55
+  const midY = mmToM(180)
 
   useEffect(() => {
     const el = controls.current
@@ -32,8 +32,8 @@ export function ChaseCamera() {
   useFrame((_, dt) => {
     const target = look.current.set(state.x, midY, state.y)
     if (state.chaseCam && !dragging.current) {
-      const back = 2.4
-      const height = midY + 0.45
+      const back = 1.15
+      const height = midY + 0.28
       const yaw = -state.theta + Math.PI / 2
       desired.current.set(
         state.x - Math.sin(yaw) * back,
@@ -55,8 +55,8 @@ export function ChaseCamera() {
       ref={controls}
       makeDefault
       enablePan={false}
-      minDistance={0.6}
-      maxDistance={5}
+      minDistance={0.35}
+      maxDistance={4}
       maxPolarAngle={Math.PI * 0.48}
       dampingFactor={0.08}
     />

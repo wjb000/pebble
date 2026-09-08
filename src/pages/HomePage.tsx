@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ONE_LINER, bomSubtotal } from '../product'
-import { ARM, HEIGHT_NOTE, PRINT_UNIQUE_SKUS, SHOULDER_HEIGHT_MM, STANDING_HEIGHT_MM } from '../robot/dims'
+import { ARM, BASE, HEIGHT_NOTE, PRINT_UNIQUE_SKUS, SHOULDER_HEIGHT_MM, STANDING_HEIGHT_MM, TELESCOPE } from '../robot/dims'
 
 export function HomePage() {
   const twin = bomSubtotal('dual')
@@ -18,11 +18,11 @@ export function HomePage() {
           <div className="fact-grid fact-strip">
             <div className="fact-card">
               <div className="fact-label">Base</div>
-              <div className="fact-value">perceptron_bot</div>
+              <div className="fact-value">{BASE.width_mm}×{BASE.depth_mm} omni</div>
             </div>
             <div className="fact-card">
               <div className="fact-label">Lift</div>
-              <div className="fact-value">Prusa Z / Q·E</div>
+              <div className="fact-value">Nested tubes · Q/E</div>
             </div>
             <div className="fact-card">
               <div className="fact-label">Arms</div>
@@ -34,14 +34,15 @@ export function HomePage() {
             </div>
           </div>
           <p className="lede" style={{ marginTop: '1rem', maxWidth: '40rem' }}>
-            Composed from <strong>real OSS meshes</strong> (no generated bodies): perceptron_bot chassis,
-            Prusa lead-screw carriage, SO-ARM overhead cam (1:1), dual SO-101. Shoulders ride ~
-            {SHOULDER_HEIGHT_MM} mm AGL idle. {PRINT_UNIQUE_SKUS} upstream print SKUs + bought 2040 extrusion
-            to overall ~{STANDING_HEIGHT_MM} mm. Arms DIY dominate cost (~$250 of twin).
+            HouseHand v3 form: <strong>400×450 mm mecanum deck</strong>, nested telescoping column
+            (grows/shrinks — not an exposed rail), printed shoulder bar, dual SO-101. Shoulders idle ~
+            {SHOULDER_HEIGHT_MM} mm AGL ({TELESCOPE.min_agl_mm}→{TELESCOPE.max_agl_mm}). {PRINT_UNIQUE_SKUS} printed
+            structure SKUs. Overall extended ~{STANDING_HEIGHT_MM} mm. Arms DIY dominate cost.
           </p>
           <p className="draft-banner">{HEIGHT_NOTE}</p>
           <p className="draft-banner">
-            House chores: floor pick, wipe, dishes assist, laundry basket/washer-assist. Tip margin ≈1.22× with outriggers + 4 kg ballast; MGN12 required. Draft / not for sale. Not official Pollen.
+            House chores: floor pick, wipe, dishes assist, laundry basket/washer-assist. Tip margin ≈2.5× on the
+            400 mm deck + 12V pack. No casters, no RÅSKOG, no MGN rail. Draft / not for sale. Not official Pollen.
           </p>
         </div>
       </section>

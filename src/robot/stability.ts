@@ -1,23 +1,24 @@
 /**
- * Tip / CG analysis — Critic P0-1.
+ * Tip / CG analysis — HouseHand v3 omni deck.
  * Numbers are planning estimates (not FEA). Worst case: dual SO-101 at max AGL
  * with horizontal reach ≈ 0.40 m (usable fraction of 500 mm SO-101 reach).
+ * Support polygon = 400×450 mm mecanum deck (no outriggers).
  */
-import { SCREW_ELEVATOR, SO101 } from './dims'
+import { BASE, SO101, TELESCOPE } from './dims'
 
 export const TIP = {
-  /** Effective support width after bought outriggers (mm) — was track 160 */
-  support_width_mm: 400,
-  wheelbase_mm: 140,
-  /** Dual arm + carriage mass at height (kg) */
+  /** Deck width — mecanum contact patch ≈ track */
+  support_width_mm: BASE.width_mm,
+  wheelbase_mm: BASE.wheelbase_mm,
+  /** Dual arm + shoulder mass at height (kg) */
   tip_mass_kg: 2.0,
   /** Horizontal CG offset of tip mass at worst reach (m) */
   worst_reach_m: 0.4,
   /** Height of tip mass CG ≈ max shoulder AGL (m) */
-  tip_height_m: SCREW_ELEVATOR.max_agl_mm * 0.001,
-  /** Low mass: base structure+wheels+compute+battery (kg), excl. ballast */
-  low_mass_excl_ballast_kg: 0.9,
-  /** Sized scrap-steel ballast in bay (kg) */
+  tip_height_m: TELESCOPE.max_agl_mm * 0.001,
+  /** Low mass: deck + wheels + motors + column + compute (kg), excl. battery */
+  low_mass_excl_ballast_kg: 6.0,
+  /** 12V pack + BMS centered in base (kg) — the low-bay mass */
   ballast_kg: 4.0,
   g: 9.81,
   so101_reach_mm: SO101.reach_mm,
@@ -51,17 +52,17 @@ export const TIP_SUMMARY = {
   restoring_moment_Nm: Math.round(restoringMoment_Nm() * 100) / 100,
   margin: Math.round(tipMargin() * 100) / 100,
   note:
-    'Margin ≥1.2 target with 400 mm outrigger stance + 4 kg bay ballast at arms max AGL + 0.40 m reach. Tip slowdown is UX only — physics uses wouldTip().',
+    'Margin ≥1.2 with 400 mm omni-deck stance + 4 kg 12V pack at arms max AGL + 0.40 m reach. No outriggers. Tip slowdown is UX only — physics uses wouldTip().',
 }
 
 /** ASCII diagram for docs */
 export const TIP_DIAGRAM = `
-         arms@950 AGL ──●── reach 0.40 m
+         arms@1022 AGL ─●── reach 0.40 m
                         │
                    tip M ≈ 7.85 N·m
                         │
-         ┌──────────────┼──────────────┐  support 400 mm
-         │   ballast 4 kg (low bay)    │  restore ≈ 9.6 N·m
-         └──────────────┴──────────────┘  margin ≈ 1.22×
-              track/outriggers
+         ┌──────────────┼──────────────┐  deck 400×450 mm
+         │  12V pack 4 kg (center bay) │  restore ≈ 19.6 N·m
+         └──────────────┴──────────────┘  margin ≈ 2.5×
+              4× mecanum  (no casters)
 `

@@ -1,6 +1,6 @@
 /**
- * Shared assembled robot — used by Sim (Pebble) and /model viewer.
- * Arms = SimpleSO101Arm kits inside WheeledChassis lift group (carriage → yoke → SO-101).
+ * Shared assembled robot — used by Sim (Pebble / HouseHand v3) and /model viewer.
+ * Body = real LeKiwi URDF STLs + second SO-101 URDF STLs.
  */
 import { Suspense } from 'react'
 import type { Colourway } from '../product'

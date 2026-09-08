@@ -54,7 +54,7 @@ export function SimProvider({ children }: { children: ReactNode }) {
   const fpsAcc = useRef({ frames: 0, t: performance.now() })
   const sitTarget = useRef(0)
   const trajRef = useRef(new TrajectoryBuffer())
-  const lastActionRef = useRef<TrainAction>({ forward: 0, yawRate: 0 })
+  const lastActionRef = useRef<TrainAction>({ forward: 0, yawRate: 0, strafe: 0 })
 
   const setChaseCam = useCallback((v: boolean) => {
     setState((s) => ({ ...s, chaseCam: v }))
@@ -223,11 +223,11 @@ export function SimProvider({ children }: { children: ReactNode }) {
 
         const sitBlend = prev.sitBlend + (sitTarget.current - prev.sitBlend) * Math.min(1, DT * 4)
 
-        let steering = { forward: 0, yawRate: 0 }
+        let steering = { forward: 0, yawRate: 0, strafe: 0 }
         if (!demoActive) {
-          if (mode === 'teleop' || keys.forward !== 0 || keys.yawRate !== 0) {
-            steering = { forward: keys.forward, yawRate: keys.yawRate }
-            if (keys.forward !== 0 || keys.yawRate !== 0) mode = 'teleop'
+          if (mode === 'teleop' || keys.forward !== 0 || keys.yawRate !== 0 || keys.strafe !== 0) {
+            steering = { forward: keys.forward, yawRate: keys.yawRate, strafe: keys.strafe }
+            if (keys.forward !== 0 || keys.yawRate !== 0 || keys.strafe !== 0) mode = 'teleop'
           } else {
             steering = brainRef.current.step({
               robot_x: x, robot_y: y, robot_theta: theta,
@@ -237,12 +237,13 @@ export function SimProvider({ children }: { children: ReactNode }) {
           steering = {
             forward: steering.forward * tipSlowdown,
             yawRate: steering.yawRate * tipSlowdown,
+            strafe: (steering.strafe ?? 0) * tipSlowdown,
           }
         }
 
         // Freeze drive when tipped
         if (tipOver) {
-          steering = { forward: 0, yawRate: 0 }
+          steering = { forward: 0, yawRate: 0, strafe: 0 }
         }
 
         const integrated = demoActive || tipOver

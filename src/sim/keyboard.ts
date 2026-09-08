@@ -1,8 +1,9 @@
-/** Tank teleop: W/S forward, A/D yawRate. Q/E lift. F pick/drop. G chore demo. */
+/** Omni teleop: W/S forward, A/D strafe, arrows/Z/X yaw. Q/E lift. F pick. G chore demo. */
 export type KeyState = {
   forward: number
   yawRate: number
-  /** +1 raise / -1 lower lead-screw carriage */
+  strafe: number
+  /** +1 raise / -1 lower telescoping column */
   lift: number
   toggleMode: boolean
   toggleChase: boolean
@@ -37,7 +38,7 @@ function onKeyUp(e: KeyboardEvent) {
   pressed.delete(e.code)
 }
 
-export const touchBias = { forward: 0, yawRate: 0 }
+export const touchBias = { forward: 0, yawRate: 0, strafe: 0 }
 
 export function installKeyboard(): () => void {
   window.addEventListener('keydown', onKeyDown)
@@ -52,20 +53,25 @@ export function installKeyboard(): () => void {
 export function sampleKeys(): KeyState {
   let forward = 0
   let yawRate = 0
+  let strafe = 0
   let lift = 0
   if (pressed.has('KeyW') || pressed.has('ArrowUp')) forward += 1
   if (pressed.has('KeyS') || pressed.has('ArrowDown')) forward -= 1
-  if (pressed.has('KeyA') || pressed.has('ArrowLeft')) yawRate -= 1
-  if (pressed.has('KeyD') || pressed.has('ArrowRight')) yawRate += 1
+  if (pressed.has('KeyA')) strafe -= 1
+  if (pressed.has('KeyD')) strafe += 1
+  if (pressed.has('ArrowLeft') || pressed.has('KeyZ')) yawRate -= 1
+  if (pressed.has('ArrowRight') || pressed.has('KeyX')) yawRate += 1
   if (pressed.has('KeyQ')) lift += 1
   if (pressed.has('KeyE')) lift -= 1
   forward += touchBias.forward
   yawRate += touchBias.yawRate
+  strafe += touchBias.strafe
   forward = Math.max(-1, Math.min(1, forward))
   yawRate = Math.max(-1, Math.min(1, yawRate))
+  strafe = Math.max(-1, Math.min(1, strafe))
   lift = Math.max(-1, Math.min(1, lift))
   const out: KeyState = {
-    forward, yawRate, lift,
+    forward, yawRate, strafe, lift,
     toggleMode: edgeMode, toggleChase: edgeChase,
     reset: edgeReset, toggleSit: edgeSit, togglePick: edgePick,
     toggleDemo: edgeDemo,

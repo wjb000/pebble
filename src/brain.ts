@@ -1,8 +1,8 @@
 /**
  * Locomotion controller interface + beacon-seeking StubBrain for the solo demo.
  *
- * Any controller that implements step(observation) -> { forward, yawRate }
- * can drive the legs.
+ * Any controller that implements step(observation) -> { forward, yawRate, strafe }
+ * can drive the omni base.
  */
 
 import { clamp, type Steering } from './steering'
@@ -61,6 +61,7 @@ export class StubBrain implements Brain {
     return {
       forward: clamp(forward),
       yawRate: clamp(yaw),
+      strafe: 0,
     }
   }
 }

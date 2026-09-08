@@ -1,13 +1,11 @@
 /**
- * Pebble dimensions — OSS-composed wheeled chore bot (cheap house chores).
- * Base: PedroS235/perceptron_bot (MIT)
- * Lift: prusa3d/Original-Prusa-i3 Z + x-end nut carriage (GPL-2.0)
- * Head: TheRobotStudio/SO-ARM100 Optional Overhead Cam (Apache-2.0)
+ * HouseHand v3 dimensions — NYRO-like silhouette.
+ * Omni deck + nested telescoping column + dual SO-101.
  * Arms: TheRobotStudio/SO-ARM100 / LeRobot SO-101 (Apache-2.0)
- * NOT official Pollen. No generated placeholder bodies.
+ * Head cam bracket: SO-ARM100 Optional Overhead Cam (Apache-2.0)
+ * Base/torso = BOM envelopes (plywood deck, mecanum, nested tubes) — not perceptron / not exposed-rail.
  *
- * Height is chore-driven: counters ~900, washer rim ~850–950, floor pick.
- * Overall stack ~1200 mm — not a humanoid fashion height.
+ * Height is chore-driven: counters ~900, washer rim ~850–950, floor pick via hanging SO-101.
  */
 
 export const MM = 1
@@ -15,14 +13,13 @@ export const mmToM = (mm: number) => mm * 0.001
 export const mToMm = (m: number) => m * 1000
 
 /**
- * Overall height with purchased 2040 extrusion.
- * Assert: BASE + EXTRUSION + HEAD.stack = OVERALL.
- * ~1200 mm (~3′11″) — shortest honest stack for sink/counter/washer rim + dual SO-101.
+ * Overall height fully extended.
+ * Assert: BASE.height + TELESCOPE.outer_h + TELESCOPE.travel + HEAD.stack = OVERALL.
  */
-export const OVERALL_HEIGHT_MM = 1200
+export const OVERALL_HEIGHT_MM = 1100
 
 export const HEIGHT_NOTE =
-  'Overall 1200 mm (~3′11″) = base 108 + bought 2040 extrusion 1010 + head stack 82. Sized for counters ~900 mm, washer rim ~850–950 mm, and floor pick (chore envelope).'
+  'Extended 1100 mm (~3′7″) = deck 82 + nested column 380 + travel 560 + head 78. Collapsed ~540 mm. Column grows/shrinks — not an exposed rail carriage.'
 
 /** Honest chore envelope (mm AGL / world). */
 export const CHORE_ENVELOPE = {
@@ -33,100 +30,82 @@ export const CHORE_ENVELOPE = {
   table_wipe_mm: 750,
   so101_reach_mm: 500,
   note:
-    'Shoulder travel 160→950 AGL + SO-101 ~500 mm reach covers floor clothes, baskets, counters, sink rim, open washer drum. NOT: folding, detergent, closed-door cycles, hot water, waterproofing.',
+    'Shoulder travel 462→1022 AGL + SO-101 ~500 mm reach covers floor clothes, baskets, counters, sink rim, open washer drum. NOT: folding, detergent, closed-door cycles, hot water, waterproofing.',
 } as const
 
-/** Perceptron Bot chassis — plates stack in CAD-Z ≈ 0…108 mm (170×170 mm footprint). */
+/** 400×450 mm omni deck — 4× 4″ mecanum. No casters. No outriggers. */
 export const BASE = {
-  footprint_mm: 170,
-  height_mm: 108,
-  depth_mm: 170,
-  diameter_mm: 170,
-  wheel_diameter_mm: 65,
-  wheel_width_mm: 25,
-  track_mm: 160,
-  wheelbase_mm: 140,
-  caster_diameter_mm: 16,
-  axle_height_mm: 32.5,
-  upstream: 'PedroS235/perceptron_bot (MIT)',
-  note: 'Diff-drive chassis from perceptron_bot; drive tires/gearmotors bought',
+  footprint_mm: 400,
+  width_mm: 400,
+  depth_mm: 450,
+  height_mm: 82,
+  deck_t_mm: 18,
+  diameter_mm: 400,
+  wheel_diameter_mm: 102,
+  wheel_width_mm: 42,
+  wheel_count: 4,
+  wheel_inset_mm: 28,
+  drive: 'mecanum' as const,
+  track_mm: 344,
+  wheelbase_mm: 394,
+  caster_diameter_mm: 0,
+  axle_height_mm: 51,
+  upstream: 'DIY 400×450 deck + 4× 4″ mecanum (LeKiwi-class omni; no casters)',
+  note: 'Full omni — no casters, no RÅSKOG, no diff-only. Battery centered in bay; tote on rear deck.',
 } as const
 
 /**
- * Bought 2040 extrusion — chore-length stock.
- * 108 + 1010 + 82 = 1200.
+ * Nested telescoping column — grows/shrinks as a tube stack.
+ * Internal T8 (or belt) is inside the torso, not an exposed MGN carriage.
  */
-export const EXTRUSION = {
-  profile: '2040 V-slot aluminium',
-  length_mm: 1010,
-  width_mm: 20,
-  depth_mm: 40,
-  mass_kg_approx: 1.0,
-  note: 'Purchased column cut for chore reach (~1 kg); Prusa Z mounts bolt to it; T8 + MGN12 parallel',
-} as const
-
-/** Bought outriggers — widen support to tip-safe stance (see stability.ts). */
-export const OUTRIGGERS = {
-  support_width_mm: 400,
-  foot_pad_mm: 50,
-  arm_reach_mm: 120,
-  mass_g: 400,
-  note: 'Angle-stock / printed feet — effective support width 400 mm (was track 160). Required for dual SO-101 tip margin.',
-} as const
-
-/** MGN12H anti-rotation rail — REQUIRED (not optional). Cheapest that carries dual-arm torque. */
-export const MGN12 = {
-  profile: 'MGN12H',
-  length_mm: 1000,
-  rail_w_mm: 12,
-  rail_h_mm: 8,
-  block_w_mm: 27,
-  block_h_mm: 13,
-  block_l_mm: 45,
-  usd_lo: 18,
-  usd_hi: 25,
-  note: 'Silver rail envelope parallel to T8; REQUIRED — extrusion slot alone will not take dual SO-101 yaw/pitch torque.',
-} as const
-
-export const SCREW_AXIS_X_MM = 22
-
-/**
- * Screw-drive shoulder elevator — travel sized for washer/counter, not ceiling.
- */
-export const SCREW_ELEVATOR = {
-  min_agl_mm: 160,
-  max_agl_mm: 950,
-  travel_mm: 790,
-  default_agl_mm: 850,
+export const TELESCOPE = {
+  profile: 'nested aluminium tubes + internal T8',
+  outer_od_mm: 80,
+  mid_od_mm: 66,
+  inner_od_mm: 52,
+  wall_mm: 3.2,
+  outer_h_mm: 380,
+  travel_mm: 560,
+  min_agl_mm: 462,
+  max_agl_mm: 1022,
+  default_agl_mm: 860,
   screw_od_mm: 8,
   screw_pitch_mm: 2,
-  screw_length_mm: 1100,
-  axis_x_mm: SCREW_AXIS_X_MM,
-  motor: 'NEMA17 (Prusa z-axis-bottom mount)',
-  anti_rotation: 'MGN12H linear rail REQUIRED (parallel to T8) — carries dual-arm torque',
-  printed_parts: [
-    'z-axis-bottom.stl',
-    'carriage_x-end-motor.stl',
-    'z-axis-top.stl',
-    'z-screw-cover.stl',
-    '4040_base_mount.stl',
-  ] as const,
-  upstream: 'prusa3d/Original-Prusa-i3 (GPL-2.0) + SO-ARM100 4040_Base_Mount (Apache-2.0)',
-  note: 'Lead screw spins; Prusa x-end-motor rides as nut carriage carrying both SO-101s',
+  screw_length_mm: 700,
+  motor: 'STS3215 or 12V gearmotor / linear actuator (internal)',
+  anti_rotation: 'nested tube spline — not an exposed MGN rail',
+  upstream: 'BOM_V3 nested column kit (or DIY nested 2040 + internal lead screw)',
+  note: 'Column grows/shrinks — not an exposed rail carriage. Limit switches at min/max.',
 } as const
 
-export const LIFT = SCREW_ELEVATOR
+/** @deprecated Use TELESCOPE — kept so lift AGL clamps stay one object. */
+export const SCREW_ELEVATOR = TELESCOPE
+export const LIFT = TELESCOPE
 
 export const TORSO = {
-  height_mm: EXTRUSION.length_mm,
-  width_mm: EXTRUSION.width_mm,
-  depth_mm: EXTRUSION.depth_mm,
-  segment_h_mm: EXTRUSION.length_mm,
-  segment_qty: 1,
-  note: 'Bought 2040 extrusion envelope; not a generated printable torso',
+  height_mm: TELESCOPE.outer_h_mm + TELESCOPE.travel_mm,
+  width_mm: TELESCOPE.outer_od_mm,
+  depth_mm: TELESCOPE.outer_od_mm,
+  segment_h_mm: TELESCOPE.outer_h_mm,
+  segment_qty: 3,
+  note: 'Three nested tubes; inner stage carries the shoulder bar',
 } as const
 
-export const HEAD_STACK_H_MM = OVERALL_HEIGHT_MM - BASE.height_mm - EXTRUSION.length_mm // 82
+export const SHOULDER_BAR = {
+  width_mm: 280,
+  height_mm: 28,
+  depth_mm: 50,
+  note: 'Printed crossbar — mounts 2× SO-101 bases',
+} as const
+
+export const TOTE = {
+  width_mm: 190,
+  height_mm: 115,
+  depth_mm: 145,
+  note: 'On-base bin / tote for drops and laundry',
+} as const
+
+export const HEAD_STACK_H_MM = OVERALL_HEIGHT_MM - BASE.height_mm - TELESCOPE.outer_h_mm - TELESCOPE.travel_mm // 78
 
 export const HEAD = {
   stack_h_mm: HEAD_STACK_H_MM,
@@ -141,23 +120,20 @@ export const HEAD = {
   cam_mount_h_mm: 40,
   cam_mount_d_mm: 50,
   cam_rise_mm: 20,
-  /** Native cam_mount_bottom STL bbox center X (mm) — subtract to center on column. */
   stl_center_x_mm: 18.7,
-  /** Bottom boom length (native +Y); tip cam uses boom_tip_mm. */
   boom_length_mm: 231,
-  /** cam_mount_top native max Y — UVC tip after rotX(+π/2) → +Z forward. */
-  boom_tip_mm: 48,  // compact face — was 372 boom poke
+  boom_tip_mm: 48,
   upstream: 'TheRobotStudio/SO-ARM100 Optional/Overhead_Cam_Mount_32x32_UVC_Module (Apache-2.0)',
-  note: 'Printed 1:1; place at X=0 on column top (do not subtract stl_center_x — that poked sideways)',
+  note: 'USB head / torso camera on inner-tube top (shoulder)',
 } as const
 
 export const HEIGHT_STACK_MM =
-  BASE.height_mm + EXTRUSION.length_mm + HEAD.stack_h_mm
+  BASE.height_mm + TELESCOPE.outer_h_mm + TELESCOPE.travel_mm + HEAD.stack_h_mm
 
 export const HEIGHT_STACK_OK = HEIGHT_STACK_MM === OVERALL_HEIGHT_MM
 if (!HEIGHT_STACK_OK) {
   throw new Error(
-    `Height stack ${HEIGHT_STACK_MM} mm !== overall ${OVERALL_HEIGHT_MM} mm — fix HEAD.stack_h_mm / extrusion`,
+    `Height stack ${HEIGHT_STACK_MM} mm !== overall ${OVERALL_HEIGHT_MM} mm — fix HEAD.stack_h_mm / telescope`,
   )
 }
 
@@ -205,46 +181,43 @@ export const SO101 = {
 } as const
 
 /**
- * Shoulder mounts — SO-101 base_link seats on 4040 arm-bolt face.
- * 4040_base_mount.stl native bbox center ≈ (112.43, -0.17, -53); Z span 42 mm
- * (zmin extrusion / zmax arm face). After centering, arm face at +z = 21 mm.
+ * Shoulder mounts — SO-101 base_link seats on printed bar (+ optional 4040 adapters).
+ * 4040_base_mount.stl native bbox center ≈ (112.43, -0.17, -53); Z span 42 mm.
  */
 export const ARM = {
-  mount_x_mm: 52,  // column face + 4040 + arm base (was 95 — floated)
-  mount_y_mm: SCREW_ELEVATOR.default_agl_mm,
-  mount_z_mm: 28,
-  mount_face_drop_mm: 8,
-  /** Native 4040 STL bbox center (mm) — applied as pre-offset before yaw. */
+  mount_x_mm: 118,
+  mount_y_mm: TELESCOPE.default_agl_mm,
+  mount_z_mm: 8,
+  mount_face_drop_mm: 6,
   mount_stl_center_mm: [112.43, -0.17, -53.0] as const,
-  /** Distance from centered origin to arm-bolt face (half of 42 mm Z span). */
   mount_face_half_mm: 21,
   default_count: 2,
   optional_second: false,
-  shoulder_span_mm: 116,
+  shoulder_span_mm: 236,
 } as const
 
-export const SHOULDER_HEIGHT_MM = SCREW_ELEVATOR.default_agl_mm
+export const SHOULDER_HEIGHT_MM = TELESCOPE.default_agl_mm
 export const STANDING_HEIGHT_MM = OVERALL_HEIGHT_MM
-export const BODY_WIDTH_MM = BASE.footprint_mm
+export const BODY_WIDTH_MM = BASE.width_mm
 
 export const PI5 = {
   W: 85,
   H: 56,
   D: 16,
-  note: 'Pi 4 2–4GB or Pi Zero 2W class — cheapest that runs LeRobot follower + tank drive',
+  note: 'Laptop you own, or optional Pi 5 — gamepad teleop host',
 } as const
 
 export const PI_ZERO = PI5
 
 export const BATTERY = {
-  W: 70,
-  H: 35,
-  D: 50,
-  note: '3S LiPo in bay; separate 4.0 kg scrap-steel ballast REQUIRED (see TIP.ballast_kg)',
+  W: 180,
+  H: 70,
+  D: 120,
+  note: '12V pack + BMS centered in base (low mass / ballast)',
 } as const
 
 export const STABILITY_NOTE =
-  'Tip math (stability.ts): support 400 mm outriggers + 4.0 kg low-bay ballast → restore ≈9.6 N·m vs tip ≈7.85 N·m at 0.40 m reach / 2 kg @ 950 AGL (margin ≈1.22×). Tip slowdown is UX only. Draft — not for sale.'
+  'Tip math (stability.ts): 400×450 mm omni deck + 4 kg 12V pack in bay → restore ≈19.6 N·m vs tip ≈7.85 N·m at 0.40 m reach / 2 kg @ max AGL (margin ≈2.5×). No outriggers. Tip slowdown is UX only. Draft — not for sale.'
 
 export const TOPHEAVY_NOTE = STABILITY_NOTE
 
@@ -256,15 +229,49 @@ export const XL330 = {
   torque_nm: 0.52,
   bus: 'TTL' as const,
   qty_body: 0,
-  note: 'Not used on wheeled Pebble — archive only',
+  note: 'Not used on HouseHand v3',
 } as const
 
-export const PRINT_UNIQUE_SKUS = 16
+/** Printed structure SKUs: shoulder bar, column base plate, 4040 adapters, cam nest. */
+export const PRINT_UNIQUE_SKUS = 6
 export const PLA_GREY = '#9aa3ad'
+
+/** Legacy aliases — v3 has no exposed extrusion / MGN / outriggers. */
+export const EXTRUSION = {
+  profile: 'nested tubes (internal T8)',
+  length_mm: TELESCOPE.outer_h_mm + TELESCOPE.travel_mm,
+  width_mm: TELESCOPE.outer_od_mm,
+  depth_mm: TELESCOPE.outer_od_mm,
+  mass_kg_approx: 1.6,
+  note: TELESCOPE.note,
+} as const
+
+export const MGN12 = {
+  profile: 'none — nested-tube anti-rotation',
+  length_mm: 0,
+  rail_w_mm: 0,
+  rail_h_mm: 0,
+  block_w_mm: 0,
+  block_h_mm: 0,
+  block_l_mm: 0,
+  usd_lo: 0,
+  usd_hi: 0,
+  note: 'Do not buy exposed-rail-only lift. Nested tubes carry dual-arm torque.',
+} as const
+
+export const OUTRIGGERS = {
+  support_width_mm: BASE.width_mm,
+  foot_pad_mm: 0,
+  arm_reach_mm: 0,
+  mass_g: 0,
+  note: 'Not used — 400 mm deck is the support polygon.',
+} as const
+
+export const SCREW_AXIS_X_MM = 0
 
 export const PEBBLE_DIMS = {
   product:
-    'Pebble — cheap wheeled chore twin (dishes/wipe/laundry-assist) + 2× SO-101 (not official Pollen)',
+    'Pebble / HouseHand v3 — omni deck + telescoping torso + 2× SO-101 (not official Pollen)',
   overall_height_mm: OVERALL_HEIGHT_MM,
   height_stack_mm: HEIGHT_STACK_MM,
   height_stack_ok: HEIGHT_STACK_OK,
@@ -276,10 +283,10 @@ export const PEBBLE_DIMS = {
   screw_axis_x_mm: SCREW_AXIS_X_MM,
   chore_envelope: CHORE_ENVELOPE,
   base: BASE,
-  outriggers: OUTRIGGERS,
-  mgn12: MGN12,
-  extrusion: EXTRUSION,
+  telescope: TELESCOPE,
   torso: TORSO,
+  shoulder_bar: SHOULDER_BAR,
+  tote: TOTE,
   screw_elevator: SCREW_ELEVATOR,
   head: HEAD,
   camera: CAMERA,
@@ -291,11 +298,11 @@ export const PEBBLE_DIMS = {
   stability_note: STABILITY_NOTE,
   units: 'mm / g',
   digital_twin_rule:
-    'visual = upstream OSS STLs + bought extrusion/leadscrew envelopes + SimpleSO101Arm boxes; dims.ts = BOM',
+    'visual = BOM envelopes (deck/mecanum/tubes) + SO-ARM cam/4040 STLs + SimpleSO101Arm boxes; dims.ts = BOM_V3',
   sources: [
-    'PedroS235/perceptron_bot (MIT) — wheeled base STLs',
-    'prusa3d/Original-Prusa-i3 (GPL-2.0) — Z mounts + x-end-motor carriage',
+    'BOM_V3.md — HouseHand v3.1 (omni + telescope + dual SO-101)',
     'TheRobotStudio/SO-ARM100 (Apache-2.0) — SO-101 arms, 4040 mount, overhead cam',
+    'SIGRobotics-UIUC/LeKiwi — omni reference (mecanum deck here)',
   ],
 } as const
 

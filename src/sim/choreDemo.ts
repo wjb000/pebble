@@ -97,7 +97,7 @@ export function stepChoreDemo(s: DemoSnapshot, dt: number): Partial<DemoSnapshot
     }
 
     case 'to_basket': {
-      carriageAglMm = lerp(carriageAglMm, 420, dt * 1.0)
+      carriageAglMm = lerp(carriageAglMm, SCREW_ELEVATOR.min_agl_mm + 40, dt * 1.0)
       armShoulderRad = lerp(armShoulderRad, 0.35, dt * 2)
       armElbowRad = lerp(armElbowRad, -0.25, dt * 2)
       const mov = approach({ ...s, x, y, theta }, BASKET.x + 0.25, BASKET.y, dt, 0.45)
@@ -107,7 +107,7 @@ export function stepChoreDemo(s: DemoSnapshot, dt: number): Partial<DemoSnapshot
     }
 
     case 'basket_drop': {
-      carriageAglMm = lerp(carriageAglMm, 380, dt * 1.5)
+      carriageAglMm = lerp(carriageAglMm, SCREW_ELEVATOR.min_agl_mm, dt * 1.5)
       if (demoT > 0.6) {
         boxHeld = false
         boxX = BASKET.x
@@ -124,7 +124,7 @@ export function stepChoreDemo(s: DemoSnapshot, dt: number): Partial<DemoSnapshot
       armElbowRad = lerp(armElbowRad, -0.4, dt * 2)
       const mov = approach({ ...s, x, y, theta }, COUNTER.x, COUNTER.y, dt, 0.5)
       x = mov.x; y = mov.y; theta = mov.theta
-      wipeContact = mov.arrived && Math.abs(carriageAglMm - 800) < 120
+      wipeContact = mov.arrived && Math.abs(carriageAglMm - (SCREW_ELEVATOR.default_agl_mm - 50)) < 140
       // Sweep along counter
       if (mov.arrived) {
         y = COUNTER.y + Math.sin(demoT * 2.2) * 0.08

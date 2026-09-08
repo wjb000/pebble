@@ -1,5 +1,5 @@
 import { DoubleSide } from 'three'
-import { mmToM } from '../robot/dims'
+import { TELESCOPE, mmToM } from '../robot/dims'
 
 /**
  * House-chore props: counter + sink + dish plate, laundry basket + cloth + washer rim.
@@ -12,7 +12,7 @@ export function ChoreProps({
   robotX,
   robotY,
   robotTheta,
-  carriageAglMm = 850,
+  carriageAglMm = TELESCOPE.default_agl_mm,
   wipeContact = false,
   demoPhase = 'idle',
 }: {

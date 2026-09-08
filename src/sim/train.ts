@@ -1,8 +1,8 @@
 /**
  * Digital-twin training hooks — observation / action loop for teleop dumps & future RL.
- * Physics are simple planar unicycle + ball (not MuJoCo); visual = printable base STLs + dual SO-101 kit envelopes (URDF printables; GLB not loaded).
+ * Physics are simple planar holonomic mecanum + ball (not MuJoCo); visual = BOM envelopes + dual SO-101 kit envelopes.
  *
- * Action contract (stable): { forward, yawRate } in [-1, 1]
+ * Action contract (stable): { forward, strafe, yawRate } in [-1, 1]
  * Observation: robot pose, ball relative, v/omega, mode
  * Fixed timestep: DT = 0.02 s (50 Hz) from types.ts
  * Reset: Space → START_* pose + ball spawn (see createInitialState / SimContext)
@@ -104,8 +104,8 @@ export class TrajectoryBuffer {
       {
         dt: DT,
         hz: 1 / DT,
-        action: '{ forward, yawRate } in [-1,1]',
-        frame: 'physics XY ground plane; theta CCW from +X; robot-local forward',
+        action: '{ forward, strafe, yawRate } in [-1,1]',
+        frame: 'physics XY ground plane; theta CCW from +X; holonomic mecanum (forward + strafe)',
         n: this.buf.length,
         samples: this.buf,
       },

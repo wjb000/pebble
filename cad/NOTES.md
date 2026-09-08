@@ -1,10 +1,9 @@
 # CAD notes
 
-ForgeCAD path abandoned (no account). Pebble body is **composed from preexisting OSS STLs**:
+HouseHand twin is **real OSS CAD**, not generated bodies:
 
-- `public/assets/base/` — PedroS235/perceptron_bot (MIT)
-- `public/assets/lift/` — Prusa i3 Z + x-end carriage (GPL-2.0) + SO-ARM 4040 mount
-- `public/assets/head/` — SO-ARM100 Overhead Cam (Apache-2.0)
-- `public/assets/so101/` — SO-101 URDF + idle GLB (Apache-2.0; GLB attribution only — twin uses kit envelopes)
+- `public/assets/lekiwi/` — SIGRobotics-UIUC/LeKiwi URDF + Onshape meshes (Apache-2.0). Print from `print/lekiwi/`.
+- `public/assets/so101/so101_new_calib.urdf` + `meshes/*.stl` + `print/SO101/Individual/` — SO-ARM100 (Apache-2.0)
+- `public/assets/head/` and `public/assets/lift/4040_base_mount.stl` — SO-ARM extras
 
-`pebble.scad` is legacy reference only — not the sim twin.
+Do not add box/cylinder fake chassis. Bought omni wheels appear as the LeKiwi URDF wheel CAD (purchase the matching 4″ omnis).

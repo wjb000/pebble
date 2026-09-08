@@ -5,8 +5,9 @@
 import { useMemo, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, OrbitControls } from '@react-three/drei'
+import { PCFShadowMap } from 'three'
 import { COLOURWAYS } from '../product'
-import { CHORE_ENVELOPE, HEIGHT_NOTE, MGN12, OUTRIGGERS, OVERALL_HEIGHT_MM, SCREW_ELEVATOR, mmToM } from '../robot/dims'
+import { CHORE_ENVELOPE, TELESCOPE, mmToM } from '../robot/dims'
 import { TIP_SUMMARY } from '../robot/stability'
 import { RobotAssembly } from '../components/RobotAssembly'
 import { MESH_ATTRIBUTION } from '../components/ImportedRobots'
@@ -17,8 +18,7 @@ export function ModelPage() {
     () => COLOURWAYS.find((c) => c.id === colourId) ?? COLOURWAYS[0],
     [colourId],
   )
-  const carriageAglMm = SCREW_ELEVATOR.default_agl_mm
-  const midY = mmToM(OVERALL_HEIGHT_MM) * 0.55
+  const carriageAglMm = TELESCOPE.default_agl_mm
 
   return (
     <div className="model-page">
@@ -26,12 +26,15 @@ export function ModelPage() {
         <Canvas
           shadows
           dpr={[1, 2]}
-          camera={{ position: [1.4, 1.1, 2.1], fov: 40, near: 0.02, far: 40 }}
-          gl={{ antialias: true, toneMappingExposure: 1.1 }}
+          camera={{ position: [0.62, 0.38, 0.72], fov: 40, near: 0.02, far: 40 }}
+          gl={{ antialias: true, toneMappingExposure: 1.15 }}
+          onCreated={({ gl }) => {
+            gl.shadowMap.type = PCFShadowMap
+          }}
           style={{ width: '100%', height: '100%', background: '#0a0b0e' }}
         >
           <color attach="background" args={['#0a0b0e']} />
-          <ambientLight intensity={0.35} />
+          <ambientLight intensity={0.48} />
           <directionalLight
             castShadow
             position={[3.2, 4.5, 2.2]}
@@ -44,14 +47,18 @@ export function ModelPage() {
             shadow-camera-bottom={-2}
           />
           <directionalLight position={[-2.2, 2.8, -1.8]} intensity={0.4} />
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+            <planeGeometry args={[8, 8]} />
+            <meshStandardMaterial color="#1c1f28" roughness={0.95} metalness={0.05} />
+          </mesh>
           <RobotAssembly colour={colour} carriageAglMm={carriageAglMm} showWipe />
           <ContactShadows position={[0, 0.001, 0]} opacity={0.5} scale={4} blur={2.4} far={2.0} />
           <OrbitControls
             makeDefault
-            target={[0, midY, 0]}
+            target={[0, mmToM(160), 0]}
             enablePan
-            minDistance={0.5}
-            maxDistance={5}
+            minDistance={0.25}
+            maxDistance={3}
             maxPolarAngle={Math.PI * 0.49}
             dampingFactor={0.08}
           />
@@ -75,22 +82,20 @@ export function ModelPage() {
           </div>
           <div className="model-caption">
             <div>
-              {OVERALL_HEIGHT_MM} mm chore stack · lift @ {carriageAglMm} mm AGL · orbit / pan / zoom
+              Real printable CAD · orbit / pan / zoom
             </div>
             <div className="model-caption-sub">
-              <strong>Bought (not printed):</strong> 2040 (~1010 mm) + <strong>T8 REQUIRED</strong> +{' '}
-              <strong>{MGN12.profile} REQUIRED</strong> + outriggers ({OUTRIGGERS.support_width_mm} mm, track 160 ≠ support) +{' '}
-              {TIP_SUMMARY.ballast_kg} kg ballast <strong>REQUIRED</strong> + <strong>2× SO-101 kits</strong> (STS3215×12).
+              <strong>On screen = what you print/buy:</strong> LeKiwi omni base (Onshape STLs) + 2× SO-101
+              (so101_new_calib URDF STLs). Print <code>print/lekiwi/</code> and <code>print/SO101/Individual/</code> ×2.
+              Buy: 3× 4″ omnis, STS3215×15, Pi, battery.
             </div>
             <div className="model-caption-sub">
-              <strong>Printed:</strong> perceptron chassis · Prusa Z/carriage (GPL-2.0) · yoke/4040 L/R keyed ·
-              cam 1:1 · soft pads + wipe. Twin arms = <em>link envelopes</em> only — BOM still costs real kits.
+              Nested-tube 1100 mm column in the BOM has no public CAD yet — it is not faked as boxes here.
+              Q/E articulates the real SO-101 joints.
             </div>
             <div className="model-caption-sub">
-              Reach: floor → counters ~{CHORE_ENVELOPE.counter_mm} · washer rim ~{CHORE_ENVELOPE.washer_rim_mm} ·
-              SO-101 ~{CHORE_ENVELOPE.so101_reach_mm} mm. Tip margin ≈{TIP_SUMMARY.margin}×.
+              Reach: floor pick with hanging SO-101 ~{CHORE_ENVELOPE.so101_reach_mm} mm. Tip margin ≈{TIP_SUMMARY.margin}×. No casters, no exposed rail.
             </div>
-            <div className="model-caption-sub">{HEIGHT_NOTE}</div>
             <div className="model-caption-attr">{MESH_ATTRIBUTION}</div>
           </div>
         </div>

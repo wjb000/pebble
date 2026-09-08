@@ -1,32 +1,27 @@
 /**
- * Locomotion steering → biped gait setpoints.
+ * Holonomic mecanum steering → setpoints.
  *
- * Normalized velocity command (WASD / gamepad / stub seeker):
+ *   steering = { forward, strafe, yawRate } each in [-1, 1]
  *
- *   steering = { forward: number in [-1, 1], yawRate: number in [-1, 1] }
- *
- * Gains map normalized commands to physical setpoints:
- *
- *   V_MAX       = 0.18 m/s   — full-throttle walk speed along ground
- *   OMEGA_MAX   = 1.8 rad/s  — full-throttle yaw (facing) rate
- *   CADENCE_MAX = 2.2 Hz     — peak gait frequency at |forward| = 1
- *
- *   v       = clamp(forward,  -1, 1) * V_MAX
- *   omega   = clamp(yawRate,  -1, 1) * OMEGA_MAX
- *   cadence = abs(clamp(forward, -1, 1)) * CADENCE_MAX
+ *   v       = forward * V_MAX      (robot-local +X physics / +Z body)
+ *   vStrafe = strafe  * STRAFE_MAX (robot-local +Y physics / +X body)
+ *   omega   = yawRate * OMEGA_MAX
  */
 
-export const V_MAX = 0.18
-export const OMEGA_MAX = 1.8
+export const V_MAX = 0.42
+export const STRAFE_MAX = 0.38
+export const OMEGA_MAX = 1.6
 export const CADENCE_MAX = 2.2
 
 export type Steering = {
   forward: number
   yawRate: number
+  strafe: number
 }
 
 export type GaitSetpoints = {
   v: number
+  vStrafe: number
   omega: number
   cadence: number
 }
@@ -37,16 +32,19 @@ export function clamp(x: number, lo = -1, hi = 1): number {
 
 export function steeringToSetpoints(
   steering: Partial<Steering>,
-  opts?: { vMax?: number; omegaMax?: number; cadenceMax?: number },
+  opts?: { vMax?: number; strafeMax?: number; omegaMax?: number; cadenceMax?: number },
 ): GaitSetpoints {
   const forward = clamp(Number(steering.forward ?? 0))
   const yawRate = clamp(Number(steering.yawRate ?? 0))
+  const strafe = clamp(Number(steering.strafe ?? 0))
   const vMax = opts?.vMax ?? V_MAX
+  const strafeMax = opts?.strafeMax ?? STRAFE_MAX
   const omegaMax = opts?.omegaMax ?? OMEGA_MAX
   const cadenceMax = opts?.cadenceMax ?? CADENCE_MAX
   return {
     v: forward * vMax,
+    vStrafe: strafe * strafeMax,
     omega: yawRate * omegaMax,
-    cadence: Math.abs(forward) * cadenceMax,
+    cadence: Math.hypot(forward, strafe) * cadenceMax,
   }
 }

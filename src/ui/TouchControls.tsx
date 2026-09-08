@@ -1,7 +1,7 @@
 import type { PointerEvent } from 'react'
 import { touchBias } from '../sim/keyboard'
 
-function hold(axis: 'forward' | 'yawRate', value: number) {
+function hold(axis: 'forward' | 'yawRate' | 'strafe', value: number) {
   return {
     onPointerDown: (e: PointerEvent<HTMLButtonElement>) => {
       e.preventDefault()

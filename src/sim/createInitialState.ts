@@ -10,7 +10,7 @@ export function createInitialState(): SimState {
     x: START_X, y: START_Y, theta: START_THETA,
     v: 0, omega: 0, cadence: 0, phase: 0,
     pose: gaitPose(0, 0),
-    steering: { forward: 0, yawRate: 0 },
+    steering: { forward: 0, yawRate: 0, strafe: 0 },
     mode: 'auto', chaseCam: true, sitBlend: 0, sitting: false,
     fps: 0, odo: 0,
     beaconX: BEACON_X, beaconY: BEACON_Y,

@@ -7,7 +7,7 @@ export function Arena() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
       <planeGeometry args={[SIZE + 4, SIZE + 4]} />
-      <meshStandardMaterial color="#12141a" roughness={0.95} metalness={0.05} />
+      <meshStandardMaterial color="#1c1f28" roughness={0.95} metalness={0.05} />
     </mesh>
   )
 }

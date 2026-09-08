@@ -1,5 +1,5 @@
 /**
- * Pebble visual = ~1200 mm chore twin + screw-drive carriage + MGN12 + 2× SO-101.
+ * Pebble visual = HouseHand v3 omni deck + telescoping torso + 2× SO-101.
  * Pose is world x/y/theta only — tipOver applies a visual lean freeze.
  */
 import { useRef } from 'react'
