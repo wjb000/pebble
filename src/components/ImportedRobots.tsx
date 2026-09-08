@@ -59,17 +59,36 @@ function nearestUrdfLink(obj: Object3D, robot: URDFRobot) {
   return null
 }
 
+/** Bright L/R so dual SO-101 CAD reads on the dark /model stage. */
+const ARM_L_HEX = '#38bdf8'
+const ARM_R_HEX = '#f97316'
+
+function xleArmSide(link: string | null): 'L' | 'R' | null {
+  if (!link) return null
+  const n = link.toLowerCase()
+  // XLe right chain uses `_2` suffix; wrist cams are named opposite the arm they ride on.
+  if (n.endsWith('_2') || n.includes('_2_') || n.startsWith('left_arm')) return 'R'
+  if (n.startsWith('right_arm')) return 'L'
+  if (/^(base|rotation|pitch|elbow|upper_arm|lower_arm|wrist|jaw|fixed_jaw|moving_jaw)/.test(n)) return 'L'
+  return null
+}
+
 function colorizeXle(robot: URDFRobot, colour: Colourway) {
   robot.traverse((obj) => {
     if (!(obj instanceof Mesh)) return
     const link = nearestUrdfLink(obj, robot)
     const bucket = link ? classifyXleLink(link) : 'arm'
     const n = `${obj.name} ${link ?? ''}`.toLowerCase()
+    const side = xleArmSide(link)
     if (bucket === 'base') tintMesh(obj, '#1e3a5f', 0.7, 0.08)
     else if (n.includes('motor') || n.includes('sts') || n.includes('servo')) {
       tintMesh(obj, '#1f2937', 0.35, 0.55)
     } else if (n.includes('camera') || n.includes('head')) {
       tintMesh(obj, '#111827', 0.4, 0.25)
+    } else if (side === 'L') {
+      tintMesh(obj, ARM_L_HEX, 0.48, 0.12)
+    } else if (side === 'R') {
+      tintMesh(obj, ARM_R_HEX, 0.48, 0.12)
     } else if (n.includes('jaw') || n.includes('wrist') || n.includes('arm') || n.includes('rotation') || n.includes('base')) {
       tintMesh(obj, colour.primary, 0.48, 0.12)
     } else {
@@ -136,27 +155,33 @@ function applyLeKiwiVisibility(robot: URDFRobot, showBase: boolean, showArm: boo
 function classifyXleLink(name: string): 'base' | 'head' | 'arm' {
   const n = name.toLowerCase()
   if (n === 'world' || n.includes('chassis') || n.includes('wheel') || n.includes('raskog')) return 'base'
+  // Wrist cams ride on the arms — keep them with the arm bucket.
+  if (n.includes('arm_camera')) return 'arm'
   if (n.includes('camera')) return 'base'
   if (n.includes('head') || n.includes('top_base')) return 'head'
   if (/^(base|rotation|pitch|elbow|upper_arm|lower_arm|wrist|jaw|fixed_jaw|moving_jaw)/.test(n)) return 'arm'
   return 'base'
 }
 
+/**
+ * Show dual SO-101 CAD; hide the XLe RÅSKOG cart.
+ * Keep world/chassis Object3Ds visible as ancestors — Three.js hides whole subtrees
+ * when a parent has visible=false, which previously blanked both arms.
+ */
 function applyXleVisibility(robot: URDFRobot, showArms: boolean, showHead: boolean) {
   for (const [name, link] of Object.entries(robot.links)) {
     const bucket = classifyXleLink(name)
-    link.visible = bucket === 'arm' ? showArms : bucket === 'head' ? showHead : false
+    if (bucket === 'arm') link.visible = showArms
+    else if (bucket === 'head') link.visible = showHead
+    else link.visible = true
   }
   robot.traverse((obj) => {
-    const n = meshLabel(obj)
-    if (n.includes('raskog') || n.includes('chassis')) {
-      obj.visible = false
-      return
-    }
     if (!(obj instanceof Mesh)) return
     const link = nearestUrdfLink(obj, robot)
     const bucket = link ? classifyXleLink(link) : 'base'
-    obj.visible = bucket === 'arm' ? showArms : bucket === 'head' ? showHead : false
+    if (bucket === 'arm') obj.visible = showArms
+    else if (bucket === 'head') obj.visible = showHead
+    else obj.visible = false
   })
 }
 
