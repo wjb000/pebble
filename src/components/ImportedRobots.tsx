@@ -164,12 +164,62 @@ function footGeometry(geom: BufferGeometry) {
   return g
 }
 
-function usePreparedStl(url: string, opts?: { collapseGaps?: boolean }) {
+/** Drop a thin bottom shelf so the dense armbase plate sits on the torso. */
+function trimThinBottomShelf(geom: BufferGeometry, maxShelfMm = 18) {
+  const pos = geom.attributes.position
+  if (!pos || pos.count < 9) return geom
+  let zMin = Infinity
+  let zMax = -Infinity
+  for (let i = 0; i < pos.count; i++) {
+    const z = pos.getZ(i)
+    if (z < zMin) zMin = z
+    if (z > zMax) zMax = z
+  }
+  const span = zMax - zMin
+  if (!(span > 1)) return geom
+  const bins = 64
+  const counts = new Array<number>(bins).fill(0)
+  for (let i = 0; i < pos.count; i++) {
+    const t = (pos.getZ(i) - zMin) / span
+    counts[Math.min(bins - 1, Math.max(0, Math.floor(t * bins)))]++
+  }
+  const thr = Math.max(6, pos.count * 0.002)
+  let firstSolid = -1
+  let firstGap = -1
+  let secondSolid = -1
+  for (let i = 0; i < bins; i++) {
+    if (counts[i] > thr) {
+      if (firstSolid < 0) firstSolid = i
+      else if (firstGap >= 0 && secondSolid < 0) secondSolid = i
+    } else if (firstSolid >= 0 && firstGap < 0) {
+      firstGap = i
+    }
+  }
+  if (firstSolid < 0 || firstGap < 0 || secondSolid < 0) return geom
+  const shelfMm = ((firstGap - firstSolid) / bins) * span
+  if (shelfMm > maxShelfMm) return geom
+  const cutZ = zMin + (secondSolid / bins) * span - 0.01
+  const kept: number[] = []
+  for (let i = 0; i < pos.count; i++) {
+    if (pos.getZ(i) >= cutZ) {
+      kept.push(pos.getX(i), pos.getY(i), pos.getZ(i))
+    }
+  }
+  if (kept.length < 27) return geom
+  const clean = new BufferGeometry()
+  clean.setAttribute('position', new BufferAttribute(new Float32Array(kept), 3))
+  clean.computeBoundingBox()
+  clean.computeVertexNormals()
+  return clean
+}
+
+function usePreparedStl(url: string, opts?: { collapseGaps?: boolean; trimThinShelf?: boolean }) {
   const raw = useLoader(STLLoader, url) as BufferGeometry
   return useMemo(() => {
-    const solid = opts?.collapseGaps ? collapseZGaps(raw) : raw
+    let solid = opts?.collapseGaps ? collapseZGaps(raw) : raw
+    if (opts?.trimThinShelf) solid = trimThinBottomShelf(solid)
     return footGeometry(solid)
-  }, [raw, opts?.collapseGaps])
+  }, [raw, opts?.collapseGaps, opts?.trimThinShelf])
 }
 
 function meshLabel(obj: Object3D) {
@@ -246,11 +296,12 @@ function mapSo101Arm(
   carriageAglMm: number,
   armShoulderRad: number,
   armElbowRad: number,
-  side: 'L' | 'R',
+  _side: 'L' | 'R',
 ) {
   const t = liftT(carriageAglMm)
-  // Same forward reach; slight outward pan only.
-  setJoint(robot, 'shoulder_pan', side === 'L' ? 0.3 : -0.3)
+  // Identical pose — R is mirror-scaled in JSX so both show the circular base the same way.
+  void _side
+  setJoint(robot, 'shoulder_pan', 0.35)
   setJoint(robot, 'shoulder_lift', -0.25 - t * 0.2 + armShoulderRad * 0.35)
   setJoint(robot, 'elbow_flex', 1.0 - t * 0.25 + armElbowRad * 0.4)
   setJoint(robot, 'wrist_flex', -0.15)
@@ -499,7 +550,7 @@ export function WheeledChassis({
   const so101R = useUrdf(`${SO101_URDF}?side=R`, SO101_PATH)
 
   const torsoGeom = usePreparedStl(TORSO_STL)
-  const armbaseGeom = usePreparedStl(ARMBASE_STL, { collapseGaps: true })
+  const armbaseGeom = usePreparedStl(ARMBASE_STL, { collapseGaps: true, trimThinShelf: true })
   const neckGeom = usePreparedStl(NECK_STL, { collapseGaps: true })
   const headMountGeom = usePreparedStl(HEAD_MOUNT_STL, { collapseGaps: true })
   const headCamGeom = usePreparedStl(HEAD_CAM_STL)
@@ -696,18 +747,20 @@ export function WheeledChassis({
               </mesh>
               <mesh
                 geometry={headCamGeom}
-                position={[0, 0, camZ]}
+                position={[0, 25, camZ + 18]}
+                rotation={[Math.PI / 2, 0, 0]}
                 castShadow={shadows}
                 receiveShadow={shadows}
               >
-                <meshStandardMaterial color={colour.dark} roughness={0.35} metalness={0.2} />
+                <meshStandardMaterial color={colour.primary} roughness={0.4} metalness={0.15} />
               </mesh>
             </group>
 
             <group ref={armLRef} position={[armLPose.x, armLPose.y, armLPose.z]}>
               <primitive object={so101L.robot!} />
             </group>
-            <group ref={armRRef} position={[armRPose.x, armRPose.y, armRPose.z]}>
+            {/* Mirror R in X so the circular base matches L and both face forward. */}
+            <group ref={armRRef} position={[armRPose.x, armRPose.y, armRPose.z]} scale={[-1, 1, 1]}>
               <primitive object={so101R.robot!} />
             </group>
           </group>
