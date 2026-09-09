@@ -29,7 +29,7 @@ export function ModelPage() {
         <Canvas
           shadows
           dpr={[1, 2]}
-          camera={{ position: [1.55, 0.72, 1.85], fov: 38, near: 0.02, far: 40 }}
+          camera={{ position: [1.85, 0.95, 2.15], fov: 38, near: 0.02, far: 40 }}
           gl={{ antialias: true, toneMappingExposure: 1.15 }}
           onCreated={({ gl }) => {
             gl.shadowMap.type = PCFShadowMap
@@ -89,7 +89,7 @@ export function ModelPage() {
             </div>
             <div className="model-caption-sub">
               Print: <code>print/lekiwi/</code>, XLeRobot <code>hardware/</code>, <code>print/SO101/Individual/</code>.
-              Twin: LeKiwi 3-wheel omni base (no arm) + dual XLe arms + OG head — no IKEA cart.
+              Twin: LeKiwi kit 3-wheel mobile base → torso shell → dual XLe arms + OG head.
             </div>
             <div className="model-caption-sub">
               Q/E articulates SO-101 joints. Reach ~{CHORE_ENVELOPE.so101_reach_mm} mm. Tip margin ≈{TIP_SUMMARY.margin}×.

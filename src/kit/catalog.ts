@@ -1,4 +1,4 @@
-/** Single twin: XLeRobot — RÅSKOG cart base + dual SO-101 + OG head. */
+/** Single twin: LeKiwi kit mobile base + torso + dual SO-101 + OG head. */
 
 export type BaseId = 'lekiwi'
 export type ArmsId = 'xlerobot'
@@ -20,9 +20,9 @@ export const DEFAULT_KIT: KitBuild = {
 }
 
 export function kitCaption(_kit?: KitBuild) {
-  return 'LeKiwi omni base · dual SO-101 · OG head'
+  return 'LeKiwi kit base · torso · dual SO-101 · OG head'
 }
 
 export function kitLookHeightM(_kit?: KitBuild) {
-  return 0.32
+  return 0.55
 }

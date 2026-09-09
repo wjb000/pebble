@@ -1,9 +1,12 @@
 /**
- * Twin CAD — LeKiwi omni base (no arm) + XLe dual SO-101 + OG head.
- * No IKEA RÅSKOG cart body / 4-wheel set (Vector-Wangel / SIGRobotics, Apache-2.0).
+ * Twin CAD — LeKiwi kit mobile base (3-wheel omni, no arm)
+ * + printable torso shell + XLe dual SO-101 + OG head.
+ * No IKEA RÅSKOG cart / 4-wheel set (SIGRobotics / Vector-Wangel, Apache-2.0).
  */
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLoader } from '@react-three/fiber'
 import { Box3, Group, LoadingManager, Mesh, MeshStandardMaterial, Object3D } from 'three'
+import { STLLoader } from 'three/addons/loaders/STLLoader.js'
 import URDFLoader, { type URDFRobot } from 'urdf-loader'
 import type { Colourway } from '../product'
 import { OVERALL_HEIGHT_MM, TELESCOPE } from '../robot/dims'
@@ -15,6 +18,7 @@ const LEKIWI_URDF = asset('assets/lekiwi/LeKiwi.urdf')
 const LEKIWI_PATH = asset('assets/lekiwi/')
 const XLE_URDF = asset('assets/xlerobot/xlerobot/xlerobot.urdf')
 const XLE_PATH = asset('assets/xlerobot/xlerobot/')
+const TORSO_STL = asset('assets/xlerobot/hardware/torso_shell.stl')
 
 const ARM_L_HEX = '#38bdf8'
 const ARM_R_HEX = '#f97316'
@@ -28,6 +32,8 @@ const XLE_SKIP_MESH = /raskog(body|wheel)/i
 const LEKIWI_SKIP_MESH =
   /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2/i
 const KIWI_PLATE_LINKS = ['base_plate_layer1-v5', 'base_plate_layer2-v3']
+/** Printable torso shell height (STL Z span), meters. */
+const TORSO_H_M = 0.32
 
 function tintMesh(mesh: Mesh, hex: string, roughness = 0.58, metalness = 0.08) {
   mesh.material = new MeshStandardMaterial({ color: hex, roughness, metalness })
@@ -296,11 +302,22 @@ export function WheeledChassis({
   void showWipe
   const lekiwi = useUrdf(LEKIWI_URDF, LEKIWI_PATH, LEKIWI_SKIP_MESH)
   const xle = useUrdf(XLE_URDF, XLE_PATH, XLE_SKIP_MESH)
+  const torsoGeom = useLoader(STLLoader, TORSO_STL)
+  const torsoH = useMemo(() => {
+    torsoGeom.computeBoundingBox()
+    const b = torsoGeom.boundingBox
+    if (!b) return TORSO_H_M
+    return Math.max(0.2, (b.max.z - b.min.z) * 0.001)
+  }, [torsoGeom])
+
   const rootRef = useRef<Group>(null)
   const kiwiRef = useRef<Group>(null)
+  const stackRef = useRef<Group>(null)
+  const torsoRef = useRef<Group>(null)
   const xleRef = useRef<Group>(null)
   const [floorY, setFloorY] = useState(0)
   const [stackPose, setStackPose] = useState({ x: 0, y: 0, z: 0 })
+  const [upperZ, setUpperZ] = useState(TORSO_H_M)
 
   useLayoutEffect(() => {
     if (!lekiwi.robot) return
@@ -319,13 +336,17 @@ export function WheeledChassis({
   useLayoutEffect(() => {
     const root = rootRef.current
     const kiwiG = kiwiRef.current
+    const stack = stackRef.current
+    const torsoG = torsoRef.current
     const xleG = xleRef.current
     if (!root) return
 
     root.position.y = 0
-    if (xleG) xleG.position.set(0, 0, 0)
+    if (stack) stack.position.set(0, 0, 0)
+    if (xleG) xleG.position.set(0, 0, torsoH)
     root.updateWorldMatrix(true, true)
 
+    // 1) Park LeKiwi kit mobile base on the floor.
     const kiwiBox = kiwiG ? visibleWorldBox(kiwiG) : null
     const nextFloor = kiwiBox ? -kiwiBox.min.y + SIT_EPS : 0
     root.position.y = nextFloor
@@ -336,13 +357,27 @@ export function WheeledChassis({
     const plateCz = plateBox ? (plateBox.min.z + plateBox.max.z) * 0.5 : 0
     const plateTop = plateBox?.max.y ?? kiwiBox?.max.y ?? nextFloor
 
+    // 2) Sit torso on the LeKiwi plate (leaves room under the raised arms/head).
     const nextStack = { x: plateCx, y: 0, z: plateCz }
-    if (xleG) {
-      xleG.position.set(nextStack.x, 0, nextStack.z)
+    if (stack) {
+      stack.position.set(nextStack.x, 0, nextStack.z)
       root.updateWorldMatrix(true, true)
+      const torsoBox = torsoG ? visibleWorldBox(torsoG) : null
+      if (torsoBox) nextStack.y = plateTop - SIT_EPS - torsoBox.min.y
+      stack.position.y = nextStack.y
+    }
+
+    // 3) Raise XLe arms + head onto the torso top.
+    let nextUpper = torsoH
+    if (xleG) {
+      xleG.position.set(0, 0, nextUpper)
+      root.updateWorldMatrix(true, true)
+      const torsoBox = torsoG ? visibleWorldBox(torsoG) : null
       const xleBox = visibleWorldBox(xleG)
-      if (xleBox) nextStack.y = plateTop - SIT_EPS - xleBox.min.y
-      xleG.position.y = nextStack.y
+      if (torsoBox && xleBox) {
+        nextUpper += torsoBox.max.y - SIT_EPS - xleBox.min.y
+        xleG.position.z = nextUpper
+      }
     }
 
     setFloorY((y) => (Math.abs(y - nextFloor) > 1e-4 ? nextFloor : y))
@@ -353,7 +388,17 @@ export function WheeledChassis({
         ? nextStack
         : prev,
     )
-  }, [lekiwi.robot, xle.robot, lekiwi.generation, xle.generation, carriageAglMm, armShoulderRad, armElbowRad])
+    setUpperZ((z) => (Math.abs(z - nextUpper) > 1e-4 ? nextUpper : z))
+  }, [
+    lekiwi.robot,
+    xle.robot,
+    lekiwi.generation,
+    xle.generation,
+    torsoH,
+    carriageAglMm,
+    armShoulderRad,
+    armElbowRad,
+  ])
 
   const loading = (!lekiwi.robot && !lekiwi.failed) || (!xle.robot && !xle.failed)
 
@@ -364,14 +409,24 @@ export function WheeledChassis({
           <primitive object={lekiwi.robot} />
         </group>
       ) : null}
-      {xle.robot ? (
-        <group ref={xleRef} rotation={ROS_TO_THREE} position={[stackPose.x, stackPose.y, stackPose.z]}>
-          <primitive object={xle.robot} />
+
+      <group ref={stackRef} rotation={ROS_TO_THREE} position={[stackPose.x, stackPose.y, stackPose.z]}>
+        <group ref={torsoRef} scale={0.001}>
+          <mesh geometry={torsoGeom} castShadow receiveShadow>
+            <meshStandardMaterial color={colour.primary} roughness={0.55} metalness={0.08} />
+          </mesh>
         </group>
-      ) : null}
+
+        {xle.robot ? (
+          <group ref={xleRef} position={[0, 0, upperZ]}>
+            <primitive object={xle.robot} />
+          </group>
+        ) : null}
+      </group>
+
       {loading ? (
-        <mesh position={[0, 0.2, 0]}>
-          <boxGeometry args={[0.18, 0.4, 0.18]} />
+        <mesh position={[0, 0.35, 0]}>
+          <boxGeometry args={[0.18, 0.5, 0.18]} />
           <meshStandardMaterial color="#334155" wireframe />
         </mesh>
       ) : null}
@@ -382,7 +437,8 @@ export function WheeledChassis({
 export function meshAttribution(kit: KitBuild) {
   return (
     `${kitCaption(kit)}. ` +
-    `LeKiwi omni base (SIGRobotics-UIUC, no onboard arm) · XLeRobot dual SO-101 + OG head (Vector-Wangel), Apache-2.0. ` +
+    `LeKiwi kit mobile base (SIGRobotics-UIUC, 3-wheel omni, no onboard arm) · printable torso shell · ` +
+    `XLeRobot dual SO-101 + OG head (Vector-Wangel), Apache-2.0. ` +
     `No IKEA RÅSKOG cart/wheels. URDF: public/assets/lekiwi/LeKiwi.urdf + public/assets/xlerobot/xlerobot/xlerobot.urdf. ` +
     `Overall BOM stack ~${OVERALL_HEIGHT_MM} mm optional.`
   )
