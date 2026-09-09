@@ -15,7 +15,6 @@ import {
   Mesh,
   MeshStandardMaterial,
   Object3D,
-  Vector3,
 } from 'three'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
 import URDFLoader, { type URDFRobot } from 'urdf-loader'
@@ -41,10 +40,20 @@ const ROS_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI]
 /** Shoulder pack / arms / head face rover-forward. */
 const STACK_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI / 2]
 const SIT_EPS = 0.0005
-/** Half-span to the circular side-pad centers (meters). */
-const MOUNT_HALF_M = 0.15
-/** Yaw both arms so the shared pose faces rover-forward (not aft). */
-const ARM_FORWARD_YAW = Math.PI
+const PRINT_SCALE = 0.001
+/**
+ * Circular side-pad centers on the recentered armbase deck (mm, print frame).
+ * Measured from the deck STL annulus (not wing tips / not neck).
+ */
+const MOUNT_PAD_X_MM = -26
+const MOUNT_HALF_MM = 138
+/**
+ * Yaw both arms in the print frame so the shared SO-101 pose faces rover-forward.
+ * π pointed aft; 0 aligns grippers with the head/camera.
+ */
+const ARM_FORWARD_YAW = 0
+/** Undo PRINT_SCALE so meter-based SO-101 URDFs stay true-size inside the mm group. */
+const ARM_IN_PRINT = 1 / PRINT_SCALE
 /** Skip LeKiwi onboard arm + cam tower. Keep real omni wheels. */
 const LEKIWI_SKIP_MESH =
   /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2/i
@@ -54,7 +63,6 @@ const LEKIWI_LEAN_MESH =
 const KIWI_PLATE_LINKS = ['base_plate_layer1-v5', 'base_plate_layer2-v3']
 /** Match torso XY to LeKiwi plate (~216 mm) — shell is 120 mm at unit scale. */
 const TORSO_XY_WIDEN = 216 / 120
-const PRINT_SCALE = 0.001
 
 function tintMesh(mesh: Mesh, hex: string, roughness = 0.58, metalness = 0.08, doubleSide = false) {
   const lean = getPerfTier().leanMeshes
@@ -304,58 +312,12 @@ function mapSo101Arm(
   const t = liftT(carriageAglMm)
   // Same pose on both; group yaw (ARM_FORWARD_YAW) points them rover-forward.
   void _side
-  setJoint(robot, 'shoulder_pan', 0.35)
+  setJoint(robot, 'shoulder_pan', 0)
   setJoint(robot, 'shoulder_lift', -0.25 - t * 0.2 + armShoulderRad * 0.35)
   setJoint(robot, 'elbow_flex', 1.0 - t * 0.25 + armElbowRad * 0.4)
   setJoint(robot, 'wrist_flex', -0.15)
   setJoint(robot, 'wrist_roll', 0)
   setJoint(robot, 'gripper', 0.35)
-}
-
-/** World Y of the circular base_so101 flange underside (not the higher motor/plate). */
-function mountFlangeBottomY(robot: URDFRobot) {
-  let plateY: number | null = null
-  let lowest = Infinity
-  let found = false
-  robot.traverse((obj) => {
-    const mesh = obj as Mesh
-    if (!mesh.isMesh || !mesh.geometry) return
-    const link = nearestUrdfLink(obj, robot)
-    if (link !== 'base_link') return
-    const file = String(mesh.userData.meshFile ?? mesh.name ?? '').toLowerCase()
-    const label = `${obj.name} ${meshLabel(obj)} ${file}`.toLowerCase()
-    const b = new Box3().setFromObject(mesh)
-    if (!Number.isFinite(b.min.y)) return
-    if (file.includes('base_so101') || label.includes('base_so101')) {
-      plateY = plateY == null ? b.min.y : Math.min(plateY, b.min.y)
-      return
-    }
-    if (!mesh.visible) return
-    if (b.min.y < lowest) {
-      lowest = b.min.y
-      found = true
-    }
-  })
-  if (plateY != null) return plateY
-  // Fall back to the true foot of base_link (lowest mesh), never a higher motor bottom.
-  return found ? lowest : null
-}
-
-function seatArmFlange(group: Group, robot: URDFRobot, deckTopY: number) {
-  group.updateWorldMatrix(true, true)
-  robot.updateMatrixWorld(true)
-  for (let i = 0; i < 2; i++) {
-    let bottom = mountFlangeBottomY(robot)
-    if (bottom == null) {
-      const world = new Vector3()
-      group.getWorldPosition(world)
-      bottom = world.y
-    }
-    // Sit slightly proud of the deck so the circular flange reads as a plate.
-    nudgeWorldY(group, deckTopY + SIT_EPS - bottom)
-    group.updateWorldMatrix(true, true)
-    robot.updateMatrixWorld(true)
-  }
 }
 
 function visibleWorldBox(root: Object3D) {
@@ -396,21 +358,6 @@ function meshBoxForLinks(robot: URDFRobot, names: string[]) {
     }
   })
   return any ? box : null
-}
-
-/** Move `obj` in parent-local space so its world Y shifts by `dy`. */
-function nudgeWorldY(obj: Object3D, dy: number) {
-  if (Math.abs(dy) < 1e-6) return
-  const parent = obj.parent
-  if (!parent) {
-    obj.position.y += dy
-    return
-  }
-  const world = new Vector3()
-  obj.getWorldPosition(world)
-  world.y += dy
-  parent.worldToLocal(world)
-  obj.position.copy(world)
 }
 
 /** Zero parent poses while seating so Sim drive/yaw cannot warp AABBs. */
@@ -583,8 +530,8 @@ export function WheeledChassis({
   const armRRef = useRef<Group>(null)
   const [floorY, setFloorY] = useState(0)
   const [stackPose, setStackPose] = useState({ x: 0, y: 0, z: 0 })
-  const [armLPose, setArmLPose] = useState({ x: 0, y: 0, z: 0 })
-  const [armRPose, setArmRPose] = useState({ x: 0, y: 0, z: 0 })
+  const [armLPose, setArmLPose] = useState({ x: MOUNT_PAD_X_MM, y: -MOUNT_HALF_MM, z: 0 })
+  const [armRPose, setArmRPose] = useState({ x: MOUNT_PAD_X_MM, y: MOUNT_HALF_MM, z: 0 })
   const [neckZ, setNeckZ] = useState(0)
   const [revealed, setRevealed] = useState(false)
 
@@ -642,62 +589,36 @@ export function WheeledChassis({
       }
       if (stack) stack.position.set(nextStack.x, nextStack.y, nextStack.z)
 
-      // Arms sit on the circular side pads; yaw π so the shared pose faces forward.
-      const padLocalZ = (torsoMm + armMm) * PRINT_SCALE
+      // Arms in the same mm print frame as the armbase → sit on the circular side pads.
+      const padZ = torsoMm + armMm + 2
+      const nextArmL = { x: MOUNT_PAD_X_MM, y: -MOUNT_HALF_MM, z: padZ }
+      const nextArmR = { x: MOUNT_PAD_X_MM, y: MOUNT_HALF_MM, z: padZ }
       if (armL) {
         armL.rotation.set(0, 0, ARM_FORWARD_YAW)
-        armL.position.set(0, -MOUNT_HALF_M, padLocalZ)
+        armL.position.set(nextArmL.x, nextArmL.y, nextArmL.z)
+        armL.scale.set(ARM_IN_PRINT, ARM_IN_PRINT, ARM_IN_PRINT)
       }
       if (armR) {
         armR.rotation.set(0, 0, ARM_FORWARD_YAW)
-        armR.position.set(0, MOUNT_HALF_M, padLocalZ)
+        armR.position.set(nextArmR.x, nextArmR.y, nextArmR.z)
+        armR.scale.set(ARM_IN_PRINT, ARM_IN_PRINT, ARM_IN_PRINT)
       }
-      root.updateWorldMatrix(true, true)
-
-      // World Y of the flat deck top under a side pad.
-      let padWorldY = plateTop + padLocalZ
-      if (armbaseRef.current) {
-        const deck = new Box3().setFromObject(armbaseRef.current)
-        if (Number.isFinite(deck.max.y)) padWorldY = deck.max.y
-      } else if (stack) {
-        const probe = new Vector3(0, MOUNT_HALF_M, padLocalZ)
-        stack.localToWorld(probe)
-        padWorldY = probe.y
-      }
-
-      if (armL && so101L.robot) {
+      if (so101L.robot) {
+        so101L.robot.position.set(0, 0, 0)
+        so101L.robot.rotation.set(0, 0, 0)
+        so101L.robot.scale.set(1, 1, 1)
         mapSo101Arm(so101L.robot, carriageAglMm, armShoulderRad, armElbowRad, 'L')
-        seatArmFlange(armL, so101L.robot, padWorldY)
       }
-      if (armR && so101R.robot) {
+      if (so101R.robot) {
+        so101R.robot.position.set(0, 0, 0)
+        so101R.robot.rotation.set(0, 0, 0)
+        so101R.robot.scale.set(1, 1, 1)
         mapSo101Arm(so101R.robot, carriageAglMm, armShoulderRad, armElbowRad, 'R')
-        seatArmFlange(armR, so101R.robot, padWorldY)
       }
 
-      // Seat neck flush on the flat armbase deck (iterate to close float gaps).
-      let nextNeckZ = torsoMm + armMm
-      const neckMesh = neckRef.current
-      const armbaseMesh = armbaseRef.current
-      if (neckMesh && armbaseMesh) {
-        for (let i = 0; i < 3; i++) {
-          neckMesh.position.set(0, 0, nextNeckZ)
-          root.updateWorldMatrix(true, true)
-          const armBox = new Box3().setFromObject(armbaseMesh)
-          const neckBox = new Box3().setFromObject(neckMesh)
-          if (!Number.isFinite(armBox.max.y) || !Number.isFinite(neckBox.min.y)) break
-          const gap = neckBox.min.y - armBox.max.y
-          if (Math.abs(gap) < 1e-4) break
-          nextNeckZ -= gap / PRINT_SCALE
-        }
-        neckMesh.position.set(0, 0, nextNeckZ)
-      }
-
-      const nextArmL = armL
-        ? { x: armL.position.x, y: armL.position.y, z: armL.position.z }
-        : { x: 0, y: -MOUNT_HALF_M, z: padLocalZ }
-      const nextArmR = armR
-        ? { x: armR.position.x, y: armR.position.y, z: armR.position.z }
-        : { x: 0, y: MOUNT_HALF_M, z: padLocalZ }
+      // Neck sits on the deck; small sink so the lattice foot reads as assembled.
+      const nextNeckZ = torsoMm + armMm - 2
+      if (neckRef.current) neckRef.current.position.set(0, 0, nextNeckZ)
 
       if (lekiwi.robot) colorizeRoot(lekiwi.robot, colour)
       if (so101L.robot) colorizeRoot(so101L.robot, colour)
@@ -764,7 +685,7 @@ export function WheeledChassis({
 
         {assembled ? (
           <group ref={stackRef} rotation={STACK_TO_THREE} position={[stackPose.x, stackPose.y, stackPose.z]}>
-            {/* Printables in mm→m; arms stay in meters as siblings. */}
+            {/* Printables + arms share the mm frame so pads and mounts coincide. */}
             <group scale={PRINT_SCALE}>
               <group scale={[TORSO_XY_WIDEN, TORSO_XY_WIDEN, 1]}>
                 <mesh geometry={torsoGeom} castShadow={shadows} receiveShadow={shadows}>
@@ -809,21 +730,23 @@ export function WheeledChassis({
               >
                 <meshStandardMaterial color={colour.primary} roughness={0.4} metalness={0.15} />
               </mesh>
-            </group>
 
-            <group
-              ref={armLRef}
-              position={[armLPose.x, armLPose.y, armLPose.z]}
-              rotation={[0, 0, ARM_FORWARD_YAW]}
-            >
-              <primitive key={`arm-L-${so101L.generation}`} object={so101L.robot!} />
-            </group>
-            <group
-              ref={armRRef}
-              position={[armRPose.x, armRPose.y, armRPose.z]}
-              rotation={[0, 0, ARM_FORWARD_YAW]}
-            >
-              <primitive key={`arm-R-${so101R.generation}`} object={so101R.robot!} />
+              <group
+                ref={armLRef}
+                position={[armLPose.x, armLPose.y, armLPose.z]}
+                rotation={[0, 0, ARM_FORWARD_YAW]}
+                scale={[ARM_IN_PRINT, ARM_IN_PRINT, ARM_IN_PRINT]}
+              >
+                <primitive key={`arm-L-${so101L.generation}`} object={so101L.robot!} />
+              </group>
+              <group
+                ref={armRRef}
+                position={[armRPose.x, armRPose.y, armRPose.z]}
+                rotation={[0, 0, ARM_FORWARD_YAW]}
+                scale={[ARM_IN_PRINT, ARM_IN_PRINT, ARM_IN_PRINT]}
+              >
+                <primitive key={`arm-R-${so101R.generation}`} object={so101R.robot!} />
+              </group>
             </group>
           </group>
         ) : null}
