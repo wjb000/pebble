@@ -4,6 +4,7 @@ import { Layout } from './ui/Layout'
 import { SimPage } from './pages/SimPage'
 import { ModelPage } from './pages/ModelPage'
 import { BomPage } from './pages/BomPage'
+import { DocsPage } from './pages/DocsPage'
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
             <Route path="model" element={<ModelPage />} />
             <Route path="sim" element={<SimPage />} />
             <Route path="bom" element={<BomPage />} />
+            <Route path="docs" element={<DocsPage />} />
             <Route path="specs" element={<Navigate to="/bom" replace />} />
             <Route path="*" element={<Navigate to="/model" replace />} />
           </Route>

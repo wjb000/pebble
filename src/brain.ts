@@ -1,11 +1,10 @@
 /**
- * Locomotion controller interface + beacon-seeking StubBrain for the solo demo.
- *
- * Any controller that implements step(observation) -> { forward, yawRate, strafe }
- * can drive the omni base.
+ * Locomotion controllers: beacon StubBrain + BC LearnedBrain.
  */
 
 import { clamp, type Steering } from './steering'
+import { predict, type PolicyWeights } from './sim/policy'
+import type { TrainObservation } from './sim/train'
 
 export type Observation = {
   robot_x: number
@@ -63,5 +62,17 @@ export class StubBrain implements Brain {
       yawRate: clamp(yaw),
       strafe: 0,
     }
+  }
+}
+
+export class LearnedBrain {
+  weights: PolicyWeights
+
+  constructor(weights: PolicyWeights) {
+    this.weights = weights
+  }
+
+  stepFromObs(obs: TrainObservation): Steering {
+    return predict(this.weights, obs)
   }
 }

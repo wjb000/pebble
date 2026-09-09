@@ -1,7 +1,7 @@
 import type { GaitPose } from '../gait'
 import type { Steering } from '../steering'
 
-export type ControlMode = 'auto' | 'teleop'
+export type ControlMode = 'auto' | 'teleop' | 'policy'
 
 /** Scripted chore demo phases (G to start/stop). */
 export type DemoPhase =

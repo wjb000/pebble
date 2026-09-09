@@ -1,18 +1,18 @@
 /**
- * Digital-twin training hooks — observation / action loop for teleop dumps & future RL.
- * Physics are simple planar holonomic mecanum + ball (not MuJoCo); visual = BOM envelopes + dual SO-101 kit envelopes.
+ * Digital-twin training hooks — observation / action loop for teleop dumps & BC.
+ * Physics: planar holonomic mecanum + ball/box (not MuJoCo).
  *
- * Action contract (stable): { forward, strafe, yawRate } in [-1, 1]
- * Observation: robot pose, ball relative, v/omega, mode
- * Fixed timestep: DT = 0.02 s (50 Hz) from types.ts
- * Reset: Space → START_* pose + ball spawn (see createInitialState / SimContext)
+ * Action contract: { forward, strafe, yawRate } in [-1, 1]
+ * Observation: pose, ball, box, lift, arms, mode
+ * Fixed timestep: DT = 0.02 s (50 Hz)
  *
- * Dev / external scripts: window.__PEBBLE_TRAIN__ after SimProvider mounts.
+ * Dev / external: window.__PEBBLE_TRAIN__ after SimProvider mounts.
  */
 
 import type { Steering } from '../steering'
 import type { ControlMode, SimState } from './types'
 import { DT } from './types'
+import type { PolicyWeights, TrainReport } from './policy'
 
 export type TrainAction = Steering
 
@@ -24,12 +24,19 @@ export type TrainObservation = {
   omega: number
   ball_x: number
   ball_y: number
-  /** Ball position relative to robot in world XY (physics plane) */
   ball_dx: number
   ball_dy: number
-  /** Bearing error to ball relative to heading (rad, atan2 wrapped) */
   ball_bearing: number
   ball_range: number
+  box_x: number
+  box_y: number
+  box_dx: number
+  box_dy: number
+  box_range: number
+  box_held: boolean
+  lift_frac: number
+  arm_shoulder: number
+  arm_elbow: number
   mode: ControlMode
 }
 
@@ -49,6 +56,11 @@ export function observe(state: SimState): TrainObservation {
     Math.sin(desired - state.theta),
     Math.cos(desired - state.theta),
   )
+  const box_dx = state.boxX - state.x
+  const box_dy = state.boxY - state.y
+  const box_range = Math.hypot(box_dx, box_dy)
+  const span = 1 // normalized externally via TELESCOPE in callers if needed
+  void span
   return {
     x: state.x,
     y: state.y,
@@ -61,16 +73,40 @@ export function observe(state: SimState): TrainObservation {
     ball_dy,
     ball_bearing,
     ball_range,
+    box_x: state.boxX,
+    box_y: state.boxY,
+    box_dx,
+    box_dy,
+    box_range,
+    box_held: state.boxHeld,
+    lift_frac: state.carriageAglMm > 0 ? Math.min(1, Math.max(0, (state.carriageAglMm - 400) / 600)) : 0,
+    arm_shoulder: state.armShoulderRad,
+    arm_elbow: state.armElbowRad,
     mode: state.mode,
   }
 }
 
-const DEFAULT_CAPACITY = 2500 // 50 s @ 50 Hz
+/** Prefer dims-aware lift fraction when elevator bounds are known. */
+export function observeWithLift(
+  state: SimState,
+  minAgl: number,
+  maxAgl: number,
+): TrainObservation {
+  const base = observe(state)
+  const span = maxAgl - minAgl
+  return {
+    ...base,
+    lift_frac: span > 0 ? Math.max(0, Math.min(1, (state.carriageAglMm - minAgl) / span)) : 0,
+  }
+}
+
+const DEFAULT_CAPACITY = 5000 // 100 s @ 50 Hz
 
 export class TrajectoryBuffer {
   readonly capacity: number
   private buf: TrainSample[] = []
   private t = 0
+  recording = true
 
   constructor(capacity = DEFAULT_CAPACITY) {
     this.capacity = capacity
@@ -90,6 +126,7 @@ export class TrajectoryBuffer {
   }
 
   push(obs: TrainObservation, action: TrainAction, dt = DT): void {
+    if (!this.recording) return
     this.t += dt
     this.buf.push({ t: this.t, dt, obs, action: { ...action } })
     if (this.buf.length > this.capacity) this.buf.shift()
@@ -105,7 +142,7 @@ export class TrajectoryBuffer {
         dt: DT,
         hz: 1 / DT,
         action: '{ forward, strafe, yawRate } in [-1,1]',
-        frame: 'physics XY ground plane; theta CCW from +X; holonomic mecanum (forward + strafe)',
+        frame: 'physics XY ground plane; theta CCW from +X; holonomic mecanum',
         n: this.buf.length,
         samples: this.buf,
       },
@@ -134,6 +171,14 @@ export type PebbleTrainApi = {
   buffer: TrajectoryBuffer
   downloadTrajectory: (filename?: string) => void
   clearTrajectory: () => void
+  setRecording: (on: boolean) => void
+  isRecording: () => boolean
+  trainFromBuffer: (epochs?: number) => TrainReport
+  getPolicy: () => PolicyWeights | null
+  runPolicy: () => void
+  stopPolicy: () => void
+  clearPolicy: () => void
+  downloadPolicy: () => void
 }
 
 declare global {

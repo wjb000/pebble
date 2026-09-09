@@ -1,91 +1,62 @@
-# Pebble assembly — HouseHand v3 (8 modules)
+# Pebble assembly — printable twin stack
 
-Twin: `RobotAssembly` → `WheeledChassis` (sim + /model). Dims: `src/robot/dims.ts`. Tip: `stability.ts`. BOM: `BOM_V3.md`.
+Twin: `RobotAssembly` → `WheeledChassis` (`/model` + `/sim`).  
+Print list: `print/README.md`. BOM: `BOM_V3.md`.
 
-**Product:** 400×450 mm omni deck + nested telescoping torso + **2× bought SO-101 kits** + cam head · chores (dishes / wipe / laundry assist).  
-**Twin note:** arms render as **link envelopes** — **BOM still costs real kits + STS3215×12**.  
-**Not** official Pollen. Draft — not for sale.
-
----
-
-## CAD sanity (locked)
-
-1. **Omni deck is the support polygon.** 400×450 mm — no outriggers, no casters.
-2. **Nested tubes + internal T8.** Column grows/shrinks. Do **not** use an exposed-rail-only lift.
-3. **12V pack centered in the bay** (~4 kg) is the low mass. Hardware e-stop cuts drive + arms + lift.
-4. Prefer **M3** for printed structure; SO-101 kits use **kit hardware**.
+**Product:** LeKiwi 3-wheel omni base + printable torso + XLe shoulder deck + **2× SO-101** + cam head.  
+**Not** official Pollen / XLeRobot / LeKiwi. Draft — not for sale. **No RÅSKOG cart.**
 
 ---
 
-## 8 modules (bolt-up order)
+## CAD mates (locked)
+
+1. **LeKiwi plates** are the support polygon (3× omni). No casters.
+2. **Torso shell** sits centered on the LeKiwi plate (widened in twin to ~216 mm plate).
+3. **Arm-base deck** (`XLeRobot_035_armbase_deck.stl`) on torso top.
+4. **SO-101 L/R** seat on circular pads at **(−26, ±138) mm** in the deck print frame, yawed forward with the head.
+5. **Neck** on deck center; cam / gimbal on neck.
+6. **12V pack** centered in the base bay; hardware e-stop cuts drive + arms.
+
+---
+
+## Bolt-up order
 
 | # | Module | Mate | Fasteners |
 |---|--------|------|-----------|
-| **1** | **Omni deck** — 400×450 + 4× mecanum + bumper | Motors → hubs → wheels at corners | Motor screws; bumper foam |
-| **2** | **Power bay** — 12V pack + BMS + e-stop + tote | Pack centered under deck; tote rear; e-stop front | Straps / XT60; panel nut |
-| **3** | **Column base plate** | Plate → deck center, plumb | M5 into deck |
-| **4** | **Nested tubes + internal T8 + lift motor** | Outer tube → base plate; screw inside | Tube clamps; motor at base |
-| **5** | **Inner stage** | Telescopes; limit switches min/max | Free slide check |
-| **6** | **Shoulder bar / 4040 L+R** (print) | Crossbar → inner tube top; keyed mounts | M3; L blue / R orange |
-| **7** | **SO-101 L/R kits** (bought) | `base_link` seats on 4040 faces | **Kit hardware** |
-| **8** | **Head cam nest** | Cam stack on inner-tube top | M3 into nest |
+| **1** | LeKiwi plates + 3× drive mounts + hubs | Wheels at 120° | Motor screws |
+| **2** | Battery / Pi / controller mounts | Per LeKiwi Assembly | Straps / M3 |
+| **3** | Torso shell | Shell → plate center, plumb | M3 / clamps |
+| **4** | Arm-base deck | Deck → torso top | M3 |
+| **5** | SO-101 L + R kits | `Base_SO101` on pad centers | Kit hardware |
+| **6** | Neck | Neck → deck center | M3 |
+| **7** | Cam / gimbal | On neck | M3 |
+| **8** | Wire + e-stop | Pack centered; e-stop reachable | XT60 / panel nut |
 
-**Exploded order:** 1 deck → 2 power/tote → 3 base plate → 4 nested column → 5 inner stage → 6 shoulder L/R → 7 arm kits → 8 head → wire.
+**Exploded:** 1 base → 2 power/compute → 3 torso → 4 deck → 5 arms → 6 neck → 7 cam → wire.
 
 ---
 
 ## Torque checklist (power OFF)
 
-1. [ ] **12V pack** centered in bay — **REQUIRED**
-2. [ ] **4× mecanum** (or 3-kiwi) — **no casters**
-3. [ ] Nested tubes slide free; **internal T8** (not exposed MGN)
-4. [ ] Limit switches at min/max height
-5. [ ] Shoulder bar plumb on inner tube
-6. [ ] 4040 L (**blue rectangular lug**) / R (**orange wedge**)
-7. [ ] Torque **one bought SO-101 kit fully** before the other; soft pads + wipe on R
-8. [ ] Cam on inner-tube top
-9. [ ] Hardware **e-stop** cuts drive + arms + lift
-10. [ ] Wire: logic first, then motor bus — L/R labels → bring-up
+1. [ ] 12V pack centered — **REQUIRED**
+2. [ ] 3× omni (no casters)
+3. [ ] Torso plumb on plate
+4. [ ] Deck pads clear; both `Base_SO101` seated
+5. [ ] Arms face forward with head (not aft)
+6. [ ] Torque **one** arm fully before the other
+7. [ ] Neck flush on deck; cam secure
+8. [ ] Hardware e-stop cuts drive + arms
+9. [ ] L/R bus labels → bring-up
 
-**Kill-switch:** hardware e-stop; sim **Space** = e-stop / reset.  
-**Pinch:** STS3215 + internal lead-screw — power off while wiring.  
-Tip slowdown in HUD is UX only; live tip margin is physics.
+**Kill-switch:** hardware e-stop; sim **Space** = e-stop / reset.
 
 ---
 
-## Tip / CG (must pass)
+## Sim AI
 
-| | |
-|--|--|
-| Support (deck) | **400 mm** |
-| Wheelbase | **394 mm** |
-| Tip @ 0.40 m / 2 kg / max AGL | **≈7.85 N·m** |
-| Restore (structure + 4 kg pack) | **≈19.6 N·m** |
-| Margin | **≈2.5×** |
-
-Do **not** skip the centered pack, nested column, or e-stop.
-
----
-
-## Chores (honest)
-
-| Does | Does NOT |
-|------|----------|
-| Floor pick → basket | Fold / detergent |
-| Open-washer assist (~850–950 rim) | Closed-door cycles |
-| Wipe / dish assist (soft pads) | Hot water / glass-safe |
-
-Shoulders **462→1022 mm AGL** + SO-101 ~**500 mm** reach.
-
----
-
-## Height + licenses
-
-`82 + 380 + 560 + 78 = 1100 mm` extended; collapsed ~**540 mm**.  
-Bought: deck, mecanum, nested column, T8, 12V pack, **2× SO-101 kits** (STS3215×12), tote, e-stop.  
-Cam / 4040 / SO-101 docs = Apache-2.0.
+`/sim` → **Train** panel: teleop to record → **Train BC** → **Test AI**.  
+API: `window.__PEBBLE_TRAIN__`. Details: `docs/TRAIN.md`.
 
 ## Controls
 
-W/S forward · **A/D strafe** · ←/→ or Z/X yaw · Q/E lift · F pick · **G** chore demo · **Space** e-stop.  
-Cost dual DIY **~$450–730** (itemized mid on /bom).
+W/S drive · A/D strafe · ←/→ turn · Q/E arms · F pick · G demo · **TAB** auto/teleop · **Space** e-stop · Train panel for BC.

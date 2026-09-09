@@ -5,11 +5,13 @@ import { BasicShadowMap, PCFShadowMap } from 'three'
 import { useSim } from '../sim/SimContext'
 import { COLOURWAYS } from '../product'
 import { Arena } from './Arena'
+import { Ball } from './Ball'
 import { ChaseCamera } from './ChaseCamera'
 import { Pebble } from './Pebble'
+import { TrainTargets } from './TrainTargets'
 import { getPerfTier } from '../kit/perf'
 
-/** Sim arena: floor + lights + intact twin only (no chore props / ball). */
+/** Sim arena: floor + twin + beacon ball + pick box for teleop / BC. */
 export function Scene({ colourId }: { colourId: string }) {
   const { state } = useSim()
   const colour = COLOURWAYS.find((c) => c.id === colourId) ?? COLOURWAYS[0]
@@ -47,6 +49,16 @@ export function Scene({ colourId }: { colourId: string }) {
       <directionalLight position={[-2.5, 3.2, -2]} intensity={perf.mobile ? 0.28 : 0.42} />
       <hemisphereLight args={['#9aa6b8', '#1a1e26', perf.mobile ? 0.28 : 0.35]} />
       <Arena />
+      <Ball x={state.ballX} y={state.ballY} />
+      <TrainTargets
+        boxX={state.boxX}
+        boxY={state.boxY}
+        boxHeld={state.boxHeld}
+        robotX={state.x}
+        robotY={state.y}
+        robotTheta={state.theta}
+        carriageAglMm={state.carriageAglMm}
+      />
       <Pebble
         x={state.x}
         y={state.y}

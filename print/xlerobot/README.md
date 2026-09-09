@@ -1,24 +1,22 @@
-# XLeRobot printables
+# XLeRobot / HouseHand printables
 
-Upstream: [Vector-Wangel/XLeRobot](https://github.com/Vector-Wangel/XLeRobot) `hardware/` (Apache-2.0).
+Upstream: [Vector-Wangel/XLeRobot](https://github.com/Vector-Wangel/XLeRobot) `hardware/` (Apache-2.0) + HouseHand `torso_shell`.
 
-The browser twin uses:
+## Print these (twin stack)
 
-- **Drive base:** LeKiwi omni (`print/lekiwi/`)
-- **Torso:** HouseHand cylindrical shell (`hardware/torso_shell.stl`) — plate to shoulders
-- **Shoulders:** XLeRobot 0.35 arm-base
-- **Neck:** XLeRobot 0.4 neck
-- **Arms:** 2× SO-101 from XLeRobot / SO-ARM100
+| File | Qty | What it is |
+|------|----:|------------|
+| `hardware/torso_shell.stl` | 1 | Hollow cylinder 120 mm OD × 4 mm wall × 320 mm. On LeKiwi top plate. |
+| `hardware/XLeRobot_035_armbase_deck.stl` | 1 | **Preferred** shoulder deck — flat pads for dual SO-101 at (−26, ±138) mm. |
+| `hardware/XLeRobot040_neck_refined.stl` | 1 | Hollow neck on deck center. |
+| `hardware/Gimbal_mesh_all_d435.stl` | 1 | Gimbal plate (D435) — or use `print/head/` cam stack. |
 
-The RÅSKOG / IKEA cart is not part of this kit. Do **not** print `XLeRobot040_armbase.stl` for the twin — that STEP includes the cart.
+## Reference only (do not print for this kit)
 
-## Torso (print these)
+| File | Why skip |
+|------|----------|
+| `hardware/XLeRobot040_armbase.stl` | Includes RÅSKOG cart |
+| `hardware/XLeRobot_035_armbase.stl` | Older asymmetric shelf; twin uses `_deck` |
+| `hardware/XLeRobot_035_armbase_symmetric.stl` | Intermediate; prefer `_deck` |
 
-| File | Upstream | What it is |
-|------|----------|------------|
-| `hardware/torso_shell.stl` | HouseHand (this repo) | Hollow cylinder 120 mm OD × 4 mm wall × 320 mm. Sits on the LeKiwi top plate. |
-| `hardware/XLeRobot_035_armbase.stl` | `hardware/ongoing_upgrades/XLeRobot 035 armbase.stl` | Dual-arm T / storage shell. Sits on the torso shell. |
-| `hardware/XLeRobot040_neck_refined.stl` | `hardware/step/XLeRobot_040/XLeRobot040_neck_refined.step` | Hollow neck. Sits on the arm base. |
-| `hardware/Gimbal_mesh_all_d435.stl` | `hardware/camera_connector/Gimbal_mesh_all_d435.stl` | Gimbal print plate (D435). |
-
-`XLeRobot040_armbase.stl` is kept for reference only (cart + arm-base assembly).
+Drive base: `print/lekiwi/`. Arms: **2×** `print/SO101/`.

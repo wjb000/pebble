@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "dev:lan": "node scripts/print-lan-url.mjs && vite --host 0.0.0.0 --port 5173 --strictPort"
+    "dev:lan": "node scripts/print-lan-url.mjs && vite --host 0.0.0.0 --port 5173 --strictPort",
+    "check:train": "npx tsx scripts/check-train.mts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

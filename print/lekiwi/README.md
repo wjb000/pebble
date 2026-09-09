@@ -1,8 +1,9 @@
-# LeKiwi print STLs — what to send to the printer
+# LeKiwi print STLs — omni base
 
-Upstream [SIGRobotics-UIUC/LeKiwi](https://github.com/SIGRobotics-UIUC/LeKiwi) `3DPrintMeshes/` (Apache-2.0). See `LICENSE.Apache-2.0.txt`.
+Upstream [SIGRobotics-UIUC/LeKiwi](https://github.com/SIGRobotics-UIUC/LeKiwi) `3DPrintMeshes/` (Apache-2.0).
 
-Print these, then buy the 3× omni wheels + STS3215 drive servos per the LeKiwi BOM.
+Print these, then buy **3×** omni wheels + STS3215 drive servos (LeKiwi BOM).  
+Skip printing the onboard LeKiwi arm — Pebble uses **2× SO-101** on the XLe deck instead.
 
 | STL | Qty |
 |-----|----:|
@@ -13,9 +14,7 @@ Print these, then buy the 3× omni wheels + STS3215 drive servos per the LeKiwi 
 | `servo_controller_mount.stl` | 1 |
 | `battery_mount.stl` | 1 |
 | `pi_case_top.stl` + `pi_case_bottom.stl` | 1 |
-| `base_camera_mount.stl` | 1 |
-| `modified_base_arm.stl` | 1 (SO-101 adapter) |
+| `base_camera_mount.stl` | 1 (optional) |
 
-Plus **2× SO-101 follower** from `print/SO101/Individual/` (or two Follower plates).
-
-Assembly: https://github.com/SIGRobotics-UIUC/LeKiwi/blob/main/Assembly.md
+Next: `print/xlerobot/hardware/torso_shell.stl` → arm-base deck → **2×** `print/SO101/`.  
+Master list: `print/README.md`. Assembly: https://github.com/SIGRobotics-UIUC/LeKiwi/blob/main/Assembly.md

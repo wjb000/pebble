@@ -12,6 +12,7 @@ export function Layout() {
           <NavLink to="/model">Model</NavLink>
           <NavLink to="/sim">Sim</NavLink>
           <NavLink to="/bom">BOM</NavLink>
+          <NavLink to="/docs">Docs</NavLink>
         </nav>
       </header>
       <main className="app-main">

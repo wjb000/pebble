@@ -3,12 +3,14 @@
 Draft wheeled house-chore bot. App pages:
 
 - **Model:** [/pebble/model](https://wjb000.github.io/pebble/model)
-- **Sim:** [/pebble/sim](https://wjb000.github.io/pebble/sim)
+- **Sim:** [/pebble/sim](https://wjb000.github.io/pebble/sim) — teleop, chore demo, **Train BC / Test AI**
 - **BOM:** [/pebble/bom](https://wjb000.github.io/pebble/bom)
+- **Docs:** [/pebble/docs](https://wjb000.github.io/pebble/docs) — print kit + assembly + AI
 
-Twin: LeKiwi kit 3-wheel mobile base → torso → dual SO-101 + OG head.  
-Dims: `src/robot/dims.ts` · Tip: `src/robot/stability.ts` · Assembly notes: `docs/ASSEMBLY.md`
+Twin: LeKiwi 3-wheel omni → torso → XLe shoulder deck → dual SO-101 + cam head.  
+Print: `print/README.md` · Assembly: `docs/ASSEMBLY.md` · Train: `docs/TRAIN.md`
 
 ## Controls (sim)
 
-W/S forward · A/D strafe · ←/→ or Z/X yaw · Q/E arms · F pick · G chore demo · Space e-stop.
+W/S forward · A/D strafe · ←/→ yaw · Q/E arms · F pick · G demo · TAB mode · Space e-stop.  
+**AI:** teleop to record → Train BC → Test AI (panel on `/sim`).
