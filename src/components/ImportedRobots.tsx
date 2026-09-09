@@ -43,6 +43,9 @@ const STACK_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI / 2]
 const SIT_EPS = 0.0005
 /** Half-span between SO-101 bases — on the armbase top deck (~±60 mm), not past it. */
 const MOUNT_HALF_M = 0.05
+/** Visible circular plate between each SO-101 and the armbase (matches base_so101 radius). */
+const MOUNT_PAD_R = 0.055
+const MOUNT_PAD_H = 0.01
 /** Skip LeKiwi onboard arm + cam tower. Keep real omni wheels. */
 const LEKIWI_SKIP_MESH =
   /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2/i
@@ -290,6 +293,37 @@ function liftT(carriageAglMm: number) {
 
 function setJoint(robot: URDFRobot, name: string, value: number) {
   if (robot.joints[name]) robot.setJointValue(name, value)
+}
+
+function hideSo101FlangeMesh(robot: URDFRobot) {
+  // Prefer the explicit mount pads under each arm; the URDF flange seats inconsistently.
+  robot.traverse((obj) => {
+    const mesh = obj as Mesh
+    if (!mesh.isMesh) return
+    const file = String(mesh.userData.meshFile ?? mesh.name ?? '').toLowerCase()
+    if (file.includes('base_so101')) mesh.visible = false
+  })
+}
+
+function MountPad({
+  colour,
+  shadows,
+}: {
+  colour: Colourway
+  shadows: boolean
+}) {
+  // Flat disc in stack XY (cylinder default axis is Y → rotate onto Z-up).
+  return (
+    <mesh
+      position={[0.021, 0, MOUNT_PAD_H * 0.5]}
+      rotation={[Math.PI / 2, 0, 0]}
+      castShadow={shadows}
+      receiveShadow={shadows}
+    >
+      <cylinderGeometry args={[MOUNT_PAD_R, MOUNT_PAD_R, MOUNT_PAD_H, 48]} />
+      <meshStandardMaterial color={colour.primary} roughness={0.48} metalness={0.12} />
+    </mesh>
+  )
 }
 
 function mapSo101Arm(
@@ -600,12 +634,14 @@ export function WheeledChassis({
   useLayoutEffect(() => {
     if (!so101L.robot) return
     colorizeRoot(so101L.robot, colour)
+    hideSo101FlangeMesh(so101L.robot)
     mapSo101Arm(so101L.robot, carriageAglMm, armShoulderRad, armElbowRad, 'L')
   }, [so101L.robot, so101L.generation, colour, carriageAglMm, armShoulderRad, armElbowRad])
 
   useLayoutEffect(() => {
     if (!so101R.robot) return
     colorizeRoot(so101R.robot, colour)
+    hideSo101FlangeMesh(so101R.robot)
     mapSo101Arm(so101R.robot, carriageAglMm, armShoulderRad, armElbowRad, 'R')
   }, [so101R.robot, so101R.generation, colour, carriageAglMm, armShoulderRad, armElbowRad])
 
@@ -653,6 +689,9 @@ export function WheeledChassis({
 
       if (armL && so101L.robot) seatArmFlange(armL, so101L.robot, mountTop)
       if (armR && so101R.robot) seatArmFlange(armR, so101R.robot, mountTop)
+      // Hide URDF flanges after seating; MountPad discs are the consistent plates.
+      if (so101L.robot) hideSo101FlangeMesh(so101L.robot)
+      if (so101R.robot) hideSo101FlangeMesh(so101R.robot)
 
       const nextArmL = armL
         ? { x: armL.position.x, y: armL.position.y, z: armL.position.z }
@@ -771,9 +810,11 @@ export function WheeledChassis({
             </group>
 
             <group ref={armLRef} position={[armLPose.x, armLPose.y, armLPose.z]}>
+              <MountPad colour={colour} shadows={shadows} />
               <primitive object={so101L.robot!} />
             </group>
             <group ref={armRRef} position={[armRPose.x, armRPose.y, armRPose.z]}>
+              <MountPad colour={colour} shadows={shadows} />
               <primitive object={so101R.robot!} />
             </group>
           </group>
