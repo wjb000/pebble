@@ -44,8 +44,8 @@ const SIT_EPS = 0.0005
 /** Half-span between SO-101 bases — on the armbase top deck (~±60 mm), not past it. */
 const MOUNT_HALF_M = 0.05
 /** Visible circular plate between each SO-101 and the armbase (matches base_so101 radius). */
-const MOUNT_PAD_R = 0.055
-const MOUNT_PAD_H = 0.01
+const MOUNT_PAD_R = 0.06
+const MOUNT_PAD_H = 0.012
 /** Skip LeKiwi onboard arm + cam tower. Keep real omni wheels. */
 const LEKIWI_SKIP_MESH =
   /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2/i
@@ -306,16 +306,20 @@ function hideSo101FlangeMesh(robot: URDFRobot) {
 }
 
 function MountPad({
+  y,
+  z,
   colour,
   shadows,
 }: {
+  y: number
+  z: number
   colour: Colourway
   shadows: boolean
 }) {
-  // Flat disc in stack XY (cylinder default axis is Y → rotate onto Z-up).
+  // Flat disc on the armbase (cylinder default axis is Y → rotate onto stack Z-up).
   return (
     <mesh
-      position={[0.021, 0, MOUNT_PAD_H * 0.5]}
+      position={[0.021, y, z]}
       rotation={[Math.PI / 2, 0, 0]}
       castShadow={shadows}
       receiveShadow={shadows}
@@ -352,10 +356,9 @@ function mountFlangeBottomY(robot: URDFRobot) {
   let found = false
   robot.traverse((obj) => {
     const mesh = obj as Mesh
-    if (!mesh.isMesh || !mesh.visible || !mesh.geometry) return
+    if (!mesh.isMesh || !mesh.geometry) return
     const link = nearestUrdfLink(obj, robot)
     if (link !== 'base_link') return
-    mesh.visible = true
     const file = String(mesh.userData.meshFile ?? mesh.name ?? '').toLowerCase()
     const label = `${obj.name} ${meshLabel(obj)} ${file}`.toLowerCase()
     const b = new Box3().setFromObject(mesh)
@@ -364,6 +367,7 @@ function mountFlangeBottomY(robot: URDFRobot) {
       plateY = plateY == null ? b.min.y : Math.min(plateY, b.min.y)
       return
     }
+    if (!mesh.visible) return
     if (b.min.y < lowest) {
       lowest = b.min.y
       found = true
@@ -687,11 +691,16 @@ export function WheeledChassis({
           ? shoulders.max.y
           : plateTop + shoulderTopM
 
-      if (armL && so101L.robot) seatArmFlange(armL, so101L.robot, mountTop)
-      if (armR && so101R.robot) seatArmFlange(armR, so101R.robot, mountTop)
-      // Hide URDF flanges after seating; MountPad discs are the consistent plates.
-      if (so101L.robot) hideSo101FlangeMesh(so101L.robot)
-      if (so101R.robot) hideSo101FlangeMesh(so101R.robot)
+      if (armL && so101L.robot) {
+        mapSo101Arm(so101L.robot, carriageAglMm, armShoulderRad, armElbowRad, 'L')
+        seatArmFlange(armL, so101L.robot, mountTop + MOUNT_PAD_H)
+        hideSo101FlangeMesh(so101L.robot)
+      }
+      if (armR && so101R.robot) {
+        mapSo101Arm(so101R.robot, carriageAglMm, armShoulderRad, armElbowRad, 'R')
+        seatArmFlange(armR, so101R.robot, mountTop + MOUNT_PAD_H)
+        hideSo101FlangeMesh(so101R.robot)
+      }
 
       const nextArmL = armL
         ? { x: armL.position.x, y: armL.position.y, z: armL.position.z }
@@ -809,13 +818,25 @@ export function WheeledChassis({
               </mesh>
             </group>
 
+            {/* Matched circular plates on the deck under both arms. */}
+            <MountPad
+              y={-MOUNT_HALF_M}
+              z={(torsoMm + armMm) * PRINT_SCALE + MOUNT_PAD_H * 0.5}
+              colour={colour}
+              shadows={shadows}
+            />
+            <MountPad
+              y={MOUNT_HALF_M}
+              z={(torsoMm + armMm) * PRINT_SCALE + MOUNT_PAD_H * 0.5}
+              colour={colour}
+              shadows={shadows}
+            />
+
             <group ref={armLRef} position={[armLPose.x, armLPose.y, armLPose.z]}>
-              <MountPad colour={colour} shadows={shadows} />
-              <primitive object={so101L.robot!} />
+              <primitive key={`arm-L-${so101L.generation}`} object={so101L.robot!} />
             </group>
             <group ref={armRRef} position={[armRPose.x, armRPose.y, armRPose.z]}>
-              <MountPad colour={colour} shadows={shadows} />
-              <primitive object={so101R.robot!} />
+              <primitive key={`arm-R-${so101R.generation}`} object={so101R.robot!} />
             </group>
           </group>
         ) : null}
