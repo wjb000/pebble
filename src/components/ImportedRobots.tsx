@@ -31,7 +31,7 @@ const LEKIWI_PATH = asset('assets/lekiwi/')
 const SO101_URDF = asset('assets/so101/so101_new_calib.urdf')
 const SO101_PATH = asset('assets/so101/')
 const TORSO_STL = asset('assets/xlerobot/hardware/torso_shell.stl')
-const ARMBASE_STL = asset('assets/xlerobot/hardware/XLeRobot_035_armbase.stl')
+const ARMBASE_STL = asset('assets/xlerobot/hardware/XLeRobot_035_armbase_symmetric.stl')
 const NECK_STL = asset('assets/xlerobot/hardware/XLeRobot040_neck_refined.stl')
 const HEAD_MOUNT_STL = asset('assets/xlerobot/xlerobot/meshes/xlerobot/assets/tophead1.stl')
 const HEAD_CAM_STL = asset('assets/xlerobot/xlerobot/meshes/xlerobot/assets/XLeRobot_camera1.stl')
@@ -41,8 +41,8 @@ const ROS_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI]
 /** Shoulder pack / arms / head face rover-forward. */
 const STACK_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI / 2]
 const SIT_EPS = 0.0005
-/** Half-span between SO-101 bases on the XLe 0.35 armbase (meters). */
-const MOUNT_HALF_M = 0.11
+/** Half-span between SO-101 bases — on the armbase top deck (~±60 mm), not past it. */
+const MOUNT_HALF_M = 0.05
 /** Skip LeKiwi onboard arm + cam tower. Keep real omni wheels. */
 const LEKIWI_SKIP_MESH =
   /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2/i
@@ -641,15 +641,8 @@ export function WheeledChassis({
 
       // Arms (meters) sit on armbase top in the stack frame.
       const shoulderTopM = (torsoMm + armMm) * PRINT_SCALE
-      if (armL) {
-        armL.rotation.set(0, 0, 0)
-        armL.position.set(0, -MOUNT_HALF_M, shoulderTopM)
-      }
-      if (armR) {
-        // XLe fixed_Base_2 yaw — keep set here so seating can't leave R unyawed.
-        armR.rotation.set(0, 0, Math.PI)
-        armR.position.set(0, MOUNT_HALF_M, shoulderTopM)
-      }
+      if (armL) armL.position.set(0, -MOUNT_HALF_M, shoulderTopM)
+      if (armR) armR.position.set(0, MOUNT_HALF_M, shoulderTopM)
       root.updateWorldMatrix(true, true)
 
       const shoulders = armbaseRef.current ? new Box3().setFromObject(armbaseRef.current) : null
@@ -780,9 +773,11 @@ export function WheeledChassis({
             <group ref={armLRef} position={[armLPose.x, armLPose.y, armLPose.z]}>
               <primitive object={so101L.robot!} />
             </group>
-            {/* XLe fixed_Base_2: yaw π so R faces forward with the same flange as L. */}
-            <group ref={armRRef} position={[armRPose.x, armRPose.y, armRPose.z]} rotation={[0, 0, Math.PI]}>
-              <primitive object={so101R.robot!} />
+            {/* Outer group = seat translation; inner = XLe fixed_Base_2 π yaw (kept off the seat ref). */}
+            <group ref={armRRef} position={[armRPose.x, armRPose.y, armRPose.z]}>
+              <group rotation={[0, 0, Math.PI]}>
+                <primitive object={so101R.robot!} />
+              </group>
             </group>
           </group>
         ) : null}
