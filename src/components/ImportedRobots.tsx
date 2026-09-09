@@ -631,11 +631,11 @@ export function WheeledChassis({
           if (Math.abs(gap) < 1e-4) break
           nextNeckZ -= gap / PRINT_SCALE
         }
-        // Extra sink: lowest verts are sparse; the visible lattice foot sits a bit higher.
-        nextNeckZ -= 18
+        // Extra sink: lowest verts are sparse; the visible lattice foot sits higher.
+        nextNeckZ -= 45
         neckMesh.position.set(0, 0, nextNeckZ)
       } else {
-        nextNeckZ = torsoMm + armMm - 18
+        nextNeckZ = torsoMm + armMm - 45
       }
 
       if (lekiwi.robot) colorizeRoot(lekiwi.robot, colour)
