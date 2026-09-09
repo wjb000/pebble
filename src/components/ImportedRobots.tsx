@@ -43,11 +43,9 @@ const UPPER_CORE_LINKS = ['Base', 'Base_2', 'top_base_link', 'head_pan_link', 'h
 /** Printable torso shell height (STL Z span), meters. */
 const TORSO_H_M = 0.32
 /**
- * Nudge upper toward camera / over the cylinder after core-centering.
- * World +Z matches the usual orbit view (camera at +Z); outstretched-arm AABB
- * previously left the head stack behind the torso.
+ * Nudge after core-centering. Negative = back. Was +0.025; pull back ~2 in (0.05 m).
  */
-const UPPER_FORWARD_M = 0.025
+const UPPER_FORWARD_M = -0.025
 
 function tintMesh(mesh: Mesh, hex: string, roughness = 0.58, metalness = 0.08) {
   mesh.material = new MeshStandardMaterial({ color: hex, roughness, metalness })
