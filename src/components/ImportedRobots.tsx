@@ -49,9 +49,9 @@ const MOUNT_PAD_X_MM = -26
 const MOUNT_HALF_MM = 138
 /**
  * Yaw both arms in the print frame so the shared SO-101 pose faces rover-forward.
- * π pointed aft; 0 aligns grippers with the head/camera.
+ * Side-view checks showed yaw 0 aimed aft; π aims grippers with the head/camera.
  */
-const ARM_FORWARD_YAW = 0
+const ARM_FORWARD_YAW = Math.PI
 /** Undo PRINT_SCALE so meter-based SO-101 URDFs stay true-size inside the mm group. */
 const ARM_IN_PRINT = 1 / PRINT_SCALE
 /** Skip LeKiwi onboard arm + cam tower. Keep real omni wheels. */
@@ -616,9 +616,27 @@ export function WheeledChassis({
         mapSo101Arm(so101R.robot, carriageAglMm, armShoulderRad, armElbowRad, 'R')
       }
 
-      // Neck sits on the deck; small sink so the lattice foot reads as assembled.
-      const nextNeckZ = torsoMm + armMm - 2
-      if (neckRef.current) neckRef.current.position.set(0, 0, nextNeckZ)
+      // Seat neck on the deck in world space, then sink so the open lattice foot reads flush.
+      let nextNeckZ = torsoMm + armMm
+      const neckMesh = neckRef.current
+      const armbaseMesh = armbaseRef.current
+      if (neckMesh && armbaseMesh) {
+        for (let i = 0; i < 4; i++) {
+          neckMesh.position.set(0, 0, nextNeckZ)
+          root.updateWorldMatrix(true, true)
+          const armBox = new Box3().setFromObject(armbaseMesh)
+          const neckBox = new Box3().setFromObject(neckMesh)
+          if (!Number.isFinite(armBox.max.y) || !Number.isFinite(neckBox.min.y)) break
+          const gap = neckBox.min.y - armBox.max.y
+          if (Math.abs(gap) < 1e-4) break
+          nextNeckZ -= gap / PRINT_SCALE
+        }
+        // Extra sink: lowest verts are sparse; the visible lattice foot sits a bit higher.
+        nextNeckZ -= 18
+        neckMesh.position.set(0, 0, nextNeckZ)
+      } else {
+        nextNeckZ = torsoMm + armMm - 18
+      }
 
       if (lekiwi.robot) colorizeRoot(lekiwi.robot, colour)
       if (so101L.robot) colorizeRoot(so101L.robot, colour)
