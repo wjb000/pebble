@@ -20,7 +20,7 @@ export const DEFAULT_KIT: KitBuild = {
 }
 
 export function kitCaption(_kit?: KitBuild) {
-  return 'XLeRobot · wheeled base · dual SO-101 · OG head'
+  return 'LeKiwi omni base · dual SO-101 · OG head'
 }
 
 export function kitLookHeightM(_kit?: KitBuild) {

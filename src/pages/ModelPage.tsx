@@ -88,8 +88,8 @@ export function ModelPage() {
               {kitCaption(kit)}
             </div>
             <div className="model-caption-sub">
-              Print: XLeRobot <code>hardware/</code>, <code>print/SO101/Individual/</code>.
-              Twin shows wheeled base + dual arms + OG head — no IKEA RÅSKOG cart body.
+              Print: <code>print/lekiwi/</code>, XLeRobot <code>hardware/</code>, <code>print/SO101/Individual/</code>.
+              Twin: LeKiwi 3-wheel omni base (no arm) + dual XLe arms + OG head — no IKEA cart.
             </div>
             <div className="model-caption-sub">
               Q/E articulates SO-101 joints. Reach ~{CHORE_ENVELOPE.so101_reach_mm} mm. Tip margin ≈{TIP_SUMMARY.margin}×.
