@@ -300,7 +300,9 @@ function mapSo101Arm(
   _side: 'L' | 'R',
 ) {
   const t = liftT(carriageAglMm)
-  // Identical pose — R is mirror-scaled in JSX so both show the circular base the same way.
+  // Same joint pose on both — R base is yawed π (XLe fixed_Base_2) so both face forward
+  // with matching circular flanges. Do not scale-mirror; that flips one arm backward
+  // and hides one flange overhang under the armbase.
   void _side
   setJoint(robot, 'shoulder_pan', 0.35)
   setJoint(robot, 'shoulder_lift', -0.25 - t * 0.2 + armShoulderRad * 0.35)
@@ -592,8 +594,7 @@ export function WheeledChassis({
 
   useLayoutEffect(() => {
     if (!so101R.robot) return
-    // Negative X scale on R needs DoubleSide so the circular flange stays visible.
-    colorizeRoot(so101R.robot, colour, true)
+    colorizeRoot(so101R.robot, colour)
     mapSo101Arm(so101R.robot, carriageAglMm, armShoulderRad, armElbowRad, 'R')
   }, [so101R.robot, so101R.generation, colour, carriageAglMm, armShoulderRad, armElbowRad])
 
@@ -651,7 +652,7 @@ export function WheeledChassis({
 
       if (lekiwi.robot) colorizeRoot(lekiwi.robot, colour)
       if (so101L.robot) colorizeRoot(so101L.robot, colour)
-      if (so101R.robot) colorizeRoot(so101R.robot, colour, true)
+      if (so101R.robot) colorizeRoot(so101R.robot, colour)
 
       setFloorY((y) => (Math.abs(y - nextFloor) > 1e-4 ? nextFloor : y))
       setStackPose((prev) =>
@@ -761,8 +762,8 @@ export function WheeledChassis({
             <group ref={armLRef} position={[armLPose.x, armLPose.y, armLPose.z]}>
               <primitive object={so101L.robot!} />
             </group>
-            {/* Mirror R in X so the circular base matches L and both face forward. */}
-            <group ref={armRRef} position={[armRPose.x, armRPose.y, armRPose.z]} scale={[-1, 1, 1]}>
+            {/* XLe fixed_Base_2: yaw π so R faces forward with the same flange as L. */}
+            <group ref={armRRef} position={[armRPose.x, armRPose.y, armRPose.z]} rotation={[0, 0, Math.PI]}>
               <primitive object={so101R.robot!} />
             </group>
           </group>
