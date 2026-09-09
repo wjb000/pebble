@@ -43,9 +43,9 @@ const UPPER_CORE_LINKS = ['Base', 'Base_2', 'top_base_link', 'head_pan_link', 'h
 /** Printable torso shell height (STL Z span), meters. */
 const TORSO_H_M = 0.32
 /**
- * Nudge after core-centering. Negative = back. Was +0.025; pull back ~2 in (0.05 m).
+ * Nudge after core-centering. Last step was −0.05 m back; come forward half of that.
  */
-const UPPER_FORWARD_M = -0.025
+const UPPER_FORWARD_M = 0
 
 function tintMesh(mesh: Mesh, hex: string, roughness = 0.58, metalness = 0.08) {
   mesh.material = new MeshStandardMaterial({ color: hex, roughness, metalness })
