@@ -43,8 +43,6 @@ const STACK_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI / 2]
 const SIT_EPS = 0.0005
 /** Half-span to the circular side-pad centers (meters). */
 const MOUNT_HALF_M = 0.15
-/** Side-pad / flat-deck top height above the armbase foot (meters). */
-const SIDE_PAD_TOP_M = 0.11
 /** Yaw both arms so the shared pose faces rover-forward (not aft). */
 const ARM_FORWARD_YAW = Math.PI
 /** Skip LeKiwi onboard arm + cam tower. Keep real omni wheels. */
