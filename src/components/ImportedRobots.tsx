@@ -210,22 +210,25 @@ function isLeKiwiCamTower(n: string) {
 
 function applyLeKiwiVisibility(robot: URDFRobot) {
   robot.traverse((obj) => {
-    if (!(obj instanceof Mesh)) return
+    const mesh = obj as Mesh
+    if (!mesh.isMesh) return
     const n = meshLabel(obj)
     if (isLeKiwiCamTower(n) || isLeKiwiArmMesh(n)) {
-      obj.visible = false
+      mesh.visible = false
       return
     }
-    obj.visible = true
+    mesh.visible = true
   })
 }
 
-/** Paint every visible mesh the colourway primary (whole twin body). */
+/** Paint every mesh the colourway primary (whole twin body). */
 function colorizeRoot(root: Object3D, colour: Colourway) {
   const body = colour.primary
   root.traverse((obj) => {
-    if (!(obj instanceof Mesh) || !obj.visible) return
-    tintMesh(obj, body, 0.55, 0.08)
+    // Duck-type meshes — `instanceof Mesh` can fail across duplicated three builds.
+    const mesh = obj as Mesh
+    if (!mesh.isMesh || !mesh.geometry) return
+    tintMesh(mesh, body, 0.55, 0.08)
   })
 }
 
@@ -259,7 +262,8 @@ function visibleWorldBox(root: Object3D) {
   const box = new Box3()
   let any = false
   root.traverse((obj) => {
-    if (!(obj instanceof Mesh) || !obj.geometry || !obj.visible) return
+    const mesh = obj as Mesh
+    if (!mesh.isMesh || !mesh.geometry || !mesh.visible) return
     let p: Object3D | null = obj
     while (p) {
       if (!p.visible) return
@@ -280,7 +284,8 @@ function meshBoxForLinks(robot: URDFRobot, names: string[]) {
   let any = false
   robot.updateWorldMatrix(true, true)
   robot.traverse((obj) => {
-    if (!(obj instanceof Mesh) || !obj.visible || !obj.geometry) return
+    const mesh = obj as Mesh
+    if (!mesh.isMesh || !mesh.visible || !mesh.geometry) return
     const link = nearestUrdfLink(obj, robot)
     if (!link || !want.has(link)) return
     const b = new Box3().setFromObject(obj)
@@ -379,13 +384,16 @@ function useUrdf(url: string, workingPath: string, skipMesh?: RegExp, leanMesh?:
       url,
       (r) => {
         parsed = r
-        const mgr = manager as LoadingManager & { itemsTotal?: number; itemsLoaded?: number }
-        const total = mgr.itemsTotal ?? 0
-        const loaded = mgr.itemsLoaded ?? 0
-        if (total === 0 || loaded >= total) {
-          meshesDone = true
-          finish()
-        }
+        // Defer idle check — mesh requests are often registered during parse.
+        queueMicrotask(() => {
+          const mgr = manager as LoadingManager & { itemsTotal?: number; itemsLoaded?: number }
+          const total = mgr.itemsTotal ?? 0
+          const loaded = mgr.itemsLoaded ?? 0
+          if (total === 0 || loaded >= total) {
+            meshesDone = true
+            finish()
+          }
+        })
       },
       undefined,
       (err) => {
@@ -518,6 +526,11 @@ export function WheeledChassis({
       seatArmOrigin(armL)
       seatArmOrigin(armR)
 
+      // Re-tint after meshes are in the live scene (SO-101 defaults are yellow).
+      if (lekiwi.robot) colorizeRoot(lekiwi.robot, colour)
+      if (so101L.robot) colorizeRoot(so101L.robot, colour)
+      if (so101R.robot) colorizeRoot(so101R.robot, colour)
+
       setFloorY((y) => (Math.abs(y - nextFloor) > 1e-4 ? nextFloor : y))
       setStackPose((prev) =>
         Math.abs(prev.x - nextStack.x) > 1e-4 ||
@@ -541,6 +554,7 @@ export function WheeledChassis({
     carriageAglMm,
     armShoulderRad,
     armElbowRad,
+    colour,
   ])
 
   useEffect(() => {
