@@ -1,4 +1,4 @@
-/** Single twin: humanoid droid — LeKiwi omni + XLe torso/neck + 2× SO-101. */
+/** Single twin: XLeRobot — RÅSKOG cart base + dual SO-101 + OG head. */
 
 export type BaseId = 'lekiwi'
 export type ArmsId = 'xlerobot'
@@ -20,9 +20,9 @@ export const DEFAULT_KIT: KitBuild = {
 }
 
 export function kitCaption(_kit?: KitBuild) {
-  return 'LeKiwi base · torso · XLe shoulders · 2× SO-101 · neck'
+  return 'XLeRobot cart · dual SO-101 · OG head'
 }
 
 export function kitLookHeightM(_kit?: KitBuild) {
-  return 0.48
+  return 0.55
 }
