@@ -5,15 +5,7 @@
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLoader } from '@react-three/fiber'
-import {
-  Box3,
-  CylinderGeometry,
-  Group,
-  LoadingManager,
-  Mesh,
-  MeshStandardMaterial,
-  Object3D,
-} from 'three'
+import { Box3, Group, LoadingManager, Mesh, MeshStandardMaterial, Object3D } from 'three'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
 import URDFLoader, { type URDFRobot } from 'urdf-loader'
 import type { Colourway } from '../product'
@@ -43,12 +35,12 @@ const SIT_EPS = 0.0005
 const DECK_DROP_M = 0.4
 /** Skip IKEA cart body + its 4 floor wheels. */
 const XLE_SKIP_MESH = /raskog(body|wheel)/i
-/** Always skip LeKiwi arm/cam + the 15MB CAD omni wheels (replaced with proxies). */
+/** Skip LeKiwi onboard arm + cam tower (twin uses XLe arms/head). Keep real omni wheels. */
 const LEKIWI_SKIP_MESH =
-  /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2|4-Omni-Directional-Wheel/i
-/** Extra skips on mobile / lean tier. */
+  /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2/i
+/** Extra skips on mobile / lean tier (not the omni wheels). */
 const LEKIWI_LEAN_MESH =
-  /ST3215_Servo_Motor|omni_wheel_mount|drive_motor_mount|94868A713|Battery---|lipo_battery|servo_controller|Bottom-V2/i
+  /ST3215_Servo_Motor|94868A713|Battery---|lipo_battery|servo_controller|Bottom-V2/i
 const XLE_LEAN_MESH = /ply\.convex|_Motor\.stl|XLeRobot_camera/i
 const KIWI_PLATE_LINKS = ['base_plate_layer1-v5', 'base_plate_layer2-v3']
 /** Center upper on mounts/head — not the full arm AABB (outstretched arms pull the center back). */
@@ -61,19 +53,6 @@ const TORSO_Z_SCALE = 0.001
 /** No forward nudge — seat upper core on the cylinder center. */
 const UPPER_FORWARD_M = 0
 
-const PROXY_WHEEL = /4-Omni-Directional-Wheel/i
-
-function makeProxyOmniWheel() {
-  // Built in mm to match URDF mesh scale="0.001".
-  const mesh = new Mesh(
-    new CylinderGeometry(48, 48, 28, 14),
-    new MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.9, metalness: 0.05 }),
-  )
-  mesh.rotation.z = Math.PI / 2
-  mesh.castShadow = true
-  mesh.receiveShadow = true
-  return mesh
-}
 function tintMesh(mesh: Mesh, hex: string, roughness = 0.58, metalness = 0.08) {
   const lean = getPerfTier().leanMeshes
   mesh.material = new MeshStandardMaterial({
@@ -336,11 +315,6 @@ function useUrdf(url: string, workingPath: string, skipMesh?: RegExp, leanMesh?:
     loader.parseVisual = true
     const defaultMesh = loader.defaultMeshLoader.bind(loader)
     loader.loadMeshCb = (path, mgr, material, done) => {
-      // 15MB CAD wheels → lightweight cylinder proxies (huge mobile win).
-      if (PROXY_WHEEL.test(path)) {
-        done(makeProxyOmniWheel())
-        return
-      }
       if (skipMesh?.test(path) || leanMesh?.test(path)) {
         done(new Object3D())
         return
