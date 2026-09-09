@@ -38,8 +38,16 @@ const XLE_SKIP_MESH = /raskog(body|wheel)/i
 const LEKIWI_SKIP_MESH =
   /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2/i
 const KIWI_PLATE_LINKS = ['base_plate_layer1-v5', 'base_plate_layer2-v3']
+/** Center upper on mounts/head — not the full arm AABB (outstretched arms pull the center back). */
+const UPPER_CORE_LINKS = ['Base', 'Base_2', 'top_base_link', 'head_pan_link', 'head_tilt_link']
 /** Printable torso shell height (STL Z span), meters. */
 const TORSO_H_M = 0.32
+/**
+ * Nudge upper toward camera / over the cylinder after core-centering.
+ * World +Z matches the usual orbit view (camera at +Z); outstretched-arm AABB
+ * previously left the head stack behind the torso.
+ */
+const UPPER_FORWARD_M = 0.06
 
 function tintMesh(mesh: Mesh, hex: string, roughness = 0.58, metalness = 0.08) {
   mesh.material = new MeshStandardMaterial({ color: hex, roughness, metalness })
@@ -373,25 +381,26 @@ export function WheeledChassis({
       stack.position.y = nextStack.y
     }
 
-    // 3) Seat upper body ON TOP of the torso, centered — not in front.
-    //    Upper is a root sibling (Y-up position) with its own yaw.
+    // 3) Seat upper body ON TOP of the torso — align shoulder/head core to the
+    //    cylinder center (full arm AABB sits too far back), then nudge forward a bit.
     const nextUpper = { x: 0, y: 0, z: 0 }
-    if (xleG) {
+    if (xleG && xle.robot) {
       xleG.position.set(0, 0, 0)
       root.updateWorldMatrix(true, true)
       const torsoBox = torsoG ? visibleWorldBox(torsoG) : null
+      const coreBox = meshBoxForLinks(xle.robot, UPPER_CORE_LINKS) ?? visibleWorldBox(xleG)
       const xleBox = visibleWorldBox(xleG)
-      if (torsoBox && xleBox) {
+      if (torsoBox && coreBox && xleBox) {
         const torsoCx = (torsoBox.min.x + torsoBox.max.x) * 0.5
         const torsoCz = (torsoBox.min.z + torsoBox.max.z) * 0.5
-        const xleCx = (xleBox.min.x + xleBox.max.x) * 0.5
-        const xleCz = (xleBox.min.z + xleBox.max.z) * 0.5
-        nextUpper.x = torsoCx - xleCx
-        nextUpper.z = torsoCz - xleCz
+        const coreCx = (coreBox.min.x + coreBox.max.x) * 0.5
+        const coreCz = (coreBox.min.z + coreBox.max.z) * 0.5
+        nextUpper.x = torsoCx - coreCx
+        nextUpper.z = torsoCz - coreCz + UPPER_FORWARD_M
         nextUpper.y = torsoBox.max.y - SIT_EPS - xleBox.min.y
       } else if (torsoBox) {
         nextUpper.x = (torsoBox.min.x + torsoBox.max.x) * 0.5
-        nextUpper.z = (torsoBox.min.z + torsoBox.max.z) * 0.5
+        nextUpper.z = (torsoBox.min.z + torsoBox.max.z) * 0.5 + UPPER_FORWARD_M
         nextUpper.y = torsoBox.max.y - SIT_EPS
       }
       xleG.position.set(nextUpper.x, nextUpper.y, nextUpper.z)
