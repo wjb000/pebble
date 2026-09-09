@@ -47,7 +47,7 @@ const TORSO_H_M = 0.32
  * World +Z matches the usual orbit view (camera at +Z); outstretched-arm AABB
  * previously left the head stack behind the torso.
  */
-const UPPER_FORWARD_M = 0.06
+const UPPER_FORWARD_M = 0.025
 
 function tintMesh(mesh: Mesh, hex: string, roughness = 0.58, metalness = 0.08) {
   mesh.material = new MeshStandardMaterial({ color: hex, roughness, metalness })
