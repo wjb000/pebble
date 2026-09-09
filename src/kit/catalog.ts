@@ -20,9 +20,9 @@ export const DEFAULT_KIT: KitBuild = {
 }
 
 export function kitCaption(_kit?: KitBuild) {
-  return 'XLeRobot cart · dual SO-101 · OG head'
+  return 'XLeRobot · wheeled base · dual SO-101 · OG head'
 }
 
 export function kitLookHeightM(_kit?: KitBuild) {
-  return 0.55
+  return 0.32
 }

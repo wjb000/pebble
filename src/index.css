@@ -203,8 +203,17 @@ kbd {
   .hud-mode { left: 14px; bottom: 110px; }
 }
 
-.model-page { min-height: calc(100vh - 56px); }
-.model-stage { position: relative; height: calc(100vh - 56px); min-height: 520px; background: #0a0b0e; overflow: hidden; }
+.model-page { min-height: calc(100vh - 56px); min-height: calc(100dvh - 56px); }
+.model-stage {
+  position: relative;
+  height: calc(100vh - 56px);
+  height: calc(100dvh - 56px);
+  min-height: 420px;
+  background: #0a0b0e;
+  overflow: hidden;
+  touch-action: none;
+}
+.model-stage canvas { display: block; width: 100% !important; height: 100% !important; }
 .model-chrome { pointer-events: none; position: absolute; inset: 0; z-index: 6; }
 .model-swatches { top: 14px; left: 14px; pointer-events: auto; }
 .model-caption {

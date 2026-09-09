@@ -29,7 +29,7 @@ export function ModelPage() {
         <Canvas
           shadows
           dpr={[1, 2]}
-          camera={{ position: [2.05, 0.82, 2.25], fov: 36, near: 0.02, far: 40 }}
+          camera={{ position: [1.55, 0.72, 1.85], fov: 38, near: 0.02, far: 40 }}
           gl={{ antialias: true, toneMappingExposure: 1.15 }}
           onCreated={({ gl }) => {
             gl.shadowMap.type = PCFShadowMap
@@ -60,8 +60,8 @@ export function ModelPage() {
             makeDefault
             target={[0, kitLookHeightM(kit), 0]}
             enablePan
-            minDistance={0.25}
-            maxDistance={5}
+            minDistance={0.35}
+            maxDistance={8}
             maxPolarAngle={Math.PI * 0.49}
             dampingFactor={0.08}
           />
@@ -88,8 +88,8 @@ export function ModelPage() {
               {kitCaption(kit)}
             </div>
             <div className="model-caption-sub">
-              Print: <code>print/lekiwi/</code>, <code>print/SO101/Individual/</code>, XLeRobot <code>hardware/</code>.
-              Humanoid stack: printable torso shell + XLe arm-base shoulders + neck.
+              Print: XLeRobot <code>hardware/</code>, <code>print/SO101/Individual/</code>.
+              Twin shows wheeled base + dual arms + OG head — no IKEA RÅSKOG cart body.
             </div>
             <div className="model-caption-sub">
               Q/E articulates SO-101 joints. Reach ~{CHORE_ENVELOPE.so101_reach_mm} mm. Tip margin ≈{TIP_SUMMARY.margin}×.
