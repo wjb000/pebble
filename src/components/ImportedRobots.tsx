@@ -5,7 +5,7 @@
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLoader } from '@react-three/fiber'
-import { Box3, Group, LoadingManager, Matrix4, Mesh, MeshStandardMaterial, Object3D, Vector3 } from 'three'
+import { Box3, Group, LoadingManager, Mesh, MeshStandardMaterial, Object3D } from 'three'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
 import URDFLoader, { type URDFRobot } from 'urdf-loader'
 import type { Colourway } from '../product'
@@ -229,30 +229,9 @@ function visibleWorldBox(root: Object3D) {
   return any ? box : null
 }
 
-/** AABB of visible meshes, expressed in `frame`'s local space (stable under Sim parent pose). */
-function visibleLocalBox(frame: Object3D, root: Object3D) {
-  const world = visibleWorldBox(root)
-  if (!world) return null
-  frame.updateWorldMatrix(true, true)
-  const inv = new Matrix4().copy(frame.matrixWorld).invert()
-  const local = new Box3()
-  const corners = [
-    new Vector3(world.min.x, world.min.y, world.min.z),
-    new Vector3(world.min.x, world.min.y, world.max.z),
-    new Vector3(world.min.x, world.max.y, world.min.z),
-    new Vector3(world.min.x, world.max.y, world.max.z),
-    new Vector3(world.max.x, world.min.y, world.min.z),
-    new Vector3(world.max.x, world.min.y, world.max.z),
-    new Vector3(world.max.x, world.max.y, world.min.z),
-    new Vector3(world.max.x, world.max.y, world.max.z),
-  ]
-  for (const c of corners) local.expandByPoint(c.applyMatrix4(inv))
-  return local
-}
-
-function meshBoxForLinksLocal(frame: Object3D, robot: URDFRobot, names: string[]) {
+function meshBoxForLinks(robot: URDFRobot, names: string[]) {
   const want = new Set(names)
-  const world = new Box3()
+  const box = new Box3()
   let any = false
   robot.updateWorldMatrix(true, true)
   robot.traverse((obj) => {
@@ -261,26 +240,42 @@ function meshBoxForLinksLocal(frame: Object3D, robot: URDFRobot, names: string[]
     if (!link || !want.has(link)) return
     const b = new Box3().setFromObject(obj)
     if (Number.isFinite(b.min.y)) {
-      world.union(b)
+      box.union(b)
       any = true
     }
   })
-  if (!any) return null
-  frame.updateWorldMatrix(true, true)
-  const inv = new Matrix4().copy(frame.matrixWorld).invert()
-  const local = new Box3()
-  const corners = [
-    new Vector3(world.min.x, world.min.y, world.min.z),
-    new Vector3(world.min.x, world.min.y, world.max.z),
-    new Vector3(world.min.x, world.max.y, world.min.z),
-    new Vector3(world.min.x, world.max.y, world.max.z),
-    new Vector3(world.max.x, world.min.y, world.min.z),
-    new Vector3(world.max.x, world.min.y, world.max.z),
-    new Vector3(world.max.x, world.max.y, world.min.z),
-    new Vector3(world.max.x, world.max.y, world.max.z),
-  ]
-  for (const c of corners) local.expandByPoint(c.applyMatrix4(inv))
-  return local
+  return any ? box : null
+}
+
+/** Zero parent poses while seating so Sim drive/yaw cannot warp AABBs. */
+function withIdentityParents(obj: Object3D, fn: () => void) {
+  type Saved = { o: Object3D; x: number; y: number; z: number; rx: number; ry: number; rz: number }
+  const saved: Saved[] = []
+  let p: Object3D | null = obj.parent
+  while (p) {
+    saved.push({
+      o: p,
+      x: p.position.x,
+      y: p.position.y,
+      z: p.position.z,
+      rx: p.rotation.x,
+      ry: p.rotation.y,
+      rz: p.rotation.z,
+    })
+    p.position.set(0, 0, 0)
+    p.rotation.set(0, 0, 0)
+    p = p.parent
+  }
+  obj.updateWorldMatrix(true, true)
+  try {
+    fn()
+  } finally {
+    for (const s of saved) {
+      s.o.position.set(s.x, s.y, s.z)
+      s.o.rotation.set(s.rx, s.ry, s.rz)
+    }
+    obj.updateWorldMatrix(true, true)
+  }
 }
 
 function useUrdf(url: string, workingPath: string, skipMesh?: RegExp) {
@@ -393,72 +388,72 @@ export function WheeledChassis({
     const xleG = xleRef.current
     if (!root) return
 
-    // Seat in chassis-local space so Sim parent x/θ never scatters the twin.
-    root.position.y = 0
-    if (stack) stack.position.set(0, 0, 0)
-    if (xleG) xleG.position.set(0, 0, 0)
-    root.updateWorldMatrix(true, true)
-
-    // 1) Park LeKiwi kit mobile base on the floor (local Y).
-    const kiwiBox = kiwiG ? visibleLocalBox(root, kiwiG) : null
-    const nextFloor = kiwiBox ? -kiwiBox.min.y + SIT_EPS : 0
-    root.position.y = nextFloor
-    root.updateWorldMatrix(true, true)
-
-    const plateBox = lekiwi.robot ? meshBoxForLinksLocal(root, lekiwi.robot, KIWI_PLATE_LINKS) : null
-    const plateCx = plateBox ? (plateBox.min.x + plateBox.max.x) * 0.5 : 0
-    const plateCz = plateBox ? (plateBox.min.z + plateBox.max.z) * 0.5 : 0
-    const plateTop = plateBox?.max.y ?? kiwiBox?.max.y ?? nextFloor
-
-    // 2) Sit torso on the LeKiwi plate.
-    const nextStack = { x: plateCx, y: 0, z: plateCz }
-    if (stack) {
-      stack.position.set(nextStack.x, 0, nextStack.z)
+    withIdentityParents(root, () => {
+      root.position.y = 0
+      if (stack) stack.position.set(0, 0, 0)
+      if (xleG) xleG.position.set(0, 0, 0)
       root.updateWorldMatrix(true, true)
-      const torsoBox = torsoG ? visibleLocalBox(root, torsoG) : null
-      if (torsoBox) nextStack.y = plateTop - SIT_EPS - torsoBox.min.y
-      stack.position.y = nextStack.y
-    }
 
-    // 3) Seat upper body on torso — core links only (ignore moving arms).
-    const nextUpper = { x: 0, y: 0, z: 0 }
-    if (xleG && xle.robot) {
-      xleG.position.set(0, 0, 0)
+      // 1) Park LeKiwi kit mobile base on the floor.
+      const kiwiBox = kiwiG ? visibleWorldBox(kiwiG) : null
+      const nextFloor = kiwiBox ? -kiwiBox.min.y + SIT_EPS : 0
+      root.position.y = nextFloor
       root.updateWorldMatrix(true, true)
-      const torsoBox = torsoG ? visibleLocalBox(root, torsoG) : null
-      const coreBox =
-        meshBoxForLinksLocal(root, xle.robot, UPPER_CORE_LINKS) ?? visibleLocalBox(root, xleG)
-      if (torsoBox && coreBox) {
-        const torsoCx = (torsoBox.min.x + torsoBox.max.x) * 0.5
-        const torsoCz = (torsoBox.min.z + torsoBox.max.z) * 0.5
-        const coreCx = (coreBox.min.x + coreBox.max.x) * 0.5
-        const coreCz = (coreBox.min.z + coreBox.max.z) * 0.5
-        nextUpper.x = torsoCx - coreCx
-        nextUpper.z = torsoCz - coreCz + UPPER_FORWARD_M
-        nextUpper.y = torsoBox.max.y - SIT_EPS - coreBox.min.y
-      } else if (torsoBox) {
-        nextUpper.x = (torsoBox.min.x + torsoBox.max.x) * 0.5
-        nextUpper.z = (torsoBox.min.z + torsoBox.max.z) * 0.5 + UPPER_FORWARD_M
-        nextUpper.y = torsoBox.max.y - SIT_EPS
+
+      const plateBox = lekiwi.robot ? meshBoxForLinks(lekiwi.robot, KIWI_PLATE_LINKS) : null
+      const plateCx = plateBox ? (plateBox.min.x + plateBox.max.x) * 0.5 : 0
+      const plateCz = plateBox ? (plateBox.min.z + plateBox.max.z) * 0.5 : 0
+      const plateTop = plateBox?.max.y ?? kiwiBox?.max.y ?? nextFloor
+
+      // 2) Sit torso on the LeKiwi plate.
+      const nextStack = { x: plateCx, y: 0, z: plateCz }
+      if (stack) {
+        stack.position.set(nextStack.x, 0, nextStack.z)
+        root.updateWorldMatrix(true, true)
+        const torsoBox = torsoG ? visibleWorldBox(torsoG) : null
+        if (torsoBox) nextStack.y = plateTop - SIT_EPS - torsoBox.min.y
+        stack.position.y = nextStack.y
       }
-      xleG.position.set(nextUpper.x, nextUpper.y, nextUpper.z)
-    }
 
-    setFloorY((y) => (Math.abs(y - nextFloor) > 1e-4 ? nextFloor : y))
-    setStackPose((prev) =>
-      Math.abs(prev.x - nextStack.x) > 1e-4 ||
-      Math.abs(prev.y - nextStack.y) > 1e-4 ||
-      Math.abs(prev.z - nextStack.z) > 1e-4
-        ? nextStack
-        : prev,
-    )
-    setUpperPose((prev) =>
-      Math.abs(prev.x - nextUpper.x) > 1e-4 ||
-      Math.abs(prev.y - nextUpper.y) > 1e-4 ||
-      Math.abs(prev.z - nextUpper.z) > 1e-4
-        ? nextUpper
-        : prev,
-    )
+      // 3) Seat upper body on torso — core links only (ignore moving arms).
+      const nextUpper = { x: 0, y: 0, z: 0 }
+      if (xleG && xle.robot) {
+        xleG.position.set(0, 0, 0)
+        root.updateWorldMatrix(true, true)
+        const torsoBox = torsoG ? visibleWorldBox(torsoG) : null
+        const coreBox = meshBoxForLinks(xle.robot, UPPER_CORE_LINKS) ?? visibleWorldBox(xleG)
+        if (torsoBox && coreBox) {
+          const torsoCx = (torsoBox.min.x + torsoBox.max.x) * 0.5
+          const torsoCz = (torsoBox.min.z + torsoBox.max.z) * 0.5
+          const coreCx = (coreBox.min.x + coreBox.max.x) * 0.5
+          const coreCz = (coreBox.min.z + coreBox.max.z) * 0.5
+          nextUpper.x = torsoCx - coreCx
+          nextUpper.z = torsoCz - coreCz + UPPER_FORWARD_M
+          nextUpper.y = torsoBox.max.y - SIT_EPS - coreBox.min.y
+        } else if (torsoBox) {
+          nextUpper.x = (torsoBox.min.x + torsoBox.max.x) * 0.5
+          nextUpper.z = (torsoBox.min.z + torsoBox.max.z) * 0.5 + UPPER_FORWARD_M
+          nextUpper.y = torsoBox.max.y - SIT_EPS
+        }
+        xleG.position.set(nextUpper.x, nextUpper.y, nextUpper.z)
+      }
+
+      setFloorY((y) => (Math.abs(y - nextFloor) > 1e-4 ? nextFloor : y))
+      setStackPose((prev) =>
+        Math.abs(prev.x - nextStack.x) > 1e-4 ||
+        Math.abs(prev.y - nextStack.y) > 1e-4 ||
+        Math.abs(prev.z - nextStack.z) > 1e-4
+          ? nextStack
+          : prev,
+      )
+      setUpperPose((prev) =>
+        Math.abs(prev.x - nextUpper.x) > 1e-4 ||
+        Math.abs(prev.y - nextUpper.y) > 1e-4 ||
+        Math.abs(prev.z - nextUpper.z) > 1e-4
+          ? nextUpper
+          : prev,
+      )
+    })
   }, [lekiwi.robot, xle.robot, lekiwi.generation, xle.generation, torsoH])
 
   const loading = (!lekiwi.robot && !lekiwi.failed) || (!xle.robot && !xle.failed)
