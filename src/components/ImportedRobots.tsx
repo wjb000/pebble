@@ -14,6 +14,8 @@ import {
   Mesh,
   MeshStandardMaterial,
   Object3D,
+  Quaternion,
+  Vector3,
 } from 'three'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
 import URDFLoader, { type URDFRobot } from 'urdf-loader'
@@ -52,8 +54,10 @@ const LEKIWI_LEAN_MESH =
   /ST3215_Servo_Motor|94868A713|Battery---|lipo_battery|servo_controller|Bottom-V2/i
 const XLE_LEAN_MESH = /ply\.convex|_Motor\.stl|XLeRobot_camera/i
 const KIWI_PLATE_LINKS = ['base_plate_layer1-v5', 'base_plate_layer2-v3']
-/** Center upper on mounts/head — not the full arm AABB (outstretched arms pull the center back). */
-const UPPER_CORE_LINKS = ['Base', 'Base_2', 'top_base_link', 'head_pan_link', 'head_tilt_link']
+/** SO-101 shoulder flanges — sit these on the printable armbase top. */
+const ARM_MOUNT_LINKS = ['Base', 'Base_2']
+/** OG head meshes — kiss these to the printable neck top. */
+const HEAD_LINKS = ['head_pan_link', 'head_pan_link_geom_1', 'head_tilt_link', 'head_tilt_link_geom_1']
 /** Match torso XY to LeKiwi plate (~216 mm) — shell is 120 mm at unit scale. */
 const TORSO_XY_SCALE = 0.001 * (216 / 120)
 const TORSO_Z_SCALE = 0.001
@@ -301,10 +305,32 @@ function seatOnDeck(robot: URDFRobot) {
   for (const name of ['fixed_Base', 'fixed_Base_2', 'fixed_top_base_link'] as const) {
     const joint = robot.joints[name]
     if (!joint) continue
-    if (joint.userData.deckDropApplied) continue
-    joint.position.z -= DECK_DROP_M
-    joint.userData.deckDropApplied = true
+    if (joint.userData.deckBaseZ == null) joint.userData.deckBaseZ = joint.position.z
+    joint.position.z = joint.userData.deckBaseZ - DECK_DROP_M
   }
+  robot.updateMatrixWorld(true)
+}
+
+/** Move a URDF fixed joint so a world +Y delta is applied (parent may be rotated). */
+function nudgeJointWorldY(joint: Object3D, dyWorld: number) {
+  if (!joint.parent || Math.abs(dyWorld) < 1e-6) return
+  const inv = joint.parent.getWorldQuaternion(new Quaternion()).invert()
+  const local = new Vector3(0, dyWorld, 0).applyQuaternion(inv)
+  joint.position.add(local)
+}
+
+/** Raise/lower the head column so its meshes sit on the printable neck. */
+function alignHeadToNeck(robot: URDFRobot, neckTopY: number) {
+  const joint = robot.joints.fixed_top_base_link
+  if (!joint) return
+  // Reset to deck baseline each pass so nudges stay idempotent.
+  if (joint.userData.deckBaseZ != null) {
+    joint.position.z = joint.userData.deckBaseZ - DECK_DROP_M
+  }
+  robot.updateMatrixWorld(true)
+  const headBox = meshBoxForLinks(robot, HEAD_LINKS)
+  if (!headBox) return
+  nudgeJointWorldY(joint, neckTopY - SIT_EPS - headBox.min.y)
   robot.updateMatrixWorld(true)
 }
 
@@ -473,6 +499,7 @@ export function WheeledChassis({
   const kiwiRef = useRef<Group>(null)
   const stackRef = useRef<Group>(null)
   const torsoRef = useRef<Group>(null)
+  const armbaseRef = useRef<Group>(null)
   const neckRef = useRef<Group>(null)
   const xleRef = useRef<Group>(null)
   const [floorY, setFloorY] = useState(0)
@@ -492,7 +519,6 @@ export function WheeledChassis({
 
   useLayoutEffect(() => {
     if (!xle.robot) return
-    seatOnDeck(xle.robot)
     showXleArmsAndHead(xle.robot)
     colorizeXle(xle.robot, colour)
   }, [xle.robot, xle.generation, colour])
@@ -507,6 +533,7 @@ export function WheeledChassis({
     const kiwiG = kiwiRef.current
     const stack = stackRef.current
     const torsoG = torsoRef.current
+    const armbaseG = armbaseRef.current
     const neckG = neckRef.current
     const xleG = xleRef.current
     if (!root) return
@@ -538,31 +565,37 @@ export function WheeledChassis({
         stack.position.y = nextStack.y
       }
 
-      // 3) Seat upper body on the neck top — core links only (ignore moving arms).
+      // 3) Seat SO-101 Base flanges on the armbase top (not the neck).
       const nextUpper = { x: 0, y: 0, z: 0 }
       if (xleG && xle.robot) {
+        // Reset head column to deck baseline before measuring arm mounts.
+        seatOnDeck(xle.robot)
         xleG.position.set(0, 0, 0)
         root.updateWorldMatrix(true, true)
-        const deckBox = neckG
-          ? visibleWorldBox(neckG)
-          : torsoG
-            ? visibleWorldBox(torsoG)
-            : null
-        const coreBox = meshBoxForLinks(xle.robot, UPPER_CORE_LINKS) ?? visibleWorldBox(xleG)
-        if (deckBox && coreBox) {
-          const deckCx = (deckBox.min.x + deckBox.max.x) * 0.5
-          const deckCz = (deckBox.min.z + deckBox.max.z) * 0.5
-          const coreCx = (coreBox.min.x + coreBox.max.x) * 0.5
-          const coreCz = (coreBox.min.z + coreBox.max.z) * 0.5
-          nextUpper.x = deckCx - coreCx
-          nextUpper.z = deckCz - coreCz + UPPER_FORWARD_M
-          nextUpper.y = deckBox.max.y - SIT_EPS - coreBox.min.y
-        } else if (deckBox) {
-          nextUpper.x = (deckBox.min.x + deckBox.max.x) * 0.5
-          nextUpper.z = (deckBox.min.z + deckBox.max.z) * 0.5 + UPPER_FORWARD_M
-          nextUpper.y = deckBox.max.y - SIT_EPS
+
+        const shoulders = armbaseG ? visibleWorldBox(armbaseG) : null
+        const mounts = meshBoxForLinks(xle.robot, ARM_MOUNT_LINKS) ?? visibleWorldBox(xleG)
+        const deck = shoulders ?? (torsoG ? visibleWorldBox(torsoG) : null)
+
+        if (deck && mounts) {
+          const deckCx = (deck.min.x + deck.max.x) * 0.5
+          const deckCz = (deck.min.z + deck.max.z) * 0.5
+          const mountCx = (mounts.min.x + mounts.max.x) * 0.5
+          const mountCz = (mounts.min.z + mounts.max.z) * 0.5
+          nextUpper.x = deckCx - mountCx
+          nextUpper.z = deckCz - mountCz + UPPER_FORWARD_M
+          nextUpper.y = deck.max.y - SIT_EPS - mounts.min.y
+        } else if (deck) {
+          nextUpper.x = (deck.min.x + deck.max.x) * 0.5
+          nextUpper.z = (deck.min.z + deck.max.z) * 0.5 + UPPER_FORWARD_M
+          nextUpper.y = deck.max.y - SIT_EPS
         }
         xleG.position.set(nextUpper.x, nextUpper.y, nextUpper.z)
+        root.updateWorldMatrix(true, true)
+
+        // 4) Independently lower/raise the head so it kisses the neck top.
+        const neckBox = neckG ? visibleWorldBox(neckG) : null
+        if (neckBox) alignHeadToNeck(xle.robot, neckBox.max.y)
       }
 
       setFloorY((y) => (Math.abs(y - nextFloor) > 1e-4 ? nextFloor : y))
@@ -606,14 +639,11 @@ export function WheeledChassis({
 
               {/* Printable XLe shoulder pack + hollow neck (mm CAD → meters). */}
               <group scale={PRINT_SCALE}>
-                <mesh
-                  geometry={armbaseGeom}
-                  position={[0, 0, torsoMm]}
-                  castShadow={!perf.leanMeshes}
-                  receiveShadow={!perf.leanMeshes}
-                >
-                  <meshStandardMaterial color={colour.primary} roughness={0.5} metalness={0.1} />
-                </mesh>
+                <group ref={armbaseRef} position={[0, 0, torsoMm]}>
+                  <mesh geometry={armbaseGeom} castShadow={!perf.leanMeshes} receiveShadow={!perf.leanMeshes}>
+                    <meshStandardMaterial color={colour.primary} roughness={0.5} metalness={0.1} />
+                  </mesh>
+                </group>
                 <group ref={neckRef} position={[0, 0, torsoMm + armMm]}>
                   <mesh geometry={neckGeom} castShadow={!perf.leanMeshes} receiveShadow={!perf.leanMeshes}>
                     <meshStandardMaterial color={colour.primary} roughness={0.52} metalness={0.1} />
