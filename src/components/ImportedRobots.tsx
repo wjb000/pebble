@@ -31,7 +31,7 @@ const LEKIWI_PATH = asset('assets/lekiwi/')
 const SO101_URDF = asset('assets/so101/so101_new_calib.urdf')
 const SO101_PATH = asset('assets/so101/')
 const TORSO_STL = asset('assets/xlerobot/hardware/torso_shell.stl')
-const ARMBASE_STL = asset('assets/xlerobot/hardware/XLeRobot_035_armbase_symmetric.stl')
+const ARMBASE_STL = asset('assets/xlerobot/hardware/XLeRobot_035_armbase_deck.stl')
 const NECK_STL = asset('assets/xlerobot/hardware/XLeRobot040_neck_refined.stl')
 const HEAD_MOUNT_STL = asset('assets/xlerobot/xlerobot/meshes/xlerobot/assets/tophead1.stl')
 const HEAD_CAM_STL = asset('assets/xlerobot/xlerobot/meshes/xlerobot/assets/XLeRobot_camera1.stl')
@@ -41,12 +41,12 @@ const ROS_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI]
 /** Shoulder pack / arms / head face rover-forward. */
 const STACK_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI / 2]
 const SIT_EPS = 0.0005
-/** Half-span between SO-101 bases — on the armbase top deck (~±60 mm), not past it. */
-const MOUNT_HALF_M = 0.05
-/** Visible ring around each SO-101 base so the plate reads on both sides. */
-const MOUNT_PAD_INNER = 0.042
-const MOUNT_PAD_OUTER = 0.078
-const MOUNT_PAD_H = 0.014
+/** Half-span to the armbase side pads (meters). */
+const MOUNT_HALF_M = 0.11
+/** Side-pad top height above the armbase foot (meters). */
+const SIDE_PAD_TOP_M = 0.11
+/** Yaw both arms so the shared pose faces rover-forward (not aft). */
+const ARM_FORWARD_YAW = Math.PI
 /** Skip LeKiwi onboard arm + cam tower. Keep real omni wheels. */
 const LEKIWI_SKIP_MESH =
   /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2/i
@@ -296,50 +296,6 @@ function setJoint(robot: URDFRobot, name: string, value: number) {
   if (robot.joints[name]) robot.setJointValue(name, value)
 }
 
-function hideSo101FlangeMesh(robot: URDFRobot) {
-  // Prefer the explicit mount pads under each arm; the URDF flange seats inconsistently.
-  robot.traverse((obj) => {
-    const mesh = obj as Mesh
-    if (!mesh.isMesh) return
-    const file = String(mesh.userData.meshFile ?? mesh.name ?? '').toLowerCase()
-    if (file.includes('base_so101')) mesh.visible = false
-  })
-}
-
-function MountPad({
-  y,
-  z,
-  colour,
-  shadows,
-}: {
-  y: number
-  z: number
-  colour: Colourway
-  shadows: boolean
-}) {
-  // Annulus on the deck around each arm base (reads even when the motor covers the center).
-  // RingGeometry lies in XY with normal +Z — matches stack Z-up.
-  return (
-    <mesh
-      position={[0.021, y, z]}
-      castShadow={shadows}
-      receiveShadow={shadows}
-      renderOrder={2}
-    >
-      <ringGeometry args={[MOUNT_PAD_INNER, MOUNT_PAD_OUTER, 64]} />
-      <meshStandardMaterial
-        color={colour.primary}
-        roughness={0.48}
-        metalness={0.12}
-        side={DoubleSide}
-        polygonOffset
-        polygonOffsetFactor={-1}
-        polygonOffsetUnits={-1}
-      />
-    </mesh>
-  )
-}
-
 function mapSo101Arm(
   robot: URDFRobot,
   carriageAglMm: number,
@@ -348,8 +304,7 @@ function mapSo101Arm(
   _side: 'L' | 'R',
 ) {
   const t = liftT(carriageAglMm)
-  // Identical absolute pose on both arms so they face the same forward direction
-  // with matching circular flanges (no π yaw / scale mirror — those hid one plate).
+  // Same pose on both; group yaw (ARM_FORWARD_YAW) points them rover-forward.
   void _side
   setJoint(robot, 'shoulder_pan', 0.35)
   setJoint(robot, 'shoulder_lift', -0.25 - t * 0.2 + armShoulderRad * 0.35)
@@ -625,12 +580,14 @@ export function WheeledChassis({
   const kiwiRef = useRef<Group>(null)
   const stackRef = useRef<Group>(null)
   const armbaseRef = useRef<Mesh>(null)
+  const neckRef = useRef<Mesh>(null)
   const armLRef = useRef<Group>(null)
   const armRRef = useRef<Group>(null)
   const [floorY, setFloorY] = useState(0)
   const [stackPose, setStackPose] = useState({ x: 0, y: 0, z: 0 })
   const [armLPose, setArmLPose] = useState({ x: 0, y: 0, z: 0 })
   const [armRPose, setArmRPose] = useState({ x: 0, y: 0, z: 0 })
+  const [neckZ, setNeckZ] = useState(0)
   const [revealed, setRevealed] = useState(false)
 
   const assembled = !!(lekiwi.robot && so101L.robot && so101R.robot)
@@ -648,14 +605,12 @@ export function WheeledChassis({
   useLayoutEffect(() => {
     if (!so101L.robot) return
     colorizeRoot(so101L.robot, colour)
-    hideSo101FlangeMesh(so101L.robot)
     mapSo101Arm(so101L.robot, carriageAglMm, armShoulderRad, armElbowRad, 'L')
   }, [so101L.robot, so101L.generation, colour, carriageAglMm, armShoulderRad, armElbowRad])
 
   useLayoutEffect(() => {
     if (!so101R.robot) return
     colorizeRoot(so101R.robot, colour)
-    hideSo101FlangeMesh(so101R.robot)
     mapSo101Arm(so101R.robot, carriageAglMm, armShoulderRad, armElbowRad, 'R')
   }, [so101R.robot, so101R.generation, colour, carriageAglMm, armShoulderRad, armElbowRad])
 
@@ -689,35 +644,60 @@ export function WheeledChassis({
       }
       if (stack) stack.position.set(nextStack.x, nextStack.y, nextStack.z)
 
-      // Arms (meters) sit on armbase top in the stack frame.
-      const shoulderTopM = (torsoMm + armMm) * PRINT_SCALE
-      if (armL) armL.position.set(0, -MOUNT_HALF_M, shoulderTopM)
-      if (armR) armR.position.set(0, MOUNT_HALF_M, shoulderTopM)
+      // Arms sit on the side pads; yaw π so the shared pose faces forward.
+      const padLocalZ = torsoMm * PRINT_SCALE + SIDE_PAD_TOP_M
+      if (armL) {
+        armL.rotation.set(0, 0, ARM_FORWARD_YAW)
+        armL.position.set(0, -MOUNT_HALF_M, padLocalZ)
+      }
+      if (armR) {
+        armR.rotation.set(0, 0, ARM_FORWARD_YAW)
+        armR.position.set(0, MOUNT_HALF_M, padLocalZ)
+      }
       root.updateWorldMatrix(true, true)
 
-      const shoulders = armbaseRef.current ? new Box3().setFromObject(armbaseRef.current) : null
-      const mountTop =
-        shoulders && Number.isFinite(shoulders.max.y) && shoulders.max.y - shoulders.min.y > 0.01
-          ? shoulders.max.y
-          : plateTop + shoulderTopM
+      // World Y of a side-pad top (stack local Z → world Y after STACK_TO_THREE).
+      let padWorldY = plateTop + padLocalZ
+      if (stack) {
+        const probe = new Vector3(0, MOUNT_HALF_M, padLocalZ)
+        stack.localToWorld(probe)
+        padWorldY = probe.y
+      }
 
       if (armL && so101L.robot) {
         mapSo101Arm(so101L.robot, carriageAglMm, armShoulderRad, armElbowRad, 'L')
-        seatArmFlange(armL, so101L.robot, mountTop + MOUNT_PAD_H)
-        hideSo101FlangeMesh(so101L.robot)
+        seatArmFlange(armL, so101L.robot, padWorldY)
       }
       if (armR && so101R.robot) {
         mapSo101Arm(so101R.robot, carriageAglMm, armShoulderRad, armElbowRad, 'R')
-        seatArmFlange(armR, so101R.robot, mountTop + MOUNT_PAD_H)
-        hideSo101FlangeMesh(so101R.robot)
+        seatArmFlange(armR, so101R.robot, padWorldY)
+      }
+
+      // Seat neck flush on the armbase center (close any float gap).
+      let nextNeckZ = torsoMm + armMm
+      const neckMesh = neckRef.current
+      const armbaseMesh = armbaseRef.current
+      if (neckMesh && armbaseMesh) {
+        neckMesh.position.set(0, 0, nextNeckZ)
+        root.updateWorldMatrix(true, true)
+        const armBox = new Box3().setFromObject(armbaseMesh)
+        const neckBox = new Box3().setFromObject(neckMesh)
+        if (Number.isFinite(armBox.max.y) && Number.isFinite(neckBox.min.y)) {
+          const gap = neckBox.min.y - armBox.max.y
+          if (Math.abs(gap) > 1e-4) {
+            // Neck lives in the mm print-scale group: convert world gap → mm along local Z.
+            nextNeckZ -= gap / PRINT_SCALE
+            neckMesh.position.set(0, 0, nextNeckZ)
+          }
+        }
       }
 
       const nextArmL = armL
         ? { x: armL.position.x, y: armL.position.y, z: armL.position.z }
-        : { x: 0, y: -MOUNT_HALF_M, z: shoulderTopM }
+        : { x: 0, y: -MOUNT_HALF_M, z: padLocalZ }
       const nextArmR = armR
         ? { x: armR.position.x, y: armR.position.y, z: armR.position.z }
-        : { x: 0, y: MOUNT_HALF_M, z: shoulderTopM }
+        : { x: 0, y: MOUNT_HALF_M, z: padLocalZ }
 
       if (lekiwi.robot) colorizeRoot(lekiwi.robot, colour)
       if (so101L.robot) colorizeRoot(so101L.robot, colour)
@@ -745,6 +725,7 @@ export function WheeledChassis({
           ? nextArmR
           : prev,
       )
+      setNeckZ((z) => (Math.abs(z - nextNeckZ) > 1e-3 ? nextNeckZ : z))
       setRevealed(true)
     })
   }, [
@@ -768,7 +749,8 @@ export function WheeledChassis({
   }, [assembled])
 
   const shadows = !perf.leanMeshes
-  const headZ = torsoMm + armMm + neckMm
+  const neckSeatZ = neckZ || torsoMm + armMm
+  const headZ = neckSeatZ + neckMm
   const camZ = headZ + headMountMm
 
   return (
@@ -801,8 +783,9 @@ export function WheeledChassis({
               </mesh>
 
               <mesh
+                ref={neckRef}
                 geometry={neckGeom}
-                position={[0, 0, torsoMm + armMm]}
+                position={[0, 0, neckSeatZ]}
                 castShadow={shadows}
                 receiveShadow={shadows}
               >
@@ -828,26 +811,18 @@ export function WheeledChassis({
               </mesh>
             </group>
 
-            {/* Matched circular plates on the deck under both arms. */}
-            <MountPad
-              key="mount-pad-L"
-              y={-MOUNT_HALF_M}
-              z={(torsoMm + armMm) * PRINT_SCALE + 0.001}
-              colour={colour}
-              shadows={shadows}
-            />
-            <MountPad
-              key="mount-pad-R"
-              y={MOUNT_HALF_M}
-              z={(torsoMm + armMm) * PRINT_SCALE + 0.001}
-              colour={colour}
-              shadows={shadows}
-            />
-
-            <group ref={armLRef} position={[armLPose.x, armLPose.y, armLPose.z]}>
+            <group
+              ref={armLRef}
+              position={[armLPose.x, armLPose.y, armLPose.z]}
+              rotation={[0, 0, ARM_FORWARD_YAW]}
+            >
               <primitive key={`arm-L-${so101L.generation}`} object={so101L.robot!} />
             </group>
-            <group ref={armRRef} position={[armRPose.x, armRPose.y, armRPose.z]}>
+            <group
+              ref={armRRef}
+              position={[armRPose.x, armRPose.y, armRPose.z]}
+              rotation={[0, 0, ARM_FORWARD_YAW]}
+            >
               <primitive key={`arm-R-${so101R.generation}`} object={so101R.robot!} />
             </group>
           </group>
