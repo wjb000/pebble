@@ -297,14 +297,13 @@ function mapSo101Arm(
   carriageAglMm: number,
   armShoulderRad: number,
   armElbowRad: number,
-  side: 'L' | 'R',
+  _side: 'L' | 'R',
 ) {
   const t = liftT(carriageAglMm)
-  // R base is yawed π (XLe fixed_Base_2) so circular flanges match on both sides.
-  // Negate shoulder_pan on R so both chains face robot-forward (same pan after π
-  // points the arms opposite ways in world).
-  const pan = side === 'L' ? 0.35 : -0.35
-  setJoint(robot, 'shoulder_pan', pan)
+  // Identical absolute pose on both arms so they face the same forward direction
+  // with matching circular flanges (no π yaw / scale mirror — those hid one plate).
+  void _side
+  setJoint(robot, 'shoulder_pan', 0.35)
   setJoint(robot, 'shoulder_lift', -0.25 - t * 0.2 + armShoulderRad * 0.35)
   setJoint(robot, 'elbow_flex', 1.0 - t * 0.25 + armElbowRad * 0.4)
   setJoint(robot, 'wrist_flex', -0.15)
@@ -351,7 +350,8 @@ function seatArmFlange(group: Group, robot: URDFRobot, deckTopY: number) {
       group.getWorldPosition(world)
       bottom = world.y
     }
-    nudgeWorldY(group, deckTopY - SIT_EPS - bottom)
+    // Sit slightly proud of the deck so the circular flange reads as a plate.
+    nudgeWorldY(group, deckTopY + SIT_EPS - bottom)
     group.updateWorldMatrix(true, true)
     robot.updateMatrixWorld(true)
   }
@@ -773,11 +773,8 @@ export function WheeledChassis({
             <group ref={armLRef} position={[armLPose.x, armLPose.y, armLPose.z]}>
               <primitive object={so101L.robot!} />
             </group>
-            {/* Outer group = seat translation; inner = XLe fixed_Base_2 π yaw (kept off the seat ref). */}
             <group ref={armRRef} position={[armRPose.x, armRPose.y, armRPose.z]}>
-              <group rotation={[0, 0, Math.PI]}>
-                <primitive object={so101R.robot!} />
-              </group>
+              <primitive object={so101R.robot!} />
             </group>
           </group>
         ) : null}
