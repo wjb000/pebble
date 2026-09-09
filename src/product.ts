@@ -65,18 +65,6 @@ export const COLOURWAYS: Colourway[] = [
   },
 ]
 
-export const ONE_LINER =
-  'HouseHand v3 (~1100 mm extended): 400×450 omni deck + nested telescoping torso + 2× SO-101. Floor pick, wipe, dishes assist, laundry basket/washer-assist. Draft / not for sale.'
-
-export const FAST_FACTS = [
-  { label: 'Height', value: '~1100 mm extended / ~540 mm collapsed' },
-  { label: 'Lift', value: 'Nested tubes 462→1022 mm AGL' },
-  { label: 'Base', value: '4× mecanum · 400×450 mm' },
-  { label: 'Arms', value: '2× SO-101' },
-  { label: 'Chores', value: 'Floor · wipe · dishes · laundry-assist' },
-  { label: 'Status', value: 'Draft / not for sale' },
-]
-
 export type BomColumn = 'base' | 'arm' | 'dual'
 
 export type BomRow = {

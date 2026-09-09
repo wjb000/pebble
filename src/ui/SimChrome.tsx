@@ -15,7 +15,7 @@ export function SimChrome({ colourId, onColour }: Props) {
     <>
       <div className="hud-box hud-nav-back">
         <div className="hud-label">NAV</div>
-        <Link className="hud-back" to="/">← BACK</Link>
+        <Link className="hud-back" to="/model">← MODEL</Link>
       </div>
       <div className="hud-box hud-shop">
         <div className="hud-label">SITE</div>

@@ -21,7 +21,6 @@ export function HUD() {
         {state.demoActive && (
           <div className="hud-row hud-demo">DEMO {state.demoPhase.replace(/_/g, ' ').toUpperCase()}</div>
         )}
-        {state.wipeContact && <div className="hud-row hud-demo">WIPE CONTACT</div>}
       </div>
       <div className="hud-box hud-tipphys">
         <div className="hud-label">TIP MARGIN</div>
@@ -36,7 +35,7 @@ export function HUD() {
       <div className="hud-tele">
         <div>{fmt(Math.abs(state.v))} M/S</div>
         <div>FWD {fmt(state.steering.forward)} · STR {fmt(state.steering.strafe ?? 0)} · YAW {fmt(state.steering.yawRate)}</div>
-        <div className="hud-estop-hint">SPACE = E-STOP · G = chore demo · A/D strafe</div>
+        <div className="hud-estop-hint">SPACE = E-STOP · A/D strafe · Q/E arms</div>
       </div>
     </div>
   )
