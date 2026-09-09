@@ -9,6 +9,7 @@ import {
   Box3,
   BufferAttribute,
   BufferGeometry,
+  DoubleSide,
   Group,
   LoadingManager,
   Mesh,
@@ -53,16 +54,27 @@ const KIWI_PLATE_LINKS = ['base_plate_layer1-v5', 'base_plate_layer2-v3']
 const TORSO_XY_WIDEN = 216 / 120
 const PRINT_SCALE = 0.001
 
-function tintMesh(mesh: Mesh, hex: string, roughness = 0.58, metalness = 0.08) {
+function tintMesh(mesh: Mesh, hex: string, roughness = 0.58, metalness = 0.08, doubleSide = false) {
   const lean = getPerfTier().leanMeshes
   mesh.material = new MeshStandardMaterial({
     color: hex,
     roughness,
     metalness: lean ? 0 : metalness,
     flatShading: lean,
+    side: doubleSide ? DoubleSide : undefined,
   })
   mesh.castShadow = !lean
   mesh.receiveShadow = !lean
+}
+
+/** Paint every mesh the colourway primary (whole twin body). */
+function colorizeRoot(root: Object3D, colour: Colourway, doubleSide = false) {
+  const body = colour.primary
+  root.traverse((obj) => {
+    const mesh = obj as Mesh
+    if (!mesh.isMesh || !mesh.geometry) return
+    tintMesh(mesh, body, 0.55, 0.08, doubleSide)
+  })
 }
 
 function cadHeightMm(geom: BufferGeometry) {
@@ -268,17 +280,6 @@ function applyLeKiwiVisibility(robot: URDFRobot) {
       return
     }
     mesh.visible = true
-  })
-}
-
-/** Paint every mesh the colourway primary (whole twin body). */
-function colorizeRoot(root: Object3D, colour: Colourway) {
-  const body = colour.primary
-  root.traverse((obj) => {
-    // Duck-type meshes — `instanceof Mesh` can fail across duplicated three builds.
-    const mesh = obj as Mesh
-    if (!mesh.isMesh || !mesh.geometry) return
-    tintMesh(mesh, body, 0.55, 0.08)
   })
 }
 
@@ -591,7 +592,8 @@ export function WheeledChassis({
 
   useLayoutEffect(() => {
     if (!so101R.robot) return
-    colorizeRoot(so101R.robot, colour)
+    // Negative X scale on R needs DoubleSide so the circular flange stays visible.
+    colorizeRoot(so101R.robot, colour, true)
     mapSo101Arm(so101R.robot, carriageAglMm, armShoulderRad, armElbowRad, 'R')
   }, [so101R.robot, so101R.generation, colour, carriageAglMm, armShoulderRad, armElbowRad])
 
@@ -649,7 +651,7 @@ export function WheeledChassis({
 
       if (lekiwi.robot) colorizeRoot(lekiwi.robot, colour)
       if (so101L.robot) colorizeRoot(so101L.robot, colour)
-      if (so101R.robot) colorizeRoot(so101R.robot, colour)
+      if (so101R.robot) colorizeRoot(so101R.robot, colour, true)
 
       setFloorY((y) => (Math.abs(y - nextFloor) > 1e-4 ? nextFloor : y))
       setStackPose((prev) =>
