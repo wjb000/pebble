@@ -41,9 +41,9 @@ const ROS_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI]
 /** Shoulder pack / arms / head face rover-forward. */
 const STACK_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI / 2]
 const SIT_EPS = 0.0005
-/** Half-span to the armbase side pads (meters). */
-const MOUNT_HALF_M = 0.11
-/** Side-pad top height above the armbase foot (meters). */
+/** Half-span to the circular side-pad centers (meters). */
+const MOUNT_HALF_M = 0.15
+/** Side-pad / flat-deck top height above the armbase foot (meters). */
 const SIDE_PAD_TOP_M = 0.11
 /** Yaw both arms so the shared pose faces rover-forward (not aft). */
 const ARM_FORWARD_YAW = Math.PI
@@ -567,7 +567,7 @@ export function WheeledChassis({
   const so101R = useUrdf(`${SO101_URDF}?side=R`, SO101_PATH)
 
   const torsoGeom = usePreparedStl(TORSO_STL)
-  const armbaseGeom = usePreparedStl(ARMBASE_STL, { collapseGaps: true, trimThinShelf: true })
+  const armbaseGeom = usePreparedStl(ARMBASE_STL, { trimThinShelf: true })
   const neckGeom = usePreparedStl(NECK_STL, { collapseGaps: true })
   const headMountGeom = usePreparedStl(HEAD_MOUNT_STL, { collapseGaps: true })
   const headCamGeom = usePreparedStl(HEAD_CAM_STL)
@@ -644,8 +644,8 @@ export function WheeledChassis({
       }
       if (stack) stack.position.set(nextStack.x, nextStack.y, nextStack.z)
 
-      // Arms sit on the side pads; yaw π so the shared pose faces forward.
-      const padLocalZ = torsoMm * PRINT_SCALE + SIDE_PAD_TOP_M
+      // Arms sit on the circular side pads; yaw π so the shared pose faces forward.
+      const padLocalZ = (torsoMm + armMm) * PRINT_SCALE
       if (armL) {
         armL.rotation.set(0, 0, ARM_FORWARD_YAW)
         armL.position.set(0, -MOUNT_HALF_M, padLocalZ)
@@ -656,9 +656,12 @@ export function WheeledChassis({
       }
       root.updateWorldMatrix(true, true)
 
-      // World Y of a side-pad top (stack local Z → world Y after STACK_TO_THREE).
+      // World Y of the flat deck top under a side pad.
       let padWorldY = plateTop + padLocalZ
-      if (stack) {
+      if (armbaseRef.current) {
+        const deck = new Box3().setFromObject(armbaseRef.current)
+        if (Number.isFinite(deck.max.y)) padWorldY = deck.max.y
+      } else if (stack) {
         const probe = new Vector3(0, MOUNT_HALF_M, padLocalZ)
         stack.localToWorld(probe)
         padWorldY = probe.y
@@ -673,23 +676,22 @@ export function WheeledChassis({
         seatArmFlange(armR, so101R.robot, padWorldY)
       }
 
-      // Seat neck flush on the armbase center (close any float gap).
+      // Seat neck flush on the flat armbase deck (iterate to close float gaps).
       let nextNeckZ = torsoMm + armMm
       const neckMesh = neckRef.current
       const armbaseMesh = armbaseRef.current
       if (neckMesh && armbaseMesh) {
-        neckMesh.position.set(0, 0, nextNeckZ)
-        root.updateWorldMatrix(true, true)
-        const armBox = new Box3().setFromObject(armbaseMesh)
-        const neckBox = new Box3().setFromObject(neckMesh)
-        if (Number.isFinite(armBox.max.y) && Number.isFinite(neckBox.min.y)) {
+        for (let i = 0; i < 3; i++) {
+          neckMesh.position.set(0, 0, nextNeckZ)
+          root.updateWorldMatrix(true, true)
+          const armBox = new Box3().setFromObject(armbaseMesh)
+          const neckBox = new Box3().setFromObject(neckMesh)
+          if (!Number.isFinite(armBox.max.y) || !Number.isFinite(neckBox.min.y)) break
           const gap = neckBox.min.y - armBox.max.y
-          if (Math.abs(gap) > 1e-4) {
-            // Neck lives in the mm print-scale group: convert world gap → mm along local Z.
-            nextNeckZ -= gap / PRINT_SCALE
-            neckMesh.position.set(0, 0, nextNeckZ)
-          }
+          if (Math.abs(gap) < 1e-4) break
+          nextNeckZ -= gap / PRINT_SCALE
         }
+        neckMesh.position.set(0, 0, nextNeckZ)
       }
 
       const nextArmL = armL
