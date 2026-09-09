@@ -43,9 +43,10 @@ const STACK_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI / 2]
 const SIT_EPS = 0.0005
 /** Half-span between SO-101 bases — on the armbase top deck (~±60 mm), not past it. */
 const MOUNT_HALF_M = 0.05
-/** Visible circular plate between each SO-101 and the armbase (matches base_so101 radius). */
-const MOUNT_PAD_R = 0.06
-const MOUNT_PAD_H = 0.012
+/** Visible ring around each SO-101 base so the plate reads on both sides. */
+const MOUNT_PAD_INNER = 0.042
+const MOUNT_PAD_OUTER = 0.078
+const MOUNT_PAD_H = 0.014
 /** Skip LeKiwi onboard arm + cam tower. Keep real omni wheels. */
 const LEKIWI_SKIP_MESH =
   /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2/i
@@ -316,16 +317,25 @@ function MountPad({
   colour: Colourway
   shadows: boolean
 }) {
-  // Flat disc on the armbase (cylinder default axis is Y → rotate onto stack Z-up).
+  // Annulus on the deck around each arm base (reads even when the motor covers the center).
+  // RingGeometry lies in XY with normal +Z — matches stack Z-up.
   return (
     <mesh
       position={[0.021, y, z]}
-      rotation={[Math.PI / 2, 0, 0]}
       castShadow={shadows}
       receiveShadow={shadows}
+      renderOrder={2}
     >
-      <cylinderGeometry args={[MOUNT_PAD_R, MOUNT_PAD_R, MOUNT_PAD_H, 48]} />
-      <meshStandardMaterial color={colour.primary} roughness={0.48} metalness={0.12} />
+      <ringGeometry args={[MOUNT_PAD_INNER, MOUNT_PAD_OUTER, 64]} />
+      <meshStandardMaterial
+        color={colour.primary}
+        roughness={0.48}
+        metalness={0.12}
+        side={DoubleSide}
+        polygonOffset
+        polygonOffsetFactor={-1}
+        polygonOffsetUnits={-1}
+      />
     </mesh>
   )
 }
@@ -820,14 +830,16 @@ export function WheeledChassis({
 
             {/* Matched circular plates on the deck under both arms. */}
             <MountPad
+              key="mount-pad-L"
               y={-MOUNT_HALF_M}
-              z={(torsoMm + armMm) * PRINT_SCALE + MOUNT_PAD_H * 0.5}
+              z={(torsoMm + armMm) * PRINT_SCALE + 0.001}
               colour={colour}
               shadows={shadows}
             />
             <MountPad
+              key="mount-pad-R"
               y={MOUNT_HALF_M}
-              z={(torsoMm + armMm) * PRINT_SCALE + MOUNT_PAD_H * 0.5}
+              z={(torsoMm + armMm) * PRINT_SCALE + 0.001}
               colour={colour}
               shadows={shadows}
             />
