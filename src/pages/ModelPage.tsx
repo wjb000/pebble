@@ -10,7 +10,6 @@ import { COLOURWAYS } from '../product'
 import { CHORE_ENVELOPE, TELESCOPE } from '../robot/dims'
 import { TIP_SUMMARY } from '../robot/stability'
 import { RobotAssembly } from '../components/RobotAssembly'
-import { meshAttribution } from '../components/ImportedRobots'
 import { kitCaption, kitLookHeightM } from '../kit/catalog'
 import { useKit } from '../kit/KitContext'
 
@@ -87,17 +86,10 @@ export function ModelPage() {
             </div>
           </div>
           <div className="model-caption">
-            <div>
-              {kitCaption(kit)}
-            </div>
+            <div>{kitCaption(kit)}</div>
             <div className="model-caption-sub">
-              Print: <code>print/lekiwi/</code>, XLeRobot <code>hardware/</code>, <code>print/SO101/Individual/</code>.
-              Twin: LeKiwi kit 3-wheel mobile base → torso shell → dual XLe arms + OG head.
+              Q/E articulates arms · reach ~{CHORE_ENVELOPE.so101_reach_mm} mm · tip ≈{TIP_SUMMARY.margin}×
             </div>
-            <div className="model-caption-sub">
-              Q/E articulates SO-101 joints. Reach ~{CHORE_ENVELOPE.so101_reach_mm} mm. Tip margin ≈{TIP_SUMMARY.margin}×.
-            </div>
-            <div className="model-caption-attr">{meshAttribution(kit)}</div>
           </div>
         </div>
       </div>
