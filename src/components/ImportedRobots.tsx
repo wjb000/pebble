@@ -262,37 +262,47 @@ function mapSo101Arm(
   carriageAglMm: number,
   armShoulderRad: number,
   armElbowRad: number,
-  _side: 'L' | 'R',
+  side: 'L' | 'R',
 ) {
   const t = liftT(carriageAglMm)
-  // Same forward pose in each mount frame — the R group is π-yawed for mirroring.
-  void _side
-  setJoint(robot, 'shoulder_pan', 0)
-  setJoint(robot, 'shoulder_lift', -0.15 - t * 0.25 + armShoulderRad * 0.35)
-  setJoint(robot, 'elbow_flex', 1.05 - t * 0.25 + armElbowRad * 0.4)
-  setJoint(robot, 'wrist_flex', -0.2)
+  // Same forward reach; slight outward pan only (no 180° group flip — that pointed one arm backward).
+  setJoint(robot, 'shoulder_pan', side === 'L' ? 0.3 : -0.3)
+  setJoint(robot, 'shoulder_lift', -0.25 - t * 0.2 + armShoulderRad * 0.35)
+  setJoint(robot, 'elbow_flex', 1.0 - t * 0.25 + armElbowRad * 0.4)
+  setJoint(robot, 'wrist_flex', -0.15)
   setJoint(robot, 'wrist_roll', 0)
   setJoint(robot, 'gripper', 0.35)
 }
 
-/** Keep OG head + RealSense cams; hide cart / arm leftovers. */
+/** Keep OG head + RealSense cams; hide cart / arm leftovers / optical frames. */
 function showXleHeadOnly(robot: URDFRobot) {
   for (const link of Object.values(robot.links)) link.visible = true
   robot.traverse((obj) => {
     const mesh = obj as Mesh
     const link = nearestUrdfLink(obj, robot)
     const linkN = (link ?? '').toLowerCase()
-    if (linkN === 'chassis' || linkN === 'world' || linkN.includes('wheel') || linkN.includes('raskog') || linkN.includes('chassis_geom')) {
+    if (
+      linkN === 'chassis' ||
+      linkN === 'world' ||
+      linkN.includes('wheel') ||
+      linkN.includes('raskog') ||
+      linkN.includes('chassis_geom') ||
+      linkN.includes('_frame')
+    ) {
       if (mesh.isMesh) mesh.visible = false
-      else if (linkN.includes('wheel') || linkN.includes('raskog') || linkN.includes('chassis_geom')) obj.visible = false
+      else if (linkN.includes('wheel') || linkN.includes('raskog') || linkN.includes('chassis_geom') || linkN.includes('_frame')) {
+        obj.visible = false
+      }
       return
     }
     if (!mesh.isMesh) return
     const keep =
       HEAD_LINKS.includes(link ?? '') ||
-      linkN.includes('head') ||
+      linkN.includes('head_pan') ||
+      linkN.includes('head_tilt') ||
       linkN.includes('top_base') ||
-      linkN.includes('camera')
+      linkN.includes('xlerobot_camera') ||
+      linkN === 'head_camera_link'
     mesh.visible = keep
   })
   if (robot.links.chassis) robot.links.chassis.visible = true
@@ -335,14 +345,18 @@ function mountFlangeBottomY(robot: URDFRobot) {
 function seatArmFlange(group: Group, robot: URDFRobot, deckTopY: number) {
   group.updateWorldMatrix(true, true)
   robot.updateMatrixWorld(true)
-  let bottom = mountFlangeBottomY(robot)
-  if (bottom == null) {
-    const world = new Vector3()
-    group.getWorldPosition(world)
-    bottom = world.y
+  // Two passes — flange AABB can shift slightly after the first nudge.
+  for (let i = 0; i < 2; i++) {
+    let bottom = mountFlangeBottomY(robot)
+    if (bottom == null) {
+      const world = new Vector3()
+      group.getWorldPosition(world)
+      bottom = world.y
+    }
+    nudgeWorldY(group, deckTopY - SIT_EPS - bottom)
+    group.updateWorldMatrix(true, true)
+    robot.updateMatrixWorld(true)
   }
-  nudgeWorldY(group, deckTopY - SIT_EPS - bottom)
-  group.updateWorldMatrix(true, true)
 }
 
 function visibleWorldBox(root: Object3D) {
@@ -554,6 +568,8 @@ export function WheeledChassis({
   const headRef = useRef<Group>(null)
   const [floorY, setFloorY] = useState(0)
   const [stackPose, setStackPose] = useState({ x: 0, y: 0, z: 0 })
+  const [armLPose, setArmLPose] = useState({ x: 0, y: 0, z: 0 })
+  const [armRPose, setArmRPose] = useState({ x: 0, y: 0, z: 0 })
   const [headPose, setHeadPose] = useState({ x: 0, y: 0, z: 0 })
   const [revealed, setRevealed] = useState(false)
 
@@ -640,6 +656,12 @@ export function WheeledChassis({
 
       if (armL && so101L.robot) seatArmFlange(armL, so101L.robot, mountTop)
       if (armR && so101R.robot) seatArmFlange(armR, so101R.robot, mountTop)
+      const nextArmL = armL
+        ? { x: armL.position.x, y: armL.position.y, z: armL.position.z }
+        : { x: 0, y: -MOUNT_HALF_M, z: shoulderTopM }
+      const nextArmR = armR
+        ? { x: armR.position.x, y: armR.position.y, z: armR.position.z }
+        : { x: 0, y: MOUNT_HALF_M, z: shoulderTopM }
 
       // 4) Seat OG camera head on the neck top.
       const nextHead = { x: 0, y: 0, z: 0 }
@@ -673,6 +695,20 @@ export function WheeledChassis({
         Math.abs(prev.y - nextStack.y) > 1e-4 ||
         Math.abs(prev.z - nextStack.z) > 1e-4
           ? nextStack
+          : prev,
+      )
+      setArmLPose((prev) =>
+        Math.abs(prev.x - nextArmL.x) > 1e-4 ||
+        Math.abs(prev.y - nextArmL.y) > 1e-4 ||
+        Math.abs(prev.z - nextArmL.z) > 1e-4
+          ? nextArmL
+          : prev,
+      )
+      setArmRPose((prev) =>
+        Math.abs(prev.x - nextArmR.x) > 1e-4 ||
+        Math.abs(prev.y - nextArmR.y) > 1e-4 ||
+        Math.abs(prev.z - nextArmR.z) > 1e-4
+          ? nextArmR
           : prev,
       )
       setHeadPose((prev) =>
@@ -743,11 +779,11 @@ export function WheeledChassis({
                 </group>
               </group>
 
-              {/* Both arms share the same forward pose; R is π-yawed to mirror the SO-101. */}
-              <group ref={armLRef}>
+              {/* Both arms face forward with mirrored outward pan — no π flip. */}
+              <group ref={armLRef} position={[armLPose.x, armLPose.y, armLPose.z]}>
                 <primitive object={so101L.robot!} />
               </group>
-              <group ref={armRRef} rotation={[0, 0, Math.PI]}>
+              <group ref={armRRef} position={[armRPose.x, armRPose.y, armRPose.z]}>
                 <primitive object={so101R.robot!} />
               </group>
             </group>
