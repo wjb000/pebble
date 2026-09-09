@@ -5,7 +5,7 @@
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLoader } from '@react-three/fiber'
-import { Box3, Group, LoadingManager, Mesh, MeshStandardMaterial, Object3D } from 'three'
+import { Box3, Group, LoadingManager, Matrix4, Mesh, MeshStandardMaterial, Object3D, Vector3 } from 'three'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
 import URDFLoader, { type URDFRobot } from 'urdf-loader'
 import type { Colourway } from '../product'
@@ -229,9 +229,30 @@ function visibleWorldBox(root: Object3D) {
   return any ? box : null
 }
 
-function meshBoxForLinks(robot: URDFRobot, names: string[]) {
+/** AABB of visible meshes, expressed in `frame`'s local space (stable under Sim parent pose). */
+function visibleLocalBox(frame: Object3D, root: Object3D) {
+  const world = visibleWorldBox(root)
+  if (!world) return null
+  frame.updateWorldMatrix(true, true)
+  const inv = new Matrix4().copy(frame.matrixWorld).invert()
+  const local = new Box3()
+  const corners = [
+    new Vector3(world.min.x, world.min.y, world.min.z),
+    new Vector3(world.min.x, world.min.y, world.max.z),
+    new Vector3(world.min.x, world.max.y, world.min.z),
+    new Vector3(world.min.x, world.max.y, world.max.z),
+    new Vector3(world.max.x, world.min.y, world.min.z),
+    new Vector3(world.max.x, world.min.y, world.max.z),
+    new Vector3(world.max.x, world.max.y, world.min.z),
+    new Vector3(world.max.x, world.max.y, world.max.z),
+  ]
+  for (const c of corners) local.expandByPoint(c.applyMatrix4(inv))
+  return local
+}
+
+function meshBoxForLinksLocal(frame: Object3D, robot: URDFRobot, names: string[]) {
   const want = new Set(names)
-  const box = new Box3()
+  const world = new Box3()
   let any = false
   robot.updateWorldMatrix(true, true)
   robot.traverse((obj) => {
@@ -240,11 +261,26 @@ function meshBoxForLinks(robot: URDFRobot, names: string[]) {
     if (!link || !want.has(link)) return
     const b = new Box3().setFromObject(obj)
     if (Number.isFinite(b.min.y)) {
-      box.union(b)
+      world.union(b)
       any = true
     }
   })
-  return any ? box : null
+  if (!any) return null
+  frame.updateWorldMatrix(true, true)
+  const inv = new Matrix4().copy(frame.matrixWorld).invert()
+  const local = new Box3()
+  const corners = [
+    new Vector3(world.min.x, world.min.y, world.min.z),
+    new Vector3(world.min.x, world.min.y, world.max.z),
+    new Vector3(world.min.x, world.max.y, world.min.z),
+    new Vector3(world.min.x, world.max.y, world.max.z),
+    new Vector3(world.max.x, world.min.y, world.min.z),
+    new Vector3(world.max.x, world.min.y, world.max.z),
+    new Vector3(world.max.x, world.max.y, world.min.z),
+    new Vector3(world.max.x, world.max.y, world.max.z),
+  ]
+  for (const c of corners) local.expandByPoint(c.applyMatrix4(inv))
+  return local
 }
 
 function useUrdf(url: string, workingPath: string, skipMesh?: RegExp) {
@@ -342,8 +378,12 @@ export function WheeledChassis({
     seatOnDeck(xle.robot)
     showXleArmsAndHead(xle.robot)
     colorizeXle(xle.robot, colour)
+  }, [xle.robot, xle.generation, colour])
+
+  useLayoutEffect(() => {
+    if (!xle.robot) return
     mapXlePose(xle.robot, carriageAglMm, armShoulderRad, armElbowRad)
-  }, [xle.robot, xle.generation, colour, carriageAglMm, armShoulderRad, armElbowRad])
+  }, [xle.robot, xle.generation, carriageAglMm, armShoulderRad, armElbowRad])
 
   useLayoutEffect(() => {
     const root = rootRef.current
@@ -353,49 +393,49 @@ export function WheeledChassis({
     const xleG = xleRef.current
     if (!root) return
 
+    // Seat in chassis-local space so Sim parent x/θ never scatters the twin.
     root.position.y = 0
     if (stack) stack.position.set(0, 0, 0)
     if (xleG) xleG.position.set(0, 0, 0)
     root.updateWorldMatrix(true, true)
 
-    // 1) Park LeKiwi kit mobile base on the floor.
-    const kiwiBox = kiwiG ? visibleWorldBox(kiwiG) : null
+    // 1) Park LeKiwi kit mobile base on the floor (local Y).
+    const kiwiBox = kiwiG ? visibleLocalBox(root, kiwiG) : null
     const nextFloor = kiwiBox ? -kiwiBox.min.y + SIT_EPS : 0
     root.position.y = nextFloor
     root.updateWorldMatrix(true, true)
 
-    const plateBox = lekiwi.robot ? meshBoxForLinks(lekiwi.robot, KIWI_PLATE_LINKS) : null
+    const plateBox = lekiwi.robot ? meshBoxForLinksLocal(root, lekiwi.robot, KIWI_PLATE_LINKS) : null
     const plateCx = plateBox ? (plateBox.min.x + plateBox.max.x) * 0.5 : 0
     const plateCz = plateBox ? (plateBox.min.z + plateBox.max.z) * 0.5 : 0
     const plateTop = plateBox?.max.y ?? kiwiBox?.max.y ?? nextFloor
 
-    // 2) Sit torso on the LeKiwi plate (root-space Y-up).
+    // 2) Sit torso on the LeKiwi plate.
     const nextStack = { x: plateCx, y: 0, z: plateCz }
     if (stack) {
       stack.position.set(nextStack.x, 0, nextStack.z)
       root.updateWorldMatrix(true, true)
-      const torsoBox = torsoG ? visibleWorldBox(torsoG) : null
+      const torsoBox = torsoG ? visibleLocalBox(root, torsoG) : null
       if (torsoBox) nextStack.y = plateTop - SIT_EPS - torsoBox.min.y
       stack.position.y = nextStack.y
     }
 
-    // 3) Seat upper body ON TOP of the torso — align shoulder/head core to the
-    //    cylinder center (full arm AABB sits too far back), then nudge forward a bit.
+    // 3) Seat upper body on torso — core links only (ignore moving arms).
     const nextUpper = { x: 0, y: 0, z: 0 }
     if (xleG && xle.robot) {
       xleG.position.set(0, 0, 0)
       root.updateWorldMatrix(true, true)
-      const torsoBox = torsoG ? visibleWorldBox(torsoG) : null
-      const coreBox = meshBoxForLinks(xle.robot, UPPER_CORE_LINKS) ?? visibleWorldBox(xleG)
-      const xleBox = visibleWorldBox(xleG)
-      if (torsoBox && coreBox && xleBox) {
+      const torsoBox = torsoG ? visibleLocalBox(root, torsoG) : null
+      const coreBox =
+        meshBoxForLinksLocal(root, xle.robot, UPPER_CORE_LINKS) ?? visibleLocalBox(root, xleG)
+      if (torsoBox && coreBox) {
         const torsoCx = (torsoBox.min.x + torsoBox.max.x) * 0.5
         const torsoCz = (torsoBox.min.z + torsoBox.max.z) * 0.5
         const coreCx = (coreBox.min.x + coreBox.max.x) * 0.5
         const coreCz = (coreBox.min.z + coreBox.max.z) * 0.5
         nextUpper.x = torsoCx - coreCx
         nextUpper.z = torsoCz - coreCz + UPPER_FORWARD_M
-        nextUpper.y = torsoBox.max.y - SIT_EPS - xleBox.min.y
+        nextUpper.y = torsoBox.max.y - SIT_EPS - coreBox.min.y
       } else if (torsoBox) {
         nextUpper.x = (torsoBox.min.x + torsoBox.max.x) * 0.5
         nextUpper.z = (torsoBox.min.z + torsoBox.max.z) * 0.5 + UPPER_FORWARD_M
@@ -419,16 +459,7 @@ export function WheeledChassis({
         ? nextUpper
         : prev,
     )
-  }, [
-    lekiwi.robot,
-    xle.robot,
-    lekiwi.generation,
-    xle.generation,
-    torsoH,
-    carriageAglMm,
-    armShoulderRad,
-    armElbowRad,
-  ])
+  }, [lekiwi.robot, xle.robot, lekiwi.generation, xle.generation, torsoH])
 
   const loading = (!lekiwi.robot && !lekiwi.failed) || (!xle.robot && !xle.failed)
 

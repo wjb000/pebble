@@ -4,20 +4,19 @@ import { PCFShadowMap } from 'three'
 import { useSim } from '../sim/SimContext'
 import { COLOURWAYS } from '../product'
 import { Arena } from './Arena'
-import { Ball } from './Ball'
 import { ChaseCamera } from './ChaseCamera'
 import { Pebble } from './Pebble'
-import { ChoreProps } from './ChoreProps'
 
+/** Sim arena: floor + lights + intact twin only (no chore props / ball). */
 export function Scene({ colourId }: { colourId: string }) {
   const { state } = useSim()
   const colour = COLOURWAYS.find((c) => c.id === colourId) ?? COLOURWAYS[0]
   return (
     <Canvas
       shadows
-      dpr={[1, 2]}
+      dpr={[1, 1.75]}
       camera={{ position: [0, 1.15, 2.8], fov: 42, near: 0.02, far: 40 }}
-      gl={{ antialias: true, toneMappingExposure: 1.15 }}
+      gl={{ antialias: true, toneMappingExposure: 1.15, powerPreference: 'high-performance' }}
       onCreated={({ gl }) => {
         gl.shadowMap.type = PCFShadowMap
       }}
@@ -25,7 +24,7 @@ export function Scene({ colourId }: { colourId: string }) {
     >
       <color attach="background" args={['#0a0b0e']} />
       <fog attach="fog" args={['#0a0b0e', 8, 18]} />
-      <ambientLight intensity={0.42} />
+      <ambientLight intensity={0.48} />
       <directionalLight
         castShadow
         position={[3.5, 6, 2.5]}
@@ -39,18 +38,6 @@ export function Scene({ colourId }: { colourId: string }) {
       />
       <directionalLight position={[-2.5, 3, -2]} intensity={0.35} />
       <Arena />
-      <ChoreProps
-        boxX={state.boxX}
-        boxY={state.boxY}
-        boxHeld={state.boxHeld}
-        robotX={state.x}
-        robotY={state.y}
-        robotTheta={state.theta}
-        carriageAglMm={state.carriageAglMm}
-        wipeContact={state.wipeContact}
-        demoPhase={state.demoPhase}
-      />
-      <Ball x={state.ballX} y={state.ballY} />
       <Pebble
         x={state.x}
         y={state.y}
