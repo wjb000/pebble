@@ -298,13 +298,20 @@ function useUrdf(url: string, workingPath: string, skipMesh?: RegExp, leanMesh?:
   useEffect(() => {
     let cancelled = false
     let parsed: URDFRobot | null = null
-    const bump = () => {
-      if (cancelled || !parsed) return
+    let meshesDone = false
+
+    const finish = () => {
+      // Only expose the robot once every mesh has finished — avoids part-by-part pop-in on mobile.
+      if (cancelled || !parsed || !meshesDone) return
       setRobot(parsed)
       setGeneration((g) => g + 1)
     }
+
     const manager = new LoadingManager()
-    manager.onLoad = bump
+    manager.onLoad = () => {
+      meshesDone = true
+      finish()
+    }
     manager.onError = (res) => {
       console.error('URDF mesh failed', res)
       if (!cancelled) setFailed(true)
@@ -325,7 +332,14 @@ function useUrdf(url: string, workingPath: string, skipMesh?: RegExp, leanMesh?:
       url,
       (r) => {
         parsed = r
-        bump()
+        // Sync skips can finish during parse; LoadingManager may already be idle.
+        const mgr = manager as LoadingManager & { itemsTotal?: number; itemsLoaded?: number }
+        const total = mgr.itemsTotal ?? 0
+        const loaded = mgr.itemsLoaded ?? 0
+        if (total === 0 || loaded >= total) {
+          meshesDone = true
+          finish()
+        }
       },
       undefined,
       (err) => {
@@ -376,6 +390,11 @@ export function WheeledChassis({
   const [floorY, setFloorY] = useState(0)
   const [stackPose, setStackPose] = useState({ x: 0, y: 0, z: 0 })
   const [upperPose, setUpperPose] = useState({ x: 0, y: 0, z: 0 })
+  /** Reveal only after both URDFs are fully meshed + seated. */
+  const [revealed, setRevealed] = useState(false)
+
+  const assembled = !!(lekiwi.robot && xle.robot)
+  const loading = (!lekiwi.robot && !lekiwi.failed) || (!xle.robot && !xle.failed)
 
   useLayoutEffect(() => {
     if (!lekiwi.robot) return
@@ -468,37 +487,42 @@ export function WheeledChassis({
           ? nextUpper
           : prev,
       )
+      setRevealed(true)
     })
   }, [lekiwi.robot, xle.robot, lekiwi.generation, xle.generation, torsoH])
 
-  const loading = (!lekiwi.robot && !lekiwi.failed) || (!xle.robot && !xle.failed)
+  useEffect(() => {
+    if (!assembled) setRevealed(false)
+  }, [assembled])
 
   return (
-    <group ref={rootRef} position={[0, floorY, 0]}>
-      {lekiwi.robot ? (
-        <group ref={kiwiRef} rotation={ROS_TO_THREE}>
-          <primitive object={lekiwi.robot} />
-        </group>
-      ) : null}
+    <group>
+      <group ref={rootRef} position={[0, floorY, 0]} visible={revealed}>
+        {assembled ? (
+          <>
+            <group ref={kiwiRef} rotation={ROS_TO_THREE}>
+              <primitive object={lekiwi.robot!} />
+            </group>
 
-      <group ref={stackRef} rotation={ROS_TO_THREE} position={[stackPose.x, stackPose.y, stackPose.z]}>
-        <group ref={torsoRef} scale={[TORSO_XY_SCALE, TORSO_XY_SCALE, TORSO_Z_SCALE]}>
-          <mesh geometry={torsoGeom} castShadow receiveShadow>
-            <meshStandardMaterial color={colour.primary} roughness={0.55} metalness={0.08} />
-          </mesh>
-        </group>
+            <group ref={stackRef} rotation={ROS_TO_THREE} position={[stackPose.x, stackPose.y, stackPose.z]}>
+              <group ref={torsoRef} scale={[TORSO_XY_SCALE, TORSO_XY_SCALE, TORSO_Z_SCALE]}>
+                <mesh geometry={torsoGeom} castShadow={!perf.leanMeshes} receiveShadow={!perf.leanMeshes}>
+                  <meshStandardMaterial color={colour.primary} roughness={0.55} metalness={0.08} />
+                </mesh>
+              </group>
+            </group>
+
+            <group ref={xleRef} rotation={UPPER_TO_THREE} position={[upperPose.x, upperPose.y, upperPose.z]}>
+              <primitive object={xle.robot!} />
+            </group>
+          </>
+        ) : null}
       </group>
 
-      {xle.robot ? (
-        <group ref={xleRef} rotation={UPPER_TO_THREE} position={[upperPose.x, upperPose.y, upperPose.z]}>
-          <primitive object={xle.robot} />
-        </group>
-      ) : null}
-
-      {loading ? (
-        <mesh position={[0, 0.35, 0]}>
-          <boxGeometry args={[0.18, 0.5, 0.18]} />
-          <meshStandardMaterial color="#334155" wireframe />
+      {loading || !revealed ? (
+        <mesh position={[0, 0.32, 0]}>
+          <boxGeometry args={[0.16, 0.42, 0.16]} />
+          <meshStandardMaterial color="#64748b" wireframe transparent opacity={0.5} />
         </mesh>
       ) : null}
     </group>
