@@ -28,15 +28,15 @@ export function Scene({ colourId }: { colourId: string }) {
         gl.shadowMap.enabled = perf.shadows
         gl.shadowMap.type = perf.mobile ? BasicShadowMap : PCFShadowMap
       }}
-      style={{ width: '100%', height: '100%', background: '#0a0b0e' }}
+      style={{ width: '100%', height: '100%', background: '#12151c' }}
     >
-      <color attach="background" args={['#0a0b0e']} />
-      {!perf.mobile ? <fog attach="fog" args={['#0a0b0e', 8, 18]} /> : null}
-      <ambientLight intensity={perf.mobile ? 0.7 : 0.48} />
+      <color attach="background" args={['#12151c']} />
+      <fog attach="fog" args={['#12151c', perf.mobile ? 10 : 7, perf.mobile ? 22 : 20]} />
+      <ambientLight intensity={perf.mobile ? 0.78 : 0.62} />
       <directionalLight
         castShadow={perf.shadows}
         position={[3.5, 6, 2.5]}
-        intensity={perf.mobile ? 1.05 : 1.45}
+        intensity={perf.mobile ? 1.15 : 1.35}
         shadow-mapSize={[perf.shadowMapSize, perf.shadowMapSize]}
         shadow-camera-far={16}
         shadow-camera-left={-4}
@@ -44,7 +44,8 @@ export function Scene({ colourId }: { colourId: string }) {
         shadow-camera-top={4}
         shadow-camera-bottom={-4}
       />
-      {!perf.mobile ? <directionalLight position={[-2.5, 3, -2]} intensity={0.35} /> : null}
+      <directionalLight position={[-2.5, 3.2, -2]} intensity={perf.mobile ? 0.28 : 0.42} />
+      <hemisphereLight args={['#9aa6b8', '#1a1e26', perf.mobile ? 0.28 : 0.35]} />
       <Arena />
       <Pebble
         x={state.x}
@@ -57,7 +58,7 @@ export function Scene({ colourId }: { colourId: string }) {
         armElbowRad={state.armElbowRad}
       />
       {perf.contactShadows ? (
-        <ContactShadows position={[0, 0.001, 0]} opacity={0.55} scale={6} blur={2.6} far={2.5} />
+        <ContactShadows position={[0, 0.002, 0]} opacity={0.38} scale={6} blur={2.8} far={2.5} />
       ) : null}
       <ChaseCamera />
     </Canvas>
