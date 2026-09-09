@@ -297,14 +297,14 @@ function mapSo101Arm(
   carriageAglMm: number,
   armShoulderRad: number,
   armElbowRad: number,
-  _side: 'L' | 'R',
+  side: 'L' | 'R',
 ) {
   const t = liftT(carriageAglMm)
-  // Same joint pose on both — R base is yawed π (XLe fixed_Base_2) so both face forward
-  // with matching circular flanges. Do not scale-mirror; that flips one arm backward
-  // and hides one flange overhang under the armbase.
-  void _side
-  setJoint(robot, 'shoulder_pan', 0.35)
+  // R base is yawed π (XLe fixed_Base_2) so circular flanges match on both sides.
+  // Negate shoulder_pan on R so both chains face robot-forward (same pan after π
+  // points the arms opposite ways in world).
+  const pan = side === 'L' ? 0.35 : -0.35
+  setJoint(robot, 'shoulder_pan', pan)
   setJoint(robot, 'shoulder_lift', -0.25 - t * 0.2 + armShoulderRad * 0.35)
   setJoint(robot, 'elbow_flex', 1.0 - t * 0.25 + armElbowRad * 0.4)
   setJoint(robot, 'wrist_flex', -0.15)
