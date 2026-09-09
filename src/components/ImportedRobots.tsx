@@ -45,10 +45,8 @@ const TORSO_H_M = 0.32
 /** Match torso XY to LeKiwi plate (~216 mm) — shell is 120 mm at unit scale. */
 const TORSO_XY_SCALE = 0.001 * (216 / 120)
 const TORSO_Z_SCALE = 0.001
-/**
- * Nudge after core-centering. Was −0.0125; move upper forward ½ in (0.0127 m).
- */
-const UPPER_FORWARD_M = 0.0002
+/** No forward nudge — seat upper core on the cylinder center. */
+const UPPER_FORWARD_M = 0
 
 function tintMesh(mesh: Mesh, hex: string, roughness = 0.58, metalness = 0.08) {
   mesh.material = new MeshStandardMaterial({ color: hex, roughness, metalness })
