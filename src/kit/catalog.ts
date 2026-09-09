@@ -20,7 +20,7 @@ export const DEFAULT_KIT: KitBuild = {
 }
 
 export function kitCaption(_kit?: KitBuild) {
-  return 'LeKiwi kit base · torso · armbase · neck · dual SO-101 · OG head'
+  return 'LeKiwi kit base · torso · armbase · neck · dual SO-101 · gimbal head'
 }
 
 export function kitLookHeightM(_kit?: KitBuild) {
