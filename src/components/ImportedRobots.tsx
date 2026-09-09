@@ -1,6 +1,6 @@
 /**
  * Twin CAD — LeKiwi kit mobile base (3-wheel omni, no arm)
- * + printable torso · XLe armbase + neck + gimbal head · 2× SO-101.
+ * + printable torso · XLe armbase + neck · 2× SO-101 · OG camera head.
  * No IKEA RÅSKOG cart / 4-wheel set (SIGRobotics / Vector-Wangel, Apache-2.0).
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -29,25 +29,41 @@ const LEKIWI_URDF = asset('assets/lekiwi/LeKiwi.urdf')
 const LEKIWI_PATH = asset('assets/lekiwi/')
 const SO101_URDF = asset('assets/so101/so101_new_calib.urdf')
 const SO101_PATH = asset('assets/so101/')
+const XLE_URDF = asset('assets/xlerobot/xlerobot/xlerobot.urdf')
+const XLE_PATH = asset('assets/xlerobot/xlerobot/')
 const TORSO_STL = asset('assets/xlerobot/hardware/torso_shell.stl')
 const ARMBASE_STL = asset('assets/xlerobot/hardware/XLeRobot_035_armbase.stl')
 const NECK_STL = asset('assets/xlerobot/hardware/XLeRobot040_neck_refined.stl')
-const HEAD_STL = asset('assets/xlerobot/hardware/Gimbal_mesh_all_d435.stl')
 
 /** LeKiwi: ROS Z-up → Three Y-up. */
 const ROS_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI]
 /** Shoulder pack / arms / head face rover-forward. */
 const STACK_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI / 2]
+const HEAD_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI / 2]
 const SIT_EPS = 0.0005
+/** Drop XLe head column from cart-top height toward the printable neck. */
+const HEAD_DECK_DROP_M = 0.4
 /** Half-span between SO-101 bases on the XLe 0.35 armbase (meters). */
 const MOUNT_HALF_M = 0.11
-/** Skip LeKiwi onboard arm + cam tower (twin uses SO-101s + gimbal). Keep real omni wheels. */
+/** Skip LeKiwi onboard arm + cam tower. Keep real omni wheels. */
 const LEKIWI_SKIP_MESH =
   /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2/i
 /** Extra skips on mobile / lean tier (not the omni wheels). */
 const LEKIWI_LEAN_MESH =
   /ST3215_Servo_Motor|94868A713|Battery---|lipo_battery|servo_controller|Bottom-V2/i
+/** XLe: keep OG head + cams only — skip cart, wheels, and both arms. */
+const XLE_SKIP_MESH =
+  /raskog(body|wheel)|\/Base\.stl|Base_Motor|Rotation_Pitch|Upper_Arm|Lower_Arm|Wrist_Pitch|Wrist_Roll|Fixed_Jaw|Moving_Jaw/i
+const XLE_LEAN_MESH = /ply\.convex/i
 const KIWI_PLATE_LINKS = ['base_plate_layer1-v5', 'base_plate_layer2-v3']
+const HEAD_LINKS = [
+  'top_base_link',
+  'top_base_link_geom_1',
+  'head_pan_link',
+  'head_pan_link_geom_1',
+  'head_tilt_link',
+  'head_tilt_link_geom_1',
+]
 /** Match torso XY to LeKiwi plate (~216 mm) — shell is 120 mm at unit scale. */
 const TORSO_XY_SCALE = 0.001 * (216 / 120)
 const TORSO_Z_SCALE = 0.001
@@ -246,15 +262,87 @@ function mapSo101Arm(
   carriageAglMm: number,
   armShoulderRad: number,
   armElbowRad: number,
-  side: 'L' | 'R',
+  _side: 'L' | 'R',
 ) {
   const t = liftT(carriageAglMm)
-  setJoint(robot, 'shoulder_pan', side === 'L' ? 0.35 : -0.35)
-  setJoint(robot, 'shoulder_lift', 0.35 - t * 0.5 + armShoulderRad * 0.35)
-  setJoint(robot, 'elbow_flex', 0.85 - t * 0.4 + armElbowRad * 0.4)
-  setJoint(robot, 'wrist_flex', -0.15)
+  // Same forward pose in each mount frame — the R group is π-yawed for mirroring.
+  void _side
+  setJoint(robot, 'shoulder_pan', 0)
+  setJoint(robot, 'shoulder_lift', -0.15 - t * 0.25 + armShoulderRad * 0.35)
+  setJoint(robot, 'elbow_flex', 1.05 - t * 0.25 + armElbowRad * 0.4)
+  setJoint(robot, 'wrist_flex', -0.2)
   setJoint(robot, 'wrist_roll', 0)
-  setJoint(robot, 'gripper', 0.4)
+  setJoint(robot, 'gripper', 0.35)
+}
+
+/** Keep OG head + RealSense cams; hide cart / arm leftovers. */
+function showXleHeadOnly(robot: URDFRobot) {
+  for (const link of Object.values(robot.links)) link.visible = true
+  robot.traverse((obj) => {
+    const mesh = obj as Mesh
+    const link = nearestUrdfLink(obj, robot)
+    const linkN = (link ?? '').toLowerCase()
+    if (linkN === 'chassis' || linkN === 'world' || linkN.includes('wheel') || linkN.includes('raskog') || linkN.includes('chassis_geom')) {
+      if (mesh.isMesh) mesh.visible = false
+      else if (linkN.includes('wheel') || linkN.includes('raskog') || linkN.includes('chassis_geom')) obj.visible = false
+      return
+    }
+    if (!mesh.isMesh) return
+    const keep =
+      HEAD_LINKS.includes(link ?? '') ||
+      linkN.includes('head') ||
+      linkN.includes('top_base') ||
+      linkN.includes('camera')
+    mesh.visible = keep
+  })
+  if (robot.links.chassis) robot.links.chassis.visible = true
+}
+
+function dropHeadToDeck(robot: URDFRobot) {
+  const joint = robot.joints.fixed_top_base_link
+  if (!joint) return
+  if (joint.userData.deckBaseZ == null) joint.userData.deckBaseZ = joint.position.z
+  joint.position.z = joint.userData.deckBaseZ - HEAD_DECK_DROP_M
+  robot.updateMatrixWorld(true)
+}
+
+/** Highest mesh-bottom under base_link ≈ circular flange (ignore hangers below). */
+function mountFlangeBottomY(robot: URDFRobot) {
+  let plateY: number | null = null
+  let bestHigh = -Infinity
+  let found = false
+  robot.traverse((obj) => {
+    const mesh = obj as Mesh
+    if (!mesh.isMesh || !mesh.visible || !mesh.geometry) return
+    const link = nearestUrdfLink(obj, robot)
+    if (link !== 'base_link') return
+    const label = `${obj.name} ${meshLabel(obj)}`.toLowerCase()
+    const b = new Box3().setFromObject(mesh)
+    if (!Number.isFinite(b.min.y)) return
+    if (label.includes('base_so101')) {
+      plateY = b.min.y
+      return
+    }
+    if (b.min.y > bestHigh) {
+      bestHigh = b.min.y
+      found = true
+    }
+  })
+  if (plateY != null) return plateY
+  return found ? bestHigh : null
+}
+
+function seatArmFlange(group: Group, robot: URDFRobot, deckTopY: number) {
+  group.updateWorldMatrix(true, true)
+  robot.updateMatrixWorld(true)
+  let bottom = mountFlangeBottomY(robot)
+  if (bottom == null) {
+    const world = new Vector3()
+    group.getWorldPosition(world)
+    bottom = world.y
+  }
+  nudgeWorldY(group, deckTopY - SIT_EPS - bottom)
+  group.updateWorldMatrix(true, true)
 }
 
 function visibleWorldBox(root: Object3D) {
@@ -442,15 +530,16 @@ export function WheeledChassis({
   void showWipe
   const perf = useMemo(() => getPerfTier(), [])
   const lekiwiLean = perf.leanMeshes ? LEKIWI_LEAN_MESH : undefined
+  const xleLean = perf.leanMeshes ? XLE_LEAN_MESH : undefined
   const lekiwi = useUrdf(LEKIWI_URDF, LEKIWI_PATH, LEKIWI_SKIP_MESH, lekiwiLean)
   // Separate URLs so each arm gets its own Object3D tree.
   const so101L = useUrdf(`${SO101_URDF}?side=L`, SO101_PATH)
   const so101R = useUrdf(`${SO101_URDF}?side=R`, SO101_PATH)
+  const xleHead = useUrdf(XLE_URDF, XLE_PATH, XLE_SKIP_MESH, xleLean)
 
   const torsoGeom = usePreparedStl(TORSO_STL)
   const armbaseGeom = usePreparedStl(ARMBASE_STL, { collapseGaps: true })
   const neckGeom = usePreparedStl(NECK_STL, { collapseGaps: true })
-  const headGeom = usePreparedStl(HEAD_STL)
   const torsoMm = useMemo(() => cadHeightMm(torsoGeom), [torsoGeom])
   const armMm = useMemo(() => cadHeightMm(armbaseGeom), [armbaseGeom])
   const neckMm = useMemo(() => cadHeightMm(neckGeom), [neckGeom])
@@ -459,17 +548,21 @@ export function WheeledChassis({
   const kiwiRef = useRef<Group>(null)
   const stackRef = useRef<Group>(null)
   const armbaseRef = useRef<Mesh>(null)
+  const neckRef = useRef<Group>(null)
   const armLRef = useRef<Group>(null)
   const armRRef = useRef<Group>(null)
+  const headRef = useRef<Group>(null)
   const [floorY, setFloorY] = useState(0)
   const [stackPose, setStackPose] = useState({ x: 0, y: 0, z: 0 })
+  const [headPose, setHeadPose] = useState({ x: 0, y: 0, z: 0 })
   const [revealed, setRevealed] = useState(false)
 
-  const assembled = !!(lekiwi.robot && so101L.robot && so101R.robot)
+  const assembled = !!(lekiwi.robot && so101L.robot && so101R.robot && xleHead.robot)
   const loading =
     (!lekiwi.robot && !lekiwi.failed) ||
     (!so101L.robot && !so101L.failed) ||
-    (!so101R.robot && !so101R.failed)
+    (!so101R.robot && !so101R.failed) ||
+    (!xleHead.robot && !xleHead.failed)
 
   useLayoutEffect(() => {
     if (!lekiwi.robot) return
@@ -490,16 +583,28 @@ export function WheeledChassis({
   }, [so101R.robot, so101R.generation, colour, carriageAglMm, armShoulderRad, armElbowRad])
 
   useLayoutEffect(() => {
+    if (!xleHead.robot) return
+    dropHeadToDeck(xleHead.robot)
+    showXleHeadOnly(xleHead.robot)
+    colorizeRoot(xleHead.robot, colour)
+    setJoint(xleHead.robot, 'head_pan_joint', 0)
+    setJoint(xleHead.robot, 'head_tilt_joint', 0.12)
+  }, [xleHead.robot, xleHead.generation, colour])
+
+  useLayoutEffect(() => {
     const root = rootRef.current
     const kiwiG = kiwiRef.current
     const stack = stackRef.current
+    const neckG = neckRef.current
     const armL = armLRef.current
     const armR = armRRef.current
+    const headG = headRef.current
     if (!root) return
 
     withIdentityParents(root, () => {
       root.position.y = 0
       if (stack) stack.position.set(0, 0, 0)
+      if (headG) headG.position.set(0, 0, 0)
       root.updateWorldMatrix(true, true)
 
       // 1) Park LeKiwi wheels on the floor.
@@ -521,7 +626,7 @@ export function WheeledChassis({
       }
       if (stack) stack.position.set(nextStack.x, nextStack.y, nextStack.z)
 
-      // 3) Seat SO-101 base origins in the armbase shoulder holes (local stack frame).
+      // 3) Seat both SO-101 circular flanges flush on the armbase top.
       const shoulderTopM = (torsoMm + armMm) * PRINT_SCALE
       if (armL) armL.position.set(0, -MOUNT_HALF_M, shoulderTopM)
       if (armR) armR.position.set(0, MOUNT_HALF_M, shoulderTopM)
@@ -533,20 +638,34 @@ export function WheeledChassis({
           ? shoulders.max.y
           : plateTop + shoulderTopM
 
-      const seatArmOrigin = (group: Group | null) => {
-        if (!group) return
-        root.updateWorldMatrix(true, true)
-        const world = new Vector3()
-        group.getWorldPosition(world)
-        nudgeWorldY(group, mountTop - SIT_EPS - world.y)
-      }
-      seatArmOrigin(armL)
-      seatArmOrigin(armR)
+      if (armL && so101L.robot) seatArmFlange(armL, so101L.robot, mountTop)
+      if (armR && so101R.robot) seatArmFlange(armR, so101R.robot, mountTop)
 
-      // Re-tint after meshes are in the live scene (SO-101 defaults are yellow).
+      // 4) Seat OG camera head on the neck top.
+      const nextHead = { x: 0, y: 0, z: 0 }
+      if (headG && xleHead.robot) {
+        dropHeadToDeck(xleHead.robot)
+        showXleHeadOnly(xleHead.robot)
+        headG.position.set(0, 0, 0)
+        root.updateWorldMatrix(true, true)
+        const neckBox = neckG ? visibleWorldBox(neckG) : null
+        const headBox = meshBoxForLinks(xleHead.robot, HEAD_LINKS) ?? visibleWorldBox(headG)
+        if (neckBox && headBox) {
+          nextHead.x = (neckBox.min.x + neckBox.max.x) * 0.5 - (headBox.min.x + headBox.max.x) * 0.5
+          nextHead.z = (neckBox.min.z + neckBox.max.z) * 0.5 - (headBox.min.z + headBox.max.z) * 0.5
+          nextHead.y = neckBox.max.y - SIT_EPS - headBox.min.y
+        } else if (neckBox) {
+          nextHead.x = (neckBox.min.x + neckBox.max.x) * 0.5
+          nextHead.z = (neckBox.min.z + neckBox.max.z) * 0.5
+          nextHead.y = neckBox.max.y - SIT_EPS
+        }
+        headG.position.set(nextHead.x, nextHead.y, nextHead.z)
+      }
+
       if (lekiwi.robot) colorizeRoot(lekiwi.robot, colour)
       if (so101L.robot) colorizeRoot(so101L.robot, colour)
       if (so101R.robot) colorizeRoot(so101R.robot, colour)
+      if (xleHead.robot) colorizeRoot(xleHead.robot, colour)
 
       setFloorY((y) => (Math.abs(y - nextFloor) > 1e-4 ? nextFloor : y))
       setStackPose((prev) =>
@@ -556,15 +675,24 @@ export function WheeledChassis({
           ? nextStack
           : prev,
       )
+      setHeadPose((prev) =>
+        Math.abs(prev.x - nextHead.x) > 1e-4 ||
+        Math.abs(prev.y - nextHead.y) > 1e-4 ||
+        Math.abs(prev.z - nextHead.z) > 1e-4
+          ? nextHead
+          : prev,
+      )
       setRevealed(true)
     })
   }, [
     lekiwi.robot,
     so101L.robot,
     so101R.robot,
+    xleHead.robot,
     lekiwi.generation,
     so101L.generation,
     so101R.generation,
+    xleHead.generation,
     torsoMm,
     armMm,
     neckMm,
@@ -590,54 +718,44 @@ export function WheeledChassis({
         ) : null}
 
         {assembled ? (
-          <group ref={stackRef} rotation={STACK_TO_THREE} position={[stackPose.x, stackPose.y, stackPose.z]}>
-            {/* Widened torso shell on the LeKiwi plate */}
-            <group scale={[TORSO_XY_SCALE, TORSO_XY_SCALE, TORSO_Z_SCALE]}>
-              <mesh geometry={torsoGeom} castShadow={shadows} receiveShadow={shadows}>
-                <meshStandardMaterial color={colour.primary} roughness={0.55} metalness={0.08} />
-              </mesh>
-            </group>
+          <>
+            <group ref={stackRef} rotation={STACK_TO_THREE} position={[stackPose.x, stackPose.y, stackPose.z]}>
+              <group scale={[TORSO_XY_SCALE, TORSO_XY_SCALE, TORSO_Z_SCALE]}>
+                <mesh geometry={torsoGeom} castShadow={shadows} receiveShadow={shadows}>
+                  <meshStandardMaterial color={colour.primary} roughness={0.55} metalness={0.08} />
+                </mesh>
+              </group>
 
-            {/* Armbase + neck + gimbal head in mm CAD space */}
-            <group scale={PRINT_SCALE}>
-              <mesh
-                ref={armbaseRef}
-                geometry={armbaseGeom}
-                position={[0, 0, torsoMm]}
-                castShadow={shadows}
-                receiveShadow={shadows}
-              >
-                <meshStandardMaterial color={colour.primary} roughness={0.5} metalness={0.1} />
-              </mesh>
-              <mesh
-                geometry={neckGeom}
-                position={[0, 0, torsoMm + armMm]}
-                castShadow={shadows}
-                receiveShadow={shadows}
-              >
-                <meshStandardMaterial color={colour.primary} roughness={0.52} metalness={0.1} />
-              </mesh>
-              <mesh
-                geometry={headGeom}
-                position={[0, 0, torsoMm + armMm + neckMm]}
-                castShadow={shadows}
-                receiveShadow={shadows}
-              >
-                <meshStandardMaterial color={colour.primary} roughness={0.4} metalness={0.18} />
-              </mesh>
-            </group>
+              <group scale={PRINT_SCALE}>
+                <mesh
+                  ref={armbaseRef}
+                  geometry={armbaseGeom}
+                  position={[0, 0, torsoMm]}
+                  castShadow={shadows}
+                  receiveShadow={shadows}
+                >
+                  <meshStandardMaterial color={colour.primary} roughness={0.5} metalness={0.1} />
+                </mesh>
+                <group ref={neckRef} position={[0, 0, torsoMm + armMm]}>
+                  <mesh geometry={neckGeom} castShadow={shadows} receiveShadow={shadows}>
+                    <meshStandardMaterial color={colour.primary} roughness={0.52} metalness={0.1} />
+                  </mesh>
+                </group>
+              </group>
 
-            {so101L.robot ? (
+              {/* Both arms share the same forward pose; R is π-yawed to mirror the SO-101. */}
               <group ref={armLRef}>
-                <primitive object={so101L.robot} />
+                <primitive object={so101L.robot!} />
               </group>
-            ) : null}
-            {so101R.robot ? (
               <group ref={armRRef} rotation={[0, 0, Math.PI]}>
-                <primitive object={so101R.robot} />
+                <primitive object={so101R.robot!} />
               </group>
-            ) : null}
-          </group>
+            </group>
+
+            <group ref={headRef} rotation={HEAD_TO_THREE} position={[headPose.x, headPose.y, headPose.z]}>
+              <primitive object={xleHead.robot!} />
+            </group>
+          </>
         ) : null}
       </group>
 
@@ -654,9 +772,9 @@ export function WheeledChassis({
 export function meshAttribution(kit: KitBuild) {
   return (
     `${kitCaption(kit)}. ` +
-    `LeKiwi kit mobile base (SIGRobotics-UIUC) · printable torso · XLe arm-base + neck + gimbal · ` +
-    `2× SO-101 (TheRobotStudio / Vector-Wangel), Apache-2.0. ` +
-    `Stack: LeKiwi plate → torso → arm-base → SO-101s → neck → D435 gimbal. ` +
+    `LeKiwi kit mobile base (SIGRobotics-UIUC) · printable torso · XLe arm-base + neck · ` +
+    `2× SO-101 + OG camera head (TheRobotStudio / Vector-Wangel), Apache-2.0. ` +
+    `Stack: LeKiwi plate → torso → arm-base → SO-101s → neck → OG cam head. ` +
     `No IKEA RÅSKOG cart/wheels. Overall BOM stack ~${OVERALL_HEIGHT_MM} mm optional.`
   )
 }
