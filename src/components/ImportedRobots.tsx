@@ -42,10 +42,13 @@ const KIWI_PLATE_LINKS = ['base_plate_layer1-v5', 'base_plate_layer2-v3']
 const UPPER_CORE_LINKS = ['Base', 'Base_2', 'top_base_link', 'head_pan_link', 'head_tilt_link']
 /** Printable torso shell height (STL Z span), meters. */
 const TORSO_H_M = 0.32
+/** Match torso XY to LeKiwi plate (~216 mm) — shell is 120 mm at unit scale. */
+const TORSO_XY_SCALE = 0.001 * (216 / 120)
+const TORSO_Z_SCALE = 0.001
 /**
- * Nudge after core-centering. Last step was +0.025 m forward; go back half of that.
+ * Nudge after core-centering. Was −0.0125; move upper forward ½ in (0.0127 m).
  */
-const UPPER_FORWARD_M = -0.0125
+const UPPER_FORWARD_M = 0.0002
 
 function tintMesh(mesh: Mesh, hex: string, roughness = 0.58, metalness = 0.08) {
   mesh.material = new MeshStandardMaterial({ color: hex, roughness, metalness })
@@ -467,7 +470,7 @@ export function WheeledChassis({
       ) : null}
 
       <group ref={stackRef} rotation={ROS_TO_THREE} position={[stackPose.x, stackPose.y, stackPose.z]}>
-        <group ref={torsoRef} scale={0.001}>
+        <group ref={torsoRef} scale={[TORSO_XY_SCALE, TORSO_XY_SCALE, TORSO_Z_SCALE]}>
           <mesh geometry={torsoGeom} castShadow receiveShadow>
             <meshStandardMaterial color={colour.primary} roughness={0.55} metalness={0.08} />
           </mesh>
