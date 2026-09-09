@@ -352,9 +352,17 @@ function useUrdf(url: string, workingPath: string, skipMesh?: RegExp, leanMesh?:
     let cancelled = false
     let parsed: URDFRobot | null = null
     let meshesDone = false
+    let pendingMeshes = 0
+    let urdfParsed = false
 
     const finish = () => {
-      if (cancelled || !parsed || !meshesDone) return
+      if (cancelled || !parsed || !meshesDone || !urdfParsed) return
+      // Require at least one real mesh when the URDF requested any.
+      let meshCount = 0
+      parsed.traverse((obj) => {
+        if ((obj as Mesh).isMesh) meshCount++
+      })
+      if (pendingMeshes > 0 && meshCount === 0) return
       setRobot(parsed)
       setGeneration((g) => g + 1)
     }
@@ -378,18 +386,27 @@ function useUrdf(url: string, workingPath: string, skipMesh?: RegExp, leanMesh?:
         done(new Object3D())
         return
       }
-      defaultMesh(path, mgr, material, done)
+      pendingMeshes++
+      defaultMesh(path, mgr, material, (scene, err) => {
+        pendingMeshes = Math.max(0, pendingMeshes - 1)
+        done(scene, err)
+        if (urdfParsed && pendingMeshes === 0) {
+          meshesDone = true
+          finish()
+        }
+      })
     }
     loader.load(
       url,
       (r) => {
         parsed = r
-        // Defer idle check — mesh requests are often registered during parse.
+        urdfParsed = true
+        // If every mesh was sync-skipped / already loaded, close out.
         queueMicrotask(() => {
           const mgr = manager as LoadingManager & { itemsTotal?: number; itemsLoaded?: number }
           const total = mgr.itemsTotal ?? 0
           const loaded = mgr.itemsLoaded ?? 0
-          if (total === 0 || loaded >= total) {
+          if (pendingMeshes === 0 && (total === 0 || loaded >= total)) {
             meshesDone = true
             finish()
           }
