@@ -28,9 +28,9 @@ export function ModelPage() {
       <div className="model-stage">
         <Canvas
           shadows
-          dpr={[1, 2]}
-          camera={{ position: [1.85, 0.95, 2.15], fov: 38, near: 0.02, far: 40 }}
-          gl={{ antialias: true, toneMappingExposure: 1.15 }}
+          dpr={[1, 1.75]}
+          camera={{ position: [2.1, 1.05, 2.4], fov: 40, near: 0.02, far: 40 }}
+          gl={{ antialias: true, toneMappingExposure: 1.15, powerPreference: 'high-performance' }}
           onCreated={({ gl }) => {
             gl.shadowMap.type = PCFShadowMap
           }}
@@ -60,10 +60,13 @@ export function ModelPage() {
             makeDefault
             target={[0, kitLookHeightM(kit), 0]}
             enablePan
-            minDistance={0.35}
-            maxDistance={8}
+            enableDamping
+            minDistance={0.45}
+            maxDistance={10}
             maxPolarAngle={Math.PI * 0.49}
             dampingFactor={0.08}
+            rotateSpeed={0.85}
+            touches={{ ONE: 0, TWO: 2 }}
           />
         </Canvas>
 

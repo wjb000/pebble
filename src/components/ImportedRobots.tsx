@@ -22,7 +22,13 @@ const TORSO_STL = asset('assets/xlerobot/hardware/torso_shell.stl')
 
 const ARM_L_HEX = '#38bdf8'
 const ARM_R_HEX = '#f97316'
+/** LeKiwi + torso: ROS Z-up → Three Y-up. */
 const ROS_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI]
+/**
+ * XLe upper (arms+head): same ROS lift, yawed +90° (to the right) so it faces
+ * base-forward instead of sideways / off the torso.
+ */
+const UPPER_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI / 2]
 const SIT_EPS = 0.0005
 /** Drop XLe arm/head mounts from cart-top height toward a low deck. */
 const DECK_DROP_M = 0.4
@@ -317,7 +323,7 @@ export function WheeledChassis({
   const xleRef = useRef<Group>(null)
   const [floorY, setFloorY] = useState(0)
   const [stackPose, setStackPose] = useState({ x: 0, y: 0, z: 0 })
-  const [upperZ, setUpperZ] = useState(TORSO_H_M)
+  const [upperPose, setUpperPose] = useState({ x: 0, y: 0, z: 0 })
 
   useLayoutEffect(() => {
     if (!lekiwi.robot) return
@@ -343,7 +349,7 @@ export function WheeledChassis({
 
     root.position.y = 0
     if (stack) stack.position.set(0, 0, 0)
-    if (xleG) xleG.position.set(0, 0, torsoH)
+    if (xleG) xleG.position.set(0, 0, 0)
     root.updateWorldMatrix(true, true)
 
     // 1) Park LeKiwi kit mobile base on the floor.
@@ -357,7 +363,7 @@ export function WheeledChassis({
     const plateCz = plateBox ? (plateBox.min.z + plateBox.max.z) * 0.5 : 0
     const plateTop = plateBox?.max.y ?? kiwiBox?.max.y ?? nextFloor
 
-    // 2) Sit torso on the LeKiwi plate (leaves room under the raised arms/head).
+    // 2) Sit torso on the LeKiwi plate (root-space Y-up).
     const nextStack = { x: plateCx, y: 0, z: plateCz }
     if (stack) {
       stack.position.set(nextStack.x, 0, nextStack.z)
@@ -367,17 +373,28 @@ export function WheeledChassis({
       stack.position.y = nextStack.y
     }
 
-    // 3) Raise XLe arms + head onto the torso top.
-    let nextUpper = torsoH
+    // 3) Seat upper body ON TOP of the torso, centered — not in front.
+    //    Upper is a root sibling (Y-up position) with its own yaw.
+    const nextUpper = { x: 0, y: 0, z: 0 }
     if (xleG) {
-      xleG.position.set(0, 0, nextUpper)
+      xleG.position.set(0, 0, 0)
       root.updateWorldMatrix(true, true)
       const torsoBox = torsoG ? visibleWorldBox(torsoG) : null
       const xleBox = visibleWorldBox(xleG)
       if (torsoBox && xleBox) {
-        nextUpper += torsoBox.max.y - SIT_EPS - xleBox.min.y
-        xleG.position.z = nextUpper
+        const torsoCx = (torsoBox.min.x + torsoBox.max.x) * 0.5
+        const torsoCz = (torsoBox.min.z + torsoBox.max.z) * 0.5
+        const xleCx = (xleBox.min.x + xleBox.max.x) * 0.5
+        const xleCz = (xleBox.min.z + xleBox.max.z) * 0.5
+        nextUpper.x = torsoCx - xleCx
+        nextUpper.z = torsoCz - xleCz
+        nextUpper.y = torsoBox.max.y - SIT_EPS - xleBox.min.y
+      } else if (torsoBox) {
+        nextUpper.x = (torsoBox.min.x + torsoBox.max.x) * 0.5
+        nextUpper.z = (torsoBox.min.z + torsoBox.max.z) * 0.5
+        nextUpper.y = torsoBox.max.y - SIT_EPS
       }
+      xleG.position.set(nextUpper.x, nextUpper.y, nextUpper.z)
     }
 
     setFloorY((y) => (Math.abs(y - nextFloor) > 1e-4 ? nextFloor : y))
@@ -388,7 +405,13 @@ export function WheeledChassis({
         ? nextStack
         : prev,
     )
-    setUpperZ((z) => (Math.abs(z - nextUpper) > 1e-4 ? nextUpper : z))
+    setUpperPose((prev) =>
+      Math.abs(prev.x - nextUpper.x) > 1e-4 ||
+      Math.abs(prev.y - nextUpper.y) > 1e-4 ||
+      Math.abs(prev.z - nextUpper.z) > 1e-4
+        ? nextUpper
+        : prev,
+    )
   }, [
     lekiwi.robot,
     xle.robot,
@@ -416,13 +439,13 @@ export function WheeledChassis({
             <meshStandardMaterial color={colour.primary} roughness={0.55} metalness={0.08} />
           </mesh>
         </group>
-
-        {xle.robot ? (
-          <group ref={xleRef} position={[0, 0, upperZ]}>
-            <primitive object={xle.robot} />
-          </group>
-        ) : null}
       </group>
+
+      {xle.robot ? (
+        <group ref={xleRef} rotation={UPPER_TO_THREE} position={[upperPose.x, upperPose.y, upperPose.z]}>
+          <primitive object={xle.robot} />
+        </group>
+      ) : null}
 
       {loading ? (
         <mesh position={[0, 0.35, 0]}>
