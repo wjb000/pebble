@@ -21,8 +21,6 @@ const XLE_URDF = asset('assets/xlerobot/xlerobot/xlerobot.urdf')
 const XLE_PATH = asset('assets/xlerobot/xlerobot/')
 const TORSO_STL = asset('assets/xlerobot/hardware/torso_shell.stl')
 
-const ARM_L_HEX = '#38bdf8'
-const ARM_R_HEX = '#f97316'
 /** LeKiwi + torso: ROS Z-up → Three Y-up. */
 const ROS_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI]
 /**
@@ -113,48 +111,20 @@ function applyLeKiwiVisibility(robot: URDFRobot) {
   })
 }
 
+/** Paint every visible mesh the colourway primary (whole twin body). */
 function colorizeLeKiwi(root: Object3D, colour: Colourway) {
+  const body = colour.primary
   root.traverse((obj) => {
     if (!(obj instanceof Mesh) || !obj.visible) return
-    const n = meshLabel(obj)
-    if (n.includes('omni') || n.includes('wheel')) tintMesh(obj, '#1a1a1a', 0.9, 0.04)
-    else if (n.includes('sts3215') || n.includes('st3215') || n.includes('servo')) tintMesh(obj, '#1f2937', 0.35, 0.55)
-    else if (n.includes('battery')) tintMesh(obj, '#374151', 0.5, 0.2)
-    else tintMesh(obj, colour.primary, 0.55, 0.08)
+    tintMesh(obj, body, 0.58, 0.08)
   })
 }
 
-function classifyXleLink(name: string): 'base' | 'head' | 'arm' {
-  const n = name.toLowerCase()
-  if (n === 'world' || n.includes('chassis') || n.includes('wheel') || n.includes('raskog')) return 'base'
-  if (n.includes('arm_camera')) return 'arm'
-  if (n.includes('head') || n.includes('top_base') || n.includes('tophead') || n.includes('topbase')) return 'head'
-  if (/^(base|rotation|pitch|elbow|upper_arm|lower_arm|wrist|jaw|fixed_jaw|moving_jaw)/.test(n)) return 'arm'
-  return 'base'
-}
-
-function xleArmSide(link: string | null): 'L' | 'R' | null {
-  if (!link) return null
-  const n = link.toLowerCase()
-  if (n.endsWith('_2') || n.includes('_2_') || n.startsWith('left_arm')) return 'R'
-  if (n.startsWith('right_arm')) return 'L'
-  if (/^(base|rotation|pitch|elbow|upper_arm|lower_arm|wrist|jaw|fixed_jaw|moving_jaw)/.test(n)) return 'L'
-  return null
-}
-
 function colorizeXle(robot: URDFRobot, colour: Colourway) {
+  const body = colour.primary
   robot.traverse((obj) => {
     if (!(obj instanceof Mesh) || !obj.visible) return
-    const link = nearestUrdfLink(obj, robot)
-    const bucket = link ? classifyXleLink(link) : 'base'
-    const n = `${obj.name} ${link ?? ''}`.toLowerCase()
-    const side = xleArmSide(link)
-    if (n.includes('motor') || n.includes('sts') || n.includes('servo')) tintMesh(obj, '#1f2937', 0.35, 0.55)
-    else if (bucket === 'head' || n.includes('camera')) tintMesh(obj, '#111827', 0.4, 0.22)
-    else if (side === 'L') tintMesh(obj, ARM_L_HEX, 0.48, 0.12)
-    else if (side === 'R') tintMesh(obj, ARM_R_HEX, 0.48, 0.12)
-    else if (bucket === 'arm') tintMesh(obj, colour.accent, 0.55, 0.08)
-    else tintMesh(obj, colour.primary, 0.62, 0.08)
+    tintMesh(obj, body, 0.55, 0.08)
   })
 }
 
