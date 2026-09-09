@@ -312,10 +312,10 @@ function mapSo101Arm(
   setJoint(robot, 'gripper', 0.35)
 }
 
-/** Highest mesh-bottom under base_link ≈ circular flange (ignore hangers below). */
+/** World Y of the circular base_so101 flange underside (not the higher motor/plate). */
 function mountFlangeBottomY(robot: URDFRobot) {
   let plateY: number | null = null
-  let bestHigh = -Infinity
+  let lowest = Infinity
   let found = false
   robot.traverse((obj) => {
     const mesh = obj as Mesh
@@ -323,20 +323,22 @@ function mountFlangeBottomY(robot: URDFRobot) {
     const link = nearestUrdfLink(obj, robot)
     if (link !== 'base_link') return
     mesh.visible = true
-    const label = `${obj.name} ${meshLabel(obj)}`.toLowerCase()
+    const file = String(mesh.userData.meshFile ?? mesh.name ?? '').toLowerCase()
+    const label = `${obj.name} ${meshLabel(obj)} ${file}`.toLowerCase()
     const b = new Box3().setFromObject(mesh)
     if (!Number.isFinite(b.min.y)) return
-    if (label.includes('base_so101')) {
-      plateY = b.min.y
+    if (file.includes('base_so101') || label.includes('base_so101')) {
+      plateY = plateY == null ? b.min.y : Math.min(plateY, b.min.y)
       return
     }
-    if (b.min.y > bestHigh) {
-      bestHigh = b.min.y
+    if (b.min.y < lowest) {
+      lowest = b.min.y
       found = true
     }
   })
   if (plateY != null) return plateY
-  return found ? bestHigh : null
+  // Fall back to the true foot of base_link (lowest mesh), never a higher motor bottom.
+  return found ? lowest : null
 }
 
 function seatArmFlange(group: Group, robot: URDFRobot, deckTopY: number) {
@@ -488,11 +490,20 @@ function useUrdf(url: string, workingPath: string, skipMesh?: RegExp, leanMesh?:
       defaultMesh(path, mgr, material, (scene, err) => {
         pendingMeshes = Math.max(0, pendingMeshes - 1)
         // Clone geometry so L/R arms don't share buffers (missing base on one side).
+        // Name meshes from the STL path so seating can find base_so101 (URDF visuals are unnamed).
         if (scene) {
+          const leaf = path.split('/').pop()?.replace(/\?.*$/, '') ?? ''
           scene.traverse((obj) => {
             const mesh = obj as Mesh
-            if (mesh.isMesh && mesh.geometry) mesh.geometry = mesh.geometry.clone()
+            if (mesh.isMesh && mesh.geometry) {
+              mesh.geometry = mesh.geometry.clone()
+              if (leaf) {
+                mesh.name = leaf
+                mesh.userData.meshFile = leaf
+              }
+            }
           })
+          if (leaf && !scene.name) scene.name = leaf
         }
         done(scene, err)
         if (urdfParsed && pendingMeshes === 0) {
@@ -630,8 +641,15 @@ export function WheeledChassis({
 
       // Arms (meters) sit on armbase top in the stack frame.
       const shoulderTopM = (torsoMm + armMm) * PRINT_SCALE
-      if (armL) armL.position.set(0, -MOUNT_HALF_M, shoulderTopM)
-      if (armR) armR.position.set(0, MOUNT_HALF_M, shoulderTopM)
+      if (armL) {
+        armL.rotation.set(0, 0, 0)
+        armL.position.set(0, -MOUNT_HALF_M, shoulderTopM)
+      }
+      if (armR) {
+        // XLe fixed_Base_2 yaw — keep set here so seating can't leave R unyawed.
+        armR.rotation.set(0, 0, Math.PI)
+        armR.position.set(0, MOUNT_HALF_M, shoulderTopM)
+      }
       root.updateWorldMatrix(true, true)
 
       const shoulders = armbaseRef.current ? new Box3().setFromObject(armbaseRef.current) : null
