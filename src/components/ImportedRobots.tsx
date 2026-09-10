@@ -22,7 +22,7 @@ import type { Colourway } from '../product'
 import { TELESCOPE } from '../robot/dims'
 import { kitCaption, type KitBuild } from '../kit/catalog'
 import { getPerfTier } from '../kit/perf'
-import { Placeable, PlaceGizmo, usePlaceStatic } from '../twin/place'
+import { Placeable, usePlaceStatic } from '../twin/place'
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
 
@@ -607,7 +607,6 @@ export function WheeledChassis({
 
   return (
     <group>
-      <PlaceGizmo />
       <group ref={rootRef} position={[0, floorY, 0]} visible={revealed}>
         {lekiwi.robot ? (
           <Placeable id="base">

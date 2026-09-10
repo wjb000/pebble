@@ -12,8 +12,8 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { TransformControls } from '@react-three/drei'
-import { Group } from 'three'
+import { useThree, type ThreeEvent } from '@react-three/fiber'
+import { Group, Plane, Vector3 } from 'three'
 
 export const PART_IDS = [
   'base',
@@ -291,10 +291,22 @@ export function usePlaceStatic() {
   return useContext(PlaceStaticContext) ?? { enabled: false, markSeated: () => undefined }
 }
 
-/** Wrapper whose local transform is the user nudge. */
+const _plane = new Plane()
+const _hit = new Vector3()
+const _world = new Vector3()
+const _dir = new Vector3()
+const _local = new Vector3()
+const _grab = new Vector3()
+const _up = new Vector3(0, 1, 0)
+
+/** Wrapper whose local transform is the user nudge. Drag when unlocked. */
 export function Placeable({ id, children }: { id: PartId; children: ReactNode }) {
-  const { enabled, seated, unlocked, nudges, setUnlocked, setSelected, registerObject } = useTwinPlace()
+  const { enabled, seated, unlocked, nudges, mode, snap, setUnlocked, setSelected, registerObject, setNudge } =
+    useTwinPlace()
+  const { camera, controls } = useThree()
   const ref = useRef<Group>(null)
+  const dragging = useRef(false)
+  const lastX = useRef(0)
   const n = nudges[id]
   const apply = !enabled || seated
   const px = apply ? n.x : 0
@@ -319,50 +331,85 @@ export function Placeable({ id, children }: { id: PartId; children: ReactNode })
     [id, registerObject],
   )
 
+  const commit = useCallback(() => {
+    const o = ref.current
+    if (!o) return
+    setNudge(id, {
+      x: o.position.x,
+      y: o.position.y,
+      z: o.position.z,
+      rx: o.rotation.x,
+      ry: o.rotation.y,
+      rz: o.rotation.z,
+    })
+  }, [id, setNudge])
+
+  const setOrbit = (on: boolean) => {
+    const c = controls as { enabled?: boolean } | null
+    if (c && typeof c.enabled === 'boolean') c.enabled = on
+  }
+
   if (!enabled) return <>{children}</>
+
+  const active = unlocked === id
 
   return (
     <group
       ref={setRef}
-      onClick={(e) => {
+      onPointerDown={(e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation()
-        if (unlocked) setUnlocked(id)
-        else setSelected(id)
+        if (!active) {
+          if (unlocked) setUnlocked(id)
+          else setSelected(id)
+          return
+        }
+        dragging.current = true
+        lastX.current = e.clientX
+        setOrbit(false)
+        const o = ref.current
+        if (!o) return
+        o.getWorldPosition(_world)
+        camera.getWorldDirection(_dir)
+        _plane.setFromNormalAndCoplanarPoint(_dir, _world)
+        if (e.ray.intersectPlane(_plane, _hit)) _grab.copy(_world).sub(_hit)
+        ;(e.target as unknown as Element).setPointerCapture?.(e.pointerId)
       }}
+      onPointerMove={(e: ThreeEvent<PointerEvent>) => {
+        if (!dragging.current || !active) return
+        e.stopPropagation()
+        const o = ref.current
+        if (!o?.parent) return
+        if (mode === 'rotate') {
+          const dx = e.clientX - lastX.current
+          lastX.current = e.clientX
+          o.rotateOnWorldAxis(_up, dx * 0.008)
+          return
+        }
+        o.getWorldPosition(_world)
+        camera.getWorldDirection(_dir)
+        _plane.setFromNormalAndCoplanarPoint(_dir, _world)
+        if (!e.ray.intersectPlane(_plane, _hit)) return
+        _world.copy(_hit).add(_grab)
+        o.parent.worldToLocal(_local.copy(_world))
+        if (snap) {
+          const step = PART_META[id].units === 'mm' ? 1 : 0.001
+          _local.x = Math.round(_local.x / step) * step
+          _local.y = Math.round(_local.y / step) * step
+          _local.z = Math.round(_local.z / step) * step
+        }
+        o.position.copy(_local)
+      }}
+      onPointerUp={(e: ThreeEvent<PointerEvent>) => {
+        if (!dragging.current) return
+        dragging.current = false
+        setOrbit(true)
+        commit()
+        e.stopPropagation()
+      }}
+      onPointerMissed={() => undefined}
     >
       {children}
     </group>
-  )
-}
-
-/** World-space gizmo — must sit outside the mm print-scale group. */
-export function PlaceGizmo() {
-  const { enabled, unlocked, mode, snap, gizmoTick, getObject, setNudge } = useTwinPlace()
-  void gizmoTick
-  if (!enabled || !unlocked) return null
-  const obj = getObject(unlocked)
-  if (!obj) return null
-  const units = PART_META[unlocked].units
-  void units
-  return (
-    <TransformControls
-      object={obj}
-      mode={mode}
-      space="world"
-      size={0.85}
-      translationSnap={snap ? 0.001 : undefined}
-      rotationSnap={snap ? Math.PI / 180 : undefined}
-      onMouseUp={() => {
-        setNudge(unlocked, {
-          x: obj.position.x,
-          y: obj.position.y,
-          z: obj.position.z,
-          rx: obj.rotation.x,
-          ry: obj.rotation.y,
-          rz: obj.rotation.z,
-        })
-      }}
-    />
   )
 }
 
@@ -380,15 +427,40 @@ export function PlaceHud() {
     setSnap,
     resetPart,
     resetAll,
+    getObject,
+    setNudge,
   } = useTwinPlace()
   const [copied, setCopied] = useState(false)
   if (!enabled) return null
+
+  const bump = (axis: 'x' | 'y' | 'z', sign: number) => {
+    if (!unlocked) return
+    const step = (PART_META[unlocked].units === 'mm' ? 1 : 0.001) * sign * (snap ? 1 : 0.25)
+    const o = getObject(unlocked)
+    if (o) o.position[axis] += step
+    const n = nudges[unlocked]
+    setNudge(unlocked, { ...n, [axis]: (o ? o.position[axis] : n[axis] + step) })
+  }
+  const bumpYaw = (sign: number) => {
+    if (!unlocked) return
+    const step = ((snap ? 1 : 0.25) * Math.PI) / 180 * sign
+    const o = getObject(unlocked)
+    if (o) o.rotateOnWorldAxis(_up, step)
+    const n = nudges[unlocked]
+    setNudge(unlocked, {
+      ...n,
+      rx: o ? o.rotation.x : n.rx,
+      ry: o ? o.rotation.y : n.ry,
+      rz: o ? o.rotation.z : n.rz,
+    })
+  }
 
   return (
     <div className="hud-box model-place">
       <div className="hud-label">PLACE</div>
       <div className="place-hint">
-        Unlock a part, drag, then Lock. Tell me to bake when it looks right.
+        Unlock a part, drag it in the view (or use the mm buttons), then Lock.
+        Tell me to bake when it looks right.
       </div>
       <div className="place-toolbar">
         <button
@@ -413,6 +485,26 @@ export function PlaceHud() {
           Snap
         </button>
       </div>
+      {unlocked ? (
+        <div className="place-toolbar">
+          {(['x', 'y', 'z'] as const).map((axis) => (
+            <span key={axis} className="place-axis">
+              <button type="button" onClick={() => bump(axis, -1)}>
+                −{axis.toUpperCase()}
+              </button>
+              <button type="button" onClick={() => bump(axis, 1)}>
+                +{axis.toUpperCase()}
+              </button>
+            </span>
+          ))}
+          <button type="button" onClick={() => bumpYaw(-1)}>
+            −YAW
+          </button>
+          <button type="button" onClick={() => bumpYaw(1)}>
+            +YAW
+          </button>
+        </div>
+      ) : null}
       <ul className="place-list">
         {PART_IDS.map((id) => {
           const fmt = formatNudge(id, nudges[id])

@@ -267,7 +267,7 @@ kbd {
   display: inline-block; width: 6px; height: 6px; border-radius: 50%;
   background: var(--accent); margin-left: 6px; vertical-align: middle;
 }
-.place-reset { opacity: 0.75; }
+.place-axis { display: inline-flex; gap: 2px; }
 .place-readout {
   grid-column: 1 / -1; font-size: 9px; color: rgba(180,190,210,0.65); line-height: 1.35;
 }
