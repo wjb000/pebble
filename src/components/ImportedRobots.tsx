@@ -22,6 +22,7 @@ import type { Colourway } from '../product'
 import { TELESCOPE } from '../robot/dims'
 import { kitCaption, type KitBuild } from '../kit/catalog'
 import { getPerfTier } from '../kit/perf'
+import { Placeable, PlaceGizmo, useTwinPlace } from '../twin/place'
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
 
@@ -428,6 +429,9 @@ export function WheeledChassis({
 }) {
   void showWipe
   const perf = useMemo(() => getPerfTier(), [])
+  const place = useTwinPlace()
+  const placing = place.enabled
+  const seatedRef = useRef(false)
   // Always load the full LeKiwi drive chain (mount → servo → hub → wheel) and
   // plate standoffs. Lean skipping those parts made the print twin look broken.
   const lekiwi = useUrdf(LEKIWI_URDF, LEKIWI_PATH, LEKIWI_SKIP_MESH)
@@ -448,8 +452,6 @@ export function WheeledChassis({
   const rootRef = useRef<Group>(null)
   const kiwiRef = useRef<Group>(null)
   const stackRef = useRef<Group>(null)
-  const armbaseRef = useRef<Mesh>(null)
-  const neckRef = useRef<Mesh>(null)
   const armLRef = useRef<Group>(null)
   const armRRef = useRef<Group>(null)
   const [floorY, setFloorY] = useState(0)
@@ -490,6 +492,8 @@ export function WheeledChassis({
     const armL = armLRef.current
     const armR = armRRef.current
     if (!root) return
+    // /model place mode: seat once, then leave user nudges alone.
+    if (placing && seatedRef.current) return
 
     withIdentityParents(root, () => {
       root.position.y = 0
@@ -540,23 +544,8 @@ export function WheeledChassis({
         mapSo101Arm(so101R.robot, carriageAglMm, armShoulderRad, armElbowRad, 'R')
       }
 
-      // Seat neck on the shoulder deck (clean printable — sit flush, no lattice sink hack).
-      let nextNeckZ = torsoMm + armMm
-      const neckMesh = neckRef.current
-      const armbaseMesh = armbaseRef.current
-      if (neckMesh && armbaseMesh) {
-        for (let i = 0; i < 4; i++) {
-          neckMesh.position.set(0, 0, nextNeckZ)
-          root.updateWorldMatrix(true, true)
-          const armBox = new Box3().setFromObject(armbaseMesh)
-          const neckBox = new Box3().setFromObject(neckMesh)
-          if (!Number.isFinite(armBox.max.y) || !Number.isFinite(neckBox.min.y)) break
-          const gap = neckBox.min.y - armBox.max.y
-          if (Math.abs(gap) < 1e-4) break
-          nextNeckZ -= gap / PRINT_SCALE
-        }
-        neckMesh.position.set(0, 0, nextNeckZ)
-      }
+      // Seat neck on the deck: print-Z = torso height + deck height (footed).
+      const nextNeckZ = torsoMm + armMm
 
       if (lekiwi.robot) colorizeRoot(lekiwi.robot, colour)
       if (so101L.robot) colorizeRoot(so101L.robot, colour)
@@ -586,6 +575,10 @@ export function WheeledChassis({
       )
       setNeckZ((z) => (Math.abs(z - nextNeckZ) > 1e-3 ? nextNeckZ : z))
       setRevealed(true)
+      if (lekiwi.robot && so101L.robot && so101R.robot) {
+        seatedRef.current = true
+        place.markSeated()
+      }
     })
   }, [
     lekiwi.robot,
@@ -601,6 +594,8 @@ export function WheeledChassis({
     armShoulderRad,
     armElbowRad,
     colour,
+    placing,
+    place,
   ])
 
   useEffect(() => {
@@ -613,88 +608,106 @@ export function WheeledChassis({
 
   return (
     <group>
+      <PlaceGizmo />
       <group ref={rootRef} position={[0, floorY, 0]} visible={revealed}>
         {lekiwi.robot ? (
-          <group ref={kiwiRef} rotation={ROS_TO_THREE}>
-            <primitive object={lekiwi.robot} />
-          </group>
+          <Placeable id="base">
+            <group ref={kiwiRef} rotation={ROS_TO_THREE}>
+              <primitive object={lekiwi.robot} />
+            </group>
+          </Placeable>
         ) : null}
 
         {assembled ? (
           <group ref={stackRef} rotation={STACK_TO_THREE} position={[stackPose.x, stackPose.y, stackPose.z]}>
-            {/* Printables + arms share the mm frame so pads and mounts coincide. */}
-            <group scale={PRINT_SCALE}>
-              <mesh geometry={torsoGeom} castShadow={shadows} receiveShadow={shadows}>
-                <meshStandardMaterial
-                  color={colour.primary}
-                  roughness={0.55}
-                  metalness={0.08}
-                  polygonOffset
-                  polygonOffsetFactor={1}
-                  polygonOffsetUnits={1}
-                />
-              </mesh>
+            <Placeable id="stack">
+              {/* Printables + arms share the mm frame so pads and mounts coincide. */}
+              <group scale={PRINT_SCALE}>
+                <Placeable id="torso">
+                  <mesh geometry={torsoGeom} castShadow={shadows} receiveShadow={shadows}>
+                    <meshStandardMaterial
+                      color={colour.primary}
+                      roughness={0.55}
+                      metalness={0.08}
+                      polygonOffset
+                      polygonOffsetFactor={1}
+                      polygonOffsetUnits={1}
+                    />
+                  </mesh>
+                </Placeable>
 
-              <mesh
-                ref={armbaseRef}
-                geometry={armbaseGeom}
-                position={[0, 0, torsoMm]}
-                castShadow={shadows}
-                receiveShadow={shadows}
-              >
-                <meshStandardMaterial
-                  color={colour.primary}
-                  roughness={0.5}
-                  metalness={0.1}
-                  polygonOffset
-                  polygonOffsetFactor={1}
-                  polygonOffsetUnits={1}
-                />
-              </mesh>
+                <group position={[0, 0, torsoMm]}>
+                  <Placeable id="deck">
+                    <mesh
+                      geometry={armbaseGeom}
+                      castShadow={shadows}
+                      receiveShadow={shadows}
+                    >
+                      <meshStandardMaterial
+                        color={colour.primary}
+                        roughness={0.5}
+                        metalness={0.1}
+                        polygonOffset
+                        polygonOffsetFactor={1}
+                        polygonOffsetUnits={1}
+                      />
+                    </mesh>
+                  </Placeable>
+                </group>
 
-              <mesh
-                ref={neckRef}
-                geometry={neckGeom}
-                position={[0, 0, neckSeatZ]}
-                castShadow={shadows}
-                receiveShadow={shadows}
-              >
-                <meshStandardMaterial
-                  color={colour.primary}
-                  roughness={0.52}
-                  metalness={0.1}
-                  polygonOffset
-                  polygonOffsetFactor={1}
-                  polygonOffsetUnits={1}
-                />
-              </mesh>
+                <group position={[0, 0, neckSeatZ]}>
+                  <Placeable id="neck">
+                    <mesh
+                      geometry={neckGeom}
+                      castShadow={shadows}
+                      receiveShadow={shadows}
+                    >
+                      <meshStandardMaterial
+                        color={colour.primary}
+                        roughness={0.52}
+                        metalness={0.1}
+                        polygonOffset
+                        polygonOffsetFactor={1}
+                        polygonOffsetUnits={1}
+                      />
+                    </mesh>
+                  </Placeable>
+                </group>
 
-              <mesh
-                geometry={headMountGeom}
-                position={[0, 0, headZ]}
-                castShadow={shadows}
-                receiveShadow={shadows}
-              >
-                <meshStandardMaterial color={colour.primary} roughness={0.45} metalness={0.12} />
-              </mesh>
+                <group position={[0, 0, headZ]}>
+                  <Placeable id="head">
+                    <mesh
+                      geometry={headMountGeom}
+                      castShadow={shadows}
+                      receiveShadow={shadows}
+                    >
+                      <meshStandardMaterial color={colour.primary} roughness={0.45} metalness={0.12} />
+                    </mesh>
+                  </Placeable>
+                </group>
 
-              <group
-                ref={armLRef}
-                position={[armLPose.x, armLPose.y, armLPose.z]}
-                rotation={[0, 0, ARM_FORWARD_YAW]}
-                scale={[ARM_IN_PRINT, ARM_IN_PRINT, ARM_IN_PRINT]}
-              >
-                <primitive key={`arm-L-${so101L.generation}`} object={so101L.robot!} />
+                <group
+                  ref={armLRef}
+                  position={[armLPose.x, armLPose.y, armLPose.z]}
+                  rotation={[0, 0, ARM_FORWARD_YAW]}
+                  scale={[ARM_IN_PRINT, ARM_IN_PRINT, ARM_IN_PRINT]}
+                >
+                  <Placeable id="armL">
+                    <primitive key={`arm-L-${so101L.generation}`} object={so101L.robot!} />
+                  </Placeable>
+                </group>
+                <group
+                  ref={armRRef}
+                  position={[armRPose.x, armRPose.y, armRPose.z]}
+                  rotation={[0, 0, ARM_FORWARD_YAW]}
+                  scale={[ARM_IN_PRINT, ARM_IN_PRINT, ARM_IN_PRINT]}
+                >
+                  <Placeable id="armR">
+                    <primitive key={`arm-R-${so101R.generation}`} object={so101R.robot!} />
+                  </Placeable>
+                </group>
               </group>
-              <group
-                ref={armRRef}
-                position={[armRPose.x, armRPose.y, armRPose.z]}
-                rotation={[0, 0, ARM_FORWARD_YAW]}
-                scale={[ARM_IN_PRINT, ARM_IN_PRINT, ARM_IN_PRINT]}
-              >
-                <primitive key={`arm-R-${so101R.generation}`} object={so101R.robot!} />
-              </group>
-            </group>
+            </Placeable>
           </group>
         ) : null}
       </group>

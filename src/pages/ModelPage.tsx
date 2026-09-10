@@ -2,17 +2,34 @@
  * /model — clean orbit viewer of assembled robot only (no kitchen props).
  * Shared RobotAssembly with Sim. Fixed default AGL. No physics/WASD.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, OrbitControls } from '@react-three/drei'
 import { BasicShadowMap, PCFShadowMap } from 'three'
 import { COLOURWAYS } from '../product'
-import { CHORE_ENVELOPE, TELESCOPE } from '../robot/dims'
-import { TIP_SUMMARY } from '../robot/stability'
+import { TELESCOPE } from '../robot/dims'
 import { RobotAssembly } from '../components/RobotAssembly'
 import { kitCaption } from '../kit/catalog'
 import { useKit } from '../kit/KitContext'
 import { getPerfTier } from '../kit/perf'
+import { PlaceHud, TwinPlaceProvider, useTwinPlace } from '../twin/place'
+
+function PlaceHotkeys() {
+  const { unlocked, setUnlocked, setMode } = useTwinPlace()
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.key === 'Escape') setUnlocked(null)
+      if (!unlocked) return
+      if (e.key === 'g' || e.key === 'G' || e.key === 't' || e.key === 'T') setMode('translate')
+      if (e.key === 'r' || e.key === 'R') setMode('rotate')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [unlocked, setUnlocked, setMode])
+  return null
+}
 
 export function ModelPage() {
   const [colourId, setColourId] = useState(COLOURWAYS[0].id)
@@ -25,6 +42,7 @@ export function ModelPage() {
   const perf = useMemo(() => getPerfTier(), [])
 
   return (
+    <TwinPlaceProvider>
     <div className="model-page">
       <div className="model-stage">
         <Canvas
@@ -80,6 +98,7 @@ export function ModelPage() {
         </Canvas>
 
         <div className="model-chrome">
+          <PlaceHotkeys />
           <div className="hud-box model-swatches">
             <div className="hud-label">COLOR</div>
             <div className="swatch-inline">
@@ -95,15 +114,16 @@ export function ModelPage() {
               ))}
             </div>
           </div>
+          <PlaceHud />
           <div className="model-caption">
             <div>{kitCaption(kit)}</div>
             <div className="model-caption-sub">
-              Q/E articulates arms · LeKiwi 3-omni @ 120° · reach ~{CHORE_ENVELOPE.so101_reach_mm}{' '}
-              mm · tip ≈{TIP_SUMMARY.margin}×
+              Unlock a part → Move/Rotate → Lock. Esc locks. I will bake poses when you say so.
             </div>
           </div>
         </div>
       </div>
     </div>
+    </TwinPlaceProvider>
   )
 }

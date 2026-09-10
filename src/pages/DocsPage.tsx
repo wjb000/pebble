@@ -52,8 +52,9 @@ export function DocsPage() {
       <section>
         <h2>4. Twin</h2>
         <p>
-          <Link to="/model">Model</Link> shows the assembled CAD. <Link to="/sim">Sim</Link> adds
-          physics, chores, and the train panel.
+          <Link to="/model">Model</Link> shows the assembled CAD. Unlock a part, move it, then Lock —
+          tell me to bake when the stack looks right. <Link to="/sim">Sim</Link> adds physics, chores,
+          and the train panel.
         </p>
       </section>
     </div>
