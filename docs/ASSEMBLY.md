@@ -1,21 +1,21 @@
-# Pebble assembly — printable twin stack
+# HouseHand assembly — printable twin stack
 
-Twin: `RobotAssembly` → `WheeledChassis` (`/model` + `/sim`).  
-Print list: `print/README.md`. BOM: `BOM_V3.md`.
+Twin: `RobotAssembly` → wheeled chassis (`/model` + `/sim`).  
+Print list: `print/README.md`. Generate structure: `python3 scripts/gen_structure_kit.py`.
 
-**Product:** LeKiwi 3-wheel omni base + printable torso + XLe shoulder deck + **2× SO-101** + cam head.  
+**Product:** LeKiwi 3-omni base + **HouseHand Ø216 torso** + shoulder deck + **2× SO-101** + neck + head cam.  
 **Not** official Pollen / XLeRobot / LeKiwi. Draft — not for sale. **No RÅSKOG cart.**
 
 ---
 
 ## CAD mates (locked)
 
-1. **LeKiwi plates** are the support polygon (3× omni). No casters.
-2. **Torso shell** sits centered on the LeKiwi plate (widened in twin to ~216 mm plate).
-3. **HouseHand shoulder deck** (`HouseHand_shoulder_deck.stl`) on torso top — solid printable plate with dual pads.
-4. **SO-101 L/R** seat on circular pads at **(−26, ±138) mm** in the deck print frame, yawed forward with the head.
-5. **Neck** on deck center boss; cam / gimbal on neck.
-6. **12V pack** centered in the base bay; hardware e-stop cuts drive + arms.
+1. **LeKiwi plates** = support polygon (3× omni).
+2. **HouseHand torso** Ø216 sits on LeKiwi plate (printed flange). Twin uses the same STL — **no fake XY scale**.
+3. **Shoulder deck** registration ring slips over torso top rim.
+4. **SO-101 L/R** on pads at **(−26, ±138) mm**, yawed forward with the head.
+5. **HouseHand neck** on deck center boss; **head mount + camera** on neck.
+6. **12 V pack** centered in base bay; hardware e-stop cuts drive + arms.
 
 ---
 
@@ -23,40 +23,37 @@ Print list: `print/README.md`. BOM: `BOM_V3.md`.
 
 | # | Module | Mate | Fasteners |
 |---|--------|------|-----------|
-| **1** | LeKiwi plates + 3× drive mounts + hubs | Wheels at 120° | Motor screws |
-| **2** | Battery / Pi / controller mounts | Per LeKiwi Assembly | Straps / M3 |
-| **3** | Torso shell | Shell → plate center, plumb | M3 / clamps |
-| **4** | **Shoulder deck** (print) | Deck → torso top; pads face forward | M3 into torso rim |
-| **5** | SO-101 L + R kits | `Base_SO101` on pad centers (−26, ±138) | Kit hardware |
-| **6** | Neck | Neck → deck center boss | M3 |
-| **7** | Cam / gimbal | On neck | M3 |
-| **8** | Wire + e-stop | Pack centered; e-stop reachable | XT60 / panel nut |
+| **1** | LeKiwi plates + 3× drive mounts + hubs | Wheels @ 120° | Motor screws |
+| **2** | Battery / Pi / controller mounts | Per LeKiwi | Straps / M3 |
+| **3** | HouseHand torso | Flange → plate center, plumb | M3 through flange guides |
+| **4** | Shoulder deck | Ring → torso rim; pads forward | M3 into rim |
+| **5** | SO-101 L + R | `Base_SO101` on pad centers | Kit hardware |
+| **6** | Neck | Collar → deck boss | M3 |
+| **7** | Head mount + camera | On neck flange | M3 |
+| **8** | Wire + e-stop | Pack centered | XT60 / panel |
 
-**Exploded:** 1 base → 2 power/compute → 3 torso → **4 shoulder deck** → 5 arms → 6 neck → 7 cam → wire.
+**Exploded:** base → power → torso → deck → arms → neck → head → wire.
 
 ---
 
 ## Torque checklist (power OFF)
 
-1. [ ] 12V pack centered — **REQUIRED**
+1. [ ] 12 V pack centered — **REQUIRED**
 2. [ ] 3× omni (no casters)
-3. [ ] Torso plumb on plate
-4. [ ] Deck pads clear; both `Base_SO101` seated
-5. [ ] Arms face forward with head (not aft)
+3. [ ] Torso plumb; flange bolts snug
+4. [ ] Deck ring seated; both pads clear
+5. [ ] Both SO-101 bases on pads, facing forward
 6. [ ] Torque **one** arm fully before the other
-7. [ ] Neck flush on deck; cam secure
+7. [ ] Neck on boss; head + cam secure
 8. [ ] Hardware e-stop cuts drive + arms
 9. [ ] L/R bus labels → bring-up
 
 **Kill-switch:** hardware e-stop; sim **Space** = e-stop / reset.
 
----
-
 ## Sim AI
 
-`/sim` → **Train** panel: teleop to record → **Train BC** → **Test AI**.  
-API: `window.__PEBBLE_TRAIN__`. Details: `docs/TRAIN.md`.
+`/sim` → Train panel: teleop → Train BC → Test AI. See `docs/TRAIN.md`.
 
 ## Controls
 
-W/S drive · A/D strafe · ←/→ turn · Q/E arms · F pick · G demo · **TAB** auto/teleop · **Space** e-stop · Train panel for BC.
+W/S drive · A/D strafe · ←/→ turn · Q/E arms · F pick · G demo · TAB mode · Space e-stop.

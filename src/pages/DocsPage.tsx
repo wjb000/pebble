@@ -16,10 +16,10 @@ export function DocsPage() {
         </p>
         <ul>
           <li><code>print/lekiwi/</code> — omni base plates & mounts</li>
-          <li><code>print/xlerobot/hardware/torso_shell.stl</code></li>
-          <li><code>print/xlerobot/hardware/HouseHand_shoulder_deck.stl</code> — solid dual-pad deck</li>
-          <li><code>print/SO101/</code> — print follower set <strong>twice</strong></li>
-          <li><code>print/xlerobot/hardware/XLeRobot040_neck_refined.stl</code> + gimbal or <code>print/head/</code></li>
+          <li><code>print/xlerobot/hardware/HouseHand_torso.stl</code> — Ø216 mm column</li>
+          <li><code>print/xlerobot/hardware/HouseHand_shoulder_deck.stl</code> — dual SO-101 pads</li>
+          <li><code>print/SO101/</code> — follower set <strong>×2</strong></li>
+          <li><code>HouseHand_neck.stl</code> + <code>HouseHand_head_mount.stl</code> + <code>HouseHand_head_camera.stl</code></li>
         </ul>
         <p className="muted">
           Skip RÅSKOG cart STL, legacy <code>print/base/</code>, and the old fragmented
