@@ -149,13 +149,25 @@ let snapshot: PlaceSnapshot = {
   snap: true,
 }
 
+let emitTimer = 0
+
 function emit() {
   for (const fn of listeners) fn()
 }
 
-function setSnapshot(partial: Partial<PlaceSnapshot>) {
+function emitSoon() {
+  if (emitTimer) return
+  emitTimer = 1
+  queueMicrotask(() => {
+    emitTimer = 0
+    emit()
+  })
+}
+
+function setSnapshot(partial: Partial<PlaceSnapshot>, soon = false) {
   snapshot = { ...snapshot, ...partial }
-  emit()
+  if (soon) emitSoon()
+  else emit()
 }
 
 export function subscribePlace(fn: () => void) {
@@ -193,7 +205,7 @@ function commitObject(id: PartId) {
   }
   const next = { ...snapshot.nudges, [id]: n }
   saveNudges(next)
-  setSnapshot({ nudges: next })
+  setSnapshot({ nudges: next }, true)
 }
 
 export function setUnlocked(id: PartId | null) {
@@ -228,7 +240,7 @@ export function setNudge(id: PartId, n: Nudge) {
   const next = { ...snapshot.nudges, [id]: n }
   saveNudges(next)
   applyNudgeToObject(id, n)
-  setSnapshot({ nudges: next })
+  setSnapshot({ nudges: next }, true)
 }
 
 export function resetPart(id: PartId) {
