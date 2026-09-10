@@ -1,6 +1,10 @@
 /**
  * Unlock / move / relock twin STLs on /model.
  * Offsets stay in localStorage until we bake them into the kit.
+ *
+ * Placement UI state lives in a module store so Unlock/Lock only re-render the
+ * HUD. Placeable meshes must not subscribe — reconciling the STL tree hangs
+ * SwiftShader Chrome.
  */
 import {
   createContext,
@@ -10,6 +14,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react'
 import { useThree, type ThreeEvent } from '@react-three/fiber'
@@ -125,162 +130,160 @@ export function nudgesJson(nudges: NudgeMap) {
   return JSON.stringify(out, null, 2)
 }
 
-type PlaceApi = {
-  enabled: boolean
-  seated: boolean
+type PlaceSnapshot = {
   unlocked: PartId | null
   selected: PartId | null
   nudges: NudgeMap
   mode: 'translate' | 'rotate'
   snap: boolean
-  markSeated: () => void
-  registerObject: (id: PartId, obj: Group | null) => void
-  getObject: (id: PartId) => Group | null
-  setUnlocked: (id: PartId | null) => void
-  setSelected: (id: PartId | null) => void
-  setNudge: (id: PartId, n: Nudge) => void
-  setMode: (mode: 'translate' | 'rotate') => void
-  setSnap: (snap: boolean) => void
-  resetPart: (id: PartId) => void
-  resetAll: () => void
 }
 
-const PlaceContext = createContext<PlaceApi | null>(null)
+const objects: Partial<Record<PartId, Group>> = {}
+const listeners = new Set<() => void>()
+
+let snapshot: PlaceSnapshot = {
+  unlocked: null,
+  selected: null,
+  nudges: typeof localStorage === 'undefined' ? emptyNudges() : loadNudges(),
+  mode: 'translate',
+  snap: true,
+}
+
+function emit() {
+  for (const fn of listeners) fn()
+}
+
+function setSnapshot(partial: Partial<PlaceSnapshot>) {
+  snapshot = { ...snapshot, ...partial }
+  emit()
+}
+
+export function subscribePlace(fn: () => void) {
+  listeners.add(fn)
+  return () => {
+    listeners.delete(fn)
+  }
+}
+
+export function getPlaceSnapshot() {
+  return snapshot
+}
+
+export function getPlaceObject(id: PartId) {
+  return objects[id] ?? null
+}
+
+function applyNudgeToObject(id: PartId, n: Nudge) {
+  const o = objects[id]
+  if (!o) return
+  o.position.set(n.x, n.y, n.z)
+  o.rotation.set(n.rx, n.ry, n.rz)
+}
+
+function commitObject(id: PartId) {
+  const o = objects[id]
+  if (!o) return
+  const n: Nudge = {
+    x: o.position.x,
+    y: o.position.y,
+    z: o.position.z,
+    rx: o.rotation.x,
+    ry: o.rotation.y,
+    rz: o.rotation.z,
+  }
+  const next = { ...snapshot.nudges, [id]: n }
+  saveNudges(next)
+  setSnapshot({ nudges: next })
+}
+
+export function setUnlocked(id: PartId | null) {
+  setSnapshot({ unlocked: id, selected: id ?? snapshot.selected })
+}
+
+export function setSelected(id: PartId | null) {
+  setSnapshot({ selected: id })
+}
+
+export function setMode(mode: 'translate' | 'rotate') {
+  setSnapshot({ mode })
+}
+
+export function setSnap(snap: boolean) {
+  setSnapshot({ snap })
+}
+
+export function setNudge(id: PartId, n: Nudge) {
+  const p = snapshot.nudges[id]
+  if (
+    p &&
+    Math.abs(p.x - n.x) < 1e-8 &&
+    Math.abs(p.y - n.y) < 1e-8 &&
+    Math.abs(p.z - n.z) < 1e-8 &&
+    Math.abs(p.rx - n.rx) < 1e-8 &&
+    Math.abs(p.ry - n.ry) < 1e-8 &&
+    Math.abs(p.rz - n.rz) < 1e-8
+  ) {
+    return
+  }
+  const next = { ...snapshot.nudges, [id]: n }
+  saveNudges(next)
+  applyNudgeToObject(id, n)
+  setSnapshot({ nudges: next })
+}
+
+export function resetPart(id: PartId) {
+  const next = { ...snapshot.nudges, [id]: { ...ZERO_NUDGE } }
+  saveNudges(next)
+  applyNudgeToObject(id, ZERO_NUDGE)
+  setSnapshot({
+    nudges: next,
+    unlocked: snapshot.unlocked === id ? null : snapshot.unlocked,
+  })
+}
+
+export function resetAll() {
+  const next = emptyNudges()
+  saveNudges(next)
+  for (const id of PART_IDS) applyNudgeToObject(id, ZERO_NUDGE)
+  setSnapshot({ nudges: next, unlocked: null })
+}
+
 const PlaceStaticContext = createContext<{ enabled: boolean; markSeated: () => void } | null>(null)
 
 export function TwinPlaceProvider({ children }: { children: ReactNode }) {
-  const [seated, setSeated] = useState(false)
-  const [unlocked, setUnlockedState] = useState<PartId | null>(null)
-  const [selected, setSelected] = useState<PartId | null>(null)
-  const [nudges, setNudges] = useState<NudgeMap>(loadNudges)
-  const [mode, setMode] = useState<'translate' | 'rotate'>('translate')
-  const [snap, setSnap] = useState(true)
-  const objects = useRef<Partial<Record<PartId, Group>>>({})
+  const markSeated = useCallback(() => undefined, [])
+  const staticApi = useMemo(() => ({ enabled: true as const, markSeated }), [markSeated])
 
-  const markSeated = useCallback(() => setSeated(true), [])
-
-  const setUnlocked = useCallback((id: PartId | null) => {
-    setUnlockedState(id)
-    if (id) setSelected(id)
+  useLayoutEffect(() => {
+    return () => setUnlocked(null)
   }, [])
 
-  const registerObject = useCallback((id: PartId, obj: Group | null) => {
-    if (obj) objects.current[id] = obj
-    else delete objects.current[id]
-  }, [])
-
-  const getObject = useCallback((id: PartId) => objects.current[id] ?? null, [])
-
-  const setNudge = useCallback((id: PartId, n: Nudge) => {
-    setNudges((prev) => {
-      const p = prev[id]
-      if (
-        p &&
-        Math.abs(p.x - n.x) < 1e-8 &&
-        Math.abs(p.y - n.y) < 1e-8 &&
-        Math.abs(p.z - n.z) < 1e-8 &&
-        Math.abs(p.rx - n.rx) < 1e-8 &&
-        Math.abs(p.ry - n.ry) < 1e-8 &&
-        Math.abs(p.rz - n.rz) < 1e-8
-      ) {
-        return prev
-      }
-      const next = { ...prev, [id]: n }
-      saveNudges(next)
-      return next
-    })
-  }, [])
-
-  const resetPart = useCallback((id: PartId) => {
-    setNudges((prev) => {
-      const next = { ...prev, [id]: { ...ZERO_NUDGE } }
-      saveNudges(next)
-      return next
-    })
-  }, [])
-
-  const resetAll = useCallback(() => {
-    const next = emptyNudges()
-    saveNudges(next)
-    setNudges(next)
-    setUnlockedState(null)
-  }, [])
-
-  const api = useMemo<PlaceApi>(
-    () => ({
-      enabled: true,
-      seated,
-      unlocked,
-      selected,
-      nudges,
-      mode,
-      snap,
-      markSeated,
-      registerObject,
-      getObject,
-      setUnlocked,
-      setSelected,
-      setNudge,
-      setMode,
-      setSnap,
-      resetPart,
-      resetAll,
-    }),
-    [
-      seated,
-      unlocked,
-      selected,
-      nudges,
-      mode,
-      snap,
-      markSeated,
-      registerObject,
-      getObject,
-      setUnlocked,
-      setNudge,
-      resetPart,
-      resetAll,
-    ],
-  )
-
-  const staticApi = useMemo(
-    () => ({ enabled: true as const, markSeated }),
-    [markSeated],
-  )
-
-  return (
-    <PlaceStaticContext.Provider value={staticApi}>
-      <PlaceContext.Provider value={api}>{children}</PlaceContext.Provider>
-    </PlaceStaticContext.Provider>
-  )
-}
-
-const DISABLED: PlaceApi = {
-  enabled: false,
-  seated: true,
-  unlocked: null,
-  selected: null,
-  nudges: emptyNudges(),
-  mode: 'translate',
-  snap: true,
-  markSeated: () => undefined,
-  registerObject: () => undefined,
-  getObject: () => null,
-  setUnlocked: () => undefined,
-  setSelected: () => undefined,
-  setNudge: () => undefined,
-  setMode: () => undefined,
-  setSnap: () => undefined,
-  resetPart: () => undefined,
-  resetAll: () => undefined,
-}
-
-export function useTwinPlace() {
-  return useContext(PlaceContext) ?? DISABLED
+  return <PlaceStaticContext.Provider value={staticApi}>{children}</PlaceStaticContext.Provider>
 }
 
 export function usePlaceStatic() {
   return useContext(PlaceStaticContext) ?? { enabled: false, markSeated: () => undefined }
+}
+
+export function useTwinPlace() {
+  const { enabled } = usePlaceStatic()
+  const snap = useSyncExternalStore(subscribePlace, getPlaceSnapshot, getPlaceSnapshot)
+  return {
+    enabled,
+    unlocked: snap.unlocked,
+    selected: snap.selected,
+    nudges: snap.nudges,
+    mode: snap.mode,
+    snap: snap.snap,
+    setUnlocked,
+    setSelected,
+    setMode,
+    setSnap,
+    setNudge,
+    resetPart,
+    resetAll,
+    getObject: getPlaceObject,
+  }
 }
 
 const _plane = new Plane()
@@ -293,48 +296,24 @@ const _up = new Vector3(0, 1, 0)
 
 /** Wrapper whose local transform is the user nudge. Drag when unlocked. */
 export function Placeable({ id, children }: { id: PartId; children: ReactNode }) {
-  const { enabled, seated, unlocked, nudges, mode, snap, setUnlocked, setSelected, registerObject, setNudge } =
-    useTwinPlace()
+  const { enabled } = usePlaceStatic()
   const { camera, controls } = useThree()
   const ref = useRef<Group>(null)
   const dragging = useRef(false)
   const lastX = useRef(0)
-  const n = nudges[id]
-  const apply = !enabled || seated
-  const px = apply ? n.x : 0
-  const py = apply ? n.y : 0
-  const pz = apply ? n.z : 0
-  const rx = apply ? n.rx : 0
-  const ry = apply ? n.ry : 0
-  const rz = apply ? n.rz : 0
 
   useLayoutEffect(() => {
-    const o = ref.current
-    if (!o || unlocked === id) return
-    o.position.set(px, py, pz)
-    o.rotation.set(rx, ry, rz)
-  }, [px, py, pz, rx, ry, rz, unlocked, id])
-
-  const setRef = useCallback(
-    (node: Group | null) => {
-      ref.current = node
-      registerObject(id, node)
-    },
-    [id, registerObject],
-  )
-
-  const commit = useCallback(() => {
+    if (!enabled) return
     const o = ref.current
     if (!o) return
-    setNudge(id, {
-      x: o.position.x,
-      y: o.position.y,
-      z: o.position.z,
-      rx: o.rotation.x,
-      ry: o.rotation.y,
-      rz: o.rotation.z,
-    })
-  }, [id, setNudge])
+    objects[id] = o
+    const n = getPlaceSnapshot().nudges[id]
+    o.position.set(n.x, n.y, n.z)
+    o.rotation.set(n.rx, n.ry, n.rz)
+    return () => {
+      if (objects[id] === o) delete objects[id]
+    }
+  }, [enabled, id])
 
   const setOrbit = (on: boolean) => {
     const c = controls as { enabled?: boolean } | null
@@ -343,14 +322,14 @@ export function Placeable({ id, children }: { id: PartId; children: ReactNode })
 
   if (!enabled) return <>{children}</>
 
-  const active = unlocked === id
-
   return (
     <group
-      ref={setRef}
+      ref={ref}
+      userData={{ placeId: id }}
       onPointerDown={(e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation()
-        if (!active) {
+        const { unlocked } = getPlaceSnapshot()
+        if (unlocked !== id) {
           if (unlocked) setUnlocked(id)
           else setSelected(id)
           return
@@ -367,7 +346,9 @@ export function Placeable({ id, children }: { id: PartId; children: ReactNode })
         ;(e.target as unknown as Element).setPointerCapture?.(e.pointerId)
       }}
       onPointerMove={(e: ThreeEvent<PointerEvent>) => {
-        if (!dragging.current || !active) return
+        if (!dragging.current) return
+        const { unlocked, mode, snap } = getPlaceSnapshot()
+        if (unlocked !== id) return
         e.stopPropagation()
         const o = ref.current
         if (!o?.parent) return
@@ -395,10 +376,9 @@ export function Placeable({ id, children }: { id: PartId; children: ReactNode })
         if (!dragging.current) return
         dragging.current = false
         setOrbit(true)
-        commit()
+        commitObject(id)
         e.stopPropagation()
       }}
-      onPointerMissed={() => undefined}
     >
       {children}
     </group>
@@ -413,14 +393,6 @@ export function PlaceHud() {
     nudges,
     mode,
     snap,
-    setUnlocked,
-    setSelected,
-    setMode,
-    setSnap,
-    resetPart,
-    resetAll,
-    getObject,
-    setNudge,
   } = useTwinPlace()
   const [copied, setCopied] = useState(false)
   if (!enabled) return null
@@ -428,31 +400,24 @@ export function PlaceHud() {
   const bump = (axis: 'x' | 'y' | 'z', sign: number) => {
     if (!unlocked) return
     const step = (PART_META[unlocked].units === 'mm' ? 1 : 0.001) * sign * (snap ? 1 : 0.25)
-    const o = getObject(unlocked)
+    const o = getPlaceObject(unlocked)
     if (o) o.position[axis] += step
-    const n = nudges[unlocked]
-    setNudge(unlocked, { ...n, [axis]: (o ? o.position[axis] : n[axis] + step) })
+    commitObject(unlocked)
   }
   const bumpYaw = (sign: number) => {
     if (!unlocked) return
     const step = ((snap ? 1 : 0.25) * Math.PI) / 180 * sign
-    const o = getObject(unlocked)
+    const o = getPlaceObject(unlocked)
     if (o) o.rotateOnWorldAxis(_up, step)
-    const n = nudges[unlocked]
-    setNudge(unlocked, {
-      ...n,
-      rx: o ? o.rotation.x : n.rx,
-      ry: o ? o.rotation.y : n.ry,
-      rz: o ? o.rotation.z : n.rz,
-    })
+    commitObject(unlocked)
   }
 
   return (
-    <div className="hud-box model-place">
+    <div className="hud-box model-place" data-place-hud="v2">
       <div className="hud-label">PLACE</div>
       <div className="place-hint">
-        Unlock a part, drag it in the view (or use the mm buttons), then Lock.
-        Tell me to bake when it looks right.
+        Unlock a part. Drag it, or tap ±X/Y/Z / ±YAW. Lock keeps the offset here
+        (not in the STL). Tell me to bake when the stack looks right.
       </div>
       <div className="place-toolbar">
         <button
@@ -472,6 +437,7 @@ export function PlaceHud() {
         <button
           type="button"
           className={snap ? 'place-on' : undefined}
+          data-place-snap=""
           onClick={() => setSnap(!snap)}
         >
           Snap
@@ -481,18 +447,18 @@ export function PlaceHud() {
         <div className="place-toolbar">
           {(['x', 'y', 'z'] as const).map((axis) => (
             <span key={axis} className="place-axis">
-              <button type="button" onClick={() => bump(axis, -1)}>
+              <button type="button" data-place-bump={`-${axis}`} onClick={() => bump(axis, -1)}>
                 −{axis.toUpperCase()}
               </button>
-              <button type="button" onClick={() => bump(axis, 1)}>
+              <button type="button" data-place-bump={`+${axis}`} onClick={() => bump(axis, 1)}>
                 +{axis.toUpperCase()}
               </button>
             </span>
           ))}
-          <button type="button" onClick={() => bumpYaw(-1)}>
+          <button type="button" data-place-bump="-yaw" onClick={() => bumpYaw(-1)}>
             −YAW
           </button>
-          <button type="button" onClick={() => bumpYaw(1)}>
+          <button type="button" data-place-bump="+yaw" onClick={() => bumpYaw(1)}>
             +YAW
           </button>
         </div>
@@ -509,24 +475,26 @@ export function PlaceHud() {
                 {fmt.moved ? <span className="place-dot" /> : null}
               </button>
               {isUnlocked ? (
-                <button type="button" className="place-on" onClick={() => setUnlocked(null)}>
+                <button type="button" className="place-on" data-place-lock={id} onClick={() => setUnlocked(null)}>
                   Lock
                 </button>
               ) : (
-                <button type="button" onClick={() => setUnlocked(id)}>
+                <button type="button" data-place-unlock={id} onClick={() => setUnlocked(id)}>
                   Unlock
                 </button>
               )}
               {fmt.moved ? (
-                <button type="button" className="place-reset" onClick={() => {
-                  if (unlocked === id) setUnlocked(null)
-                  resetPart(id)
-                }}>
+                <button
+                  type="button"
+                  className="place-reset"
+                  data-place-reset={id}
+                  onClick={() => resetPart(id)}
+                >
                   Reset
                 </button>
               ) : null}
               {fmt.moved || isUnlocked ? (
-                <div className="place-readout">
+                <div className="place-readout" data-place-readout={id}>
                   {fmt.xyz}
                   <br />
                   {fmt.rpy}

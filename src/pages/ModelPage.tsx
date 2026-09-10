@@ -118,7 +118,7 @@ export function ModelPage() {
           <div className="model-caption">
             <div>{kitCaption(kit)}</div>
             <div className="model-caption-sub">
-              Unlock a part → Move/Rotate → Lock. Esc locks. I will bake poses when you say so.
+              Unlock a part → Move/Rotate → Lock. Esc locks. Offsets stay in the browser until you tell me to bake.
             </div>
           </div>
         </div>
