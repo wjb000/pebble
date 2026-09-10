@@ -266,8 +266,11 @@ def foot_on_flange(tris, z_tol=1.0):
 
 def emit_hardware(name: str, tris: list):
     # Head mount is asymmetric — bbox footing leaves the neck flange ~13 mm off-axis.
+    # Torso wheel wells are also asymmetric — keep the tube axis at XY origin.
     if name == "HouseHand_head_mount.stl":
         tris = foot_on_flange(tris)
+    elif name.startswith("HouseHand_torso"):
+        tris = foot_z_only(tris)
     else:
         tris = foot(tris)
     x0, x1, y0, y1, z0, z1 = bbox(tris)
@@ -309,7 +312,12 @@ def main():
             print(f"  skip missing {name}")
             continue
         before = bbox(load_stl(path))
-        tris = foot(load_stl(path))
+        if name.startswith("HouseHand_torso") or name == "torso_shell.stl":
+            tris = foot_z_only(load_stl(path))
+        elif name == "HouseHand_head_mount.stl":
+            tris = foot_on_flange(load_stl(path))
+        else:
+            tris = foot(load_stl(path))
         foote[name] = tris
         emit_hardware(name, tris)
         if abs(before[4]) > 1 or abs((before[0] + before[1]) / 2) > 20:

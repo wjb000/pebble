@@ -136,7 +136,7 @@ export const BOM: BomRow[] = [
     usd_arm: 30,
     usd_dual: 30,
     vendor: 'Print — print/xlerobot/hardware/',
-    notes: 'HouseHand_*.stl · seats on LeKiwi layer2.',
+    notes: 'HouseHand_*.stl · seats on LeKiwi layer2 with wheel wells over the forward omnis.',
   },
   {
     category: 'B · HouseHand structure',
@@ -299,7 +299,7 @@ export const SPECS = [
   { key: 'Height', value: '~LeKiwi stack + Ø180×320 mm torso + deck/neck/head (see /model)' },
   { key: 'Reach', value: 'SO-101 ~500 mm from pads at (−26, ±138) mm; floor / counter / open washer rim' },
   { key: 'Base', value: 'LeKiwi layer1+layer2 · 3× 4″ omni · 3× STS3215 drive · 6× M3 hex standoffs · no casters' },
-  { key: 'Torso', value: 'Printed HouseHand Ø180 / flange Ø190 on layer2 (not a nested-tube kit)' },
+  { key: 'Torso', value: 'Printed HouseHand Ø180 / flange Ø190 on layer2 — wheel wells over the two forward omnis' },
   { key: 'Does', value: 'Pick clothes off floor → basket; nudge basket; drop into open washer if rim reachable; wipe tables; dish assist' },
   { key: 'Does NOT', value: 'Folding, detergent dosing, closed-door washer cycles, waterproofing, hot water, glass-safe grip' },
   { key: 'Drive', value: 'Holonomic 3-omni — W/S forward, A/D strafe, arrows/Z/X yaw' },

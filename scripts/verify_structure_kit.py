@@ -24,6 +24,10 @@ from gen_structure_kit import (  # noqa: E402
     PAD_HOLE_R,
     SPLICE_BOLTS,
     SPLIT_BOLTS,
+    TORSO_FLANGE_OD,
+    TORSO_OD,
+    WHEEL_WELL_Z,
+    WHEEL_WELLS,
     pad_bolts,
     PAD_HALF_Y,
 )
@@ -52,6 +56,32 @@ def empty_xy(verts, holes, z, r, label) -> int:
     return bad
 
 
+def empty_well(verts, z: float, r_lo: float, r_hi: float, label: str) -> int:
+    """Wheel-well sectors must have no wall/flange verts (wheels spin through)."""
+    bad = 0
+    for a0, a1 in WHEEL_WELLS:
+        lo, hi = math.degrees(a0), math.degrees(a1)
+        n = 0
+        for v in verts:
+            if abs(v[2] - z) > 2.5:
+                continue
+            r = math.hypot(v[0], v[1])
+            if r < r_lo or r > r_hi:
+                continue
+            ang = (math.degrees(math.atan2(v[1], v[0])) + 360.0) % 360.0
+            # End-cap walls sit on the well edges; test the open sector.
+            if lo + 2.0 < ang < hi - 2.0:
+                n += 1
+        ok = n == 0
+        print(
+            f"  {'OK' if ok else 'FAIL'} {label:28s}  "
+            f"{lo:.0f}–{hi:.0f}° @z≈{z:.0f} r[{r_lo:.0f},{r_hi:.0f}]  verts={n}"
+        )
+        if not ok:
+            bad += 1
+    return bad
+
+
 def empty_yz(verts, holes, x, r, label) -> int:
     bad = 0
     for hy, hz in holes:
@@ -75,6 +105,17 @@ def main() -> int:
     bad += empty_xy(torso, FLANGE_BOLTS_XY, 5.0, 1.2, "flange M3")
     bad += empty_xy(torso, SPLIT_BOLTS, 160.0, 1.2, "split M3")
     bad += empty_xy(torso, DECK_TORSO_BOLTS, 317.0, 1.2, "rim M3")
+    print("torso forward-omni wheel wells")
+    r_flange = TORSO_FLANGE_OD / 2
+    r_out = TORSO_OD / 2
+    bad += empty_well(torso, 5.0, 80.0, r_flange + 0.5, "flange well")
+    bad += empty_well(torso, 20.0, r_out - 7.0, r_out + 0.5, "tube well")
+    # Roof of the well must sit above the ~19 mm wheel poke.
+    if WHEEL_WELL_Z < 28.0:
+        print(f"  FAIL well height {WHEEL_WELL_Z:.0f} mm < 28 mm")
+        bad += 1
+    else:
+        print(f"  OK   well height                  {WHEEL_WELL_Z:.0f} mm")
 
     print("deck pads / neck / splice")
     deck = load_verts(hw / "HouseHand_shoulder_deck.stl")

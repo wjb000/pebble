@@ -2,19 +2,23 @@
 """Generate the HouseHand printable structure kit (manifold binary STLs).
 
 Geometry contract (mm, Z-up, print frame):
-  TORSO_OD          = 180   # clears 4″ omni tops that poke above LeKiwi layer2
-  TORSO_FLANGE_OD   = 190   # ≤190 keeps ≥8 mm to wheel mesh; plate max r≈108
+  TORSO_OD          = 180   # above the wheel wells; bottom 36 mm is notched
+  TORSO_FLANGE_OD   = 190   # two forward-omni wells so 4″ wheels can spin
   TORSO_H           = 320
-  DECK pads         = (−26, ±138)  Ø116 raised pads for SO-101 bases
+  DECK pads         = (−26, ±138)  Ø104 raised pads for SO-101 bases
   PAD bolts         = 4× Ø5 (M4/M5) on the SO-ARM100 4040 pattern
   NECK boss         = Ø72 with Ø36 cable hole on deck center
   HEAD              = neck-matching flange (4× M3 at r=28) + forward cam hood
 
-  Seat flange on LeKiwi *layer2* (top plate). Motors/hubs live under layer2;
-  bought omni wheels extend above layer2 only outside r≈103.
+  Seat flange on LeKiwi *layer2* (top plate). Motors/hubs live under layer2.
+  Twin / IRL pose yaws the print so camera (−X) faces drive-forward (plate +Y):
+  print (x, y) → plate (y, −x). The two forward 4″ omnis then sit at print
+  ~120° and ~240° (plate 30° / 150°), poking ~19 mm above layer2 into the
+  wall. Flange + lower tube are notched there so the wheels spin. Seat the
+  printed wells over those two omnis.
 
-  Flange bolts land on the LeKiwi layer2 **20 mm hole grid** at
-  (±40,±80) and (±80,±40) — real Ø3.4 through-holes, not dimples.
+  Flange bolts land on the LeKiwi layer2 **20 mm hole grid**. (−40, ±80)
+  sit in the wells — dropped. Remaining 6: (40, ±80) and (±80, ±40).
 
 Outputs (public + print):
   HouseHand_torso.stl
@@ -41,19 +45,26 @@ TORSO_RIM_Z = 6.0  # top lip the deck ring seats over; 6× M3 through-bolts
 TORSO_SPLIT_Z = 160.0
 SPLIT_RING_HALF = 5.0  # ring spans 155–165 so each split half has a 5 mm bolt lip
 
-# LeKiwi layer2 is a 20 mm M3 grid. These 8 points sit in the flange
-# annulus (r≈89.4, between tube ID 84 and flange OD 95) and hit real plate holes.
+# LeKiwi layer2 20 mm M3 grid, in the assembled print frame (camera forward).
+# (−40, ±80) sit inside the forward wheel wells (~120° / ~240°) — omitted.
 FLANGE_BOLTS_XY = (
     (40.0, 80.0),
-    (-40.0, 80.0),
     (40.0, -80.0),
-    (-40.0, -80.0),
     (80.0, 40.0),
-    (-80.0, 40.0),
     (80.0, -40.0),
+    (-80.0, 40.0),
     (-80.0, -40.0),
 )
 FLANGE_HOLE_R = 1.7  # M3 clearance
+
+# Forward omni wells in *print* XY. Plate wheels at 8–46° / 132–173° map
+# to print +90° under the twin yaw (camera −X → plate +Y). Poke ~19 mm
+# above layer2, inner r≈71 — cut the whole wall so they spin freely.
+WHEEL_WELL_Z = 36.0  # flange 10 + 26 mm of tube
+WHEEL_WELLS = (
+    (math.radians(90.0), math.radians(144.0)),
+    (math.radians(214.0), math.radians(271.0)),
+)
 
 PLATE_X = 200.0
 PLATE_Y = 380.0
@@ -199,24 +210,46 @@ def cylinder(cx, cy, z0, z1, r, seg=64, top=True, bottom=True) -> Mesh:
     return m
 
 
-def tube(cx, cy, z0, z1, r_out, r_in, seg=64) -> Mesh:
-    """Annulus — true hollow tube (manifold)."""
+def in_wheel_well(ang: float) -> bool:
+    """True if polar angle (rad, any wrap) is inside a forward-omni well."""
+    a = ang % (2.0 * math.pi)
+    return any(lo <= a <= hi for lo, hi in WHEEL_WELLS)
+
+
+def tube(cx, cy, z0, z1, r_out, r_in, seg=64, skip_wells=False) -> Mesh:
+    """Annulus — true hollow tube (manifold). skip_wells cuts forward-omni arches."""
     assert r_out > r_in > 0
     m = Mesh()
     out0, out1, in0, in1 = [], [], [], []
+    angs = []
     for i in range(seg):
         a = 2 * math.pi * i / seg
+        angs.append(a)
         c, s = math.cos(a), math.sin(a)
         out0.append((cx + r_out * c, cy + r_out * s, z0))
         out1.append((cx + r_out * c, cy + r_out * s, z1))
         in0.append((cx + r_in * c, cy + r_in * s, z0))
         in1.append((cx + r_in * c, cy + r_in * s, z1))
+    well_edge_i = []
     for i in range(seg):
         j = (i + 1) % seg
+        am = 0.5 * (angs[i] + angs[j])
+        if skip_wells and in_wheel_well(am):
+            well_edge_i.append(i)
+            continue
         m.add_quad(out0[i], out0[j], out1[j], out1[i])
         m.add_quad(in0[j], in0[i], in1[i], in1[j])
         m.add_quad(out0[i], in0[i], in0[j], out0[j])
         m.add_quad(out1[j], in1[j], in1[i], out1[i])
+    if skip_wells:
+        # Radial end-caps at well boundaries (where a kept segment meets a gap)
+        for i in range(seg):
+            j = (i + 1) % seg
+            this_gap = skip_wells and in_wheel_well(0.5 * (angs[i] + angs[j]))
+            prev = (i - 1) % seg
+            prev_gap = skip_wells and in_wheel_well(0.5 * (angs[prev] + angs[i]))
+            if this_gap != prev_gap:
+                m.add_quad(out0[i], in0[i], in1[i], out1[i])
     return m
 
 
@@ -231,11 +264,12 @@ def flange_with_through_holes(
     n_rad: int = 8,
     cx: float = 0.0,
     cy: float = 0.0,
+    skip_wells: bool = False,
 ) -> Mesh:
     """Flange annulus with real through-holes (polar cells omit hole cores).
 
     Slicer unions overlapping cell solids. Hole walls are open cylinders so
-    the bore prints clean for bolts.
+    the bore prints clean for bolts. skip_wells cuts the forward-omni arches.
     """
     assert r_out > r_in > 0
     m = Mesh()
@@ -247,6 +281,9 @@ def flange_with_through_holes(
     for i in range(n_ang):
         a0 = 2 * math.pi * i / n_ang
         a1 = 2 * math.pi * (i + 1) / n_ang
+        am = 0.5 * (a0 + a1)
+        if skip_wells and in_wheel_well(am):
+            continue
         for j in range(n_rad):
             ra = r_in + (r_out - r_in) * j / n_rad
             rb = r_in + (r_out - r_in) * (j + 1) / n_rad
@@ -267,6 +304,15 @@ def flange_with_through_holes(
                 m.add_quad(p10, q10, q11, p11)
             m.add_quad(p00, q00, q10, p10)
             m.add_quad(p01, p11, q11, q01)
+
+    if skip_wells:
+        for a0, a1 in WHEEL_WELLS:
+            for a in (a0, a1):
+                p_in = pt(r_in, a, z0)
+                p_out = pt(r_out, a, z0)
+                q_in = pt(r_in, a, z1)
+                q_out = pt(r_out, a, z1)
+                m.add_quad(p_in, p_out, q_out, q_in)
 
     m.extend(hole_walls(holes, hole_r, z0, z1, seg=20))
     return m
@@ -465,7 +511,7 @@ def write_stl(mesh: Mesh, path: Path, name: str):
 
 
 def build_torso() -> Mesh:
-    """Ø180 shell, Ø190 flange for LeKiwi layer2, split bolt-ring, top rim for deck."""
+    """Ø180 shell, Ø190 flange for LeKiwi layer2, forward-omni wheel wells."""
     m = Mesh()
     r_out = TORSO_OD / 2
     r_in = r_out - TORSO_WALL
@@ -474,14 +520,19 @@ def build_torso() -> Mesh:
     split_hi = TORSO_SPLIT_Z + SPLIT_RING_HALF
     rim0 = TORSO_H - TORSO_RIM_Z
 
-    # Bottom flange — through-holes on LeKiwi layer2 20 mm grid
+    # Bottom flange — 6× M3 on layer2 grid, notched for forward omnis
     m.extend(
         flange_with_through_holes(
-            r_flange, r_in, 0.0, TORSO_FLANGE_Z, FLANGE_BOLTS_XY, M3_R
+            r_flange, r_in, 0.0, TORSO_FLANGE_Z, FLANGE_BOLTS_XY, M3_R,
+            skip_wells=True,
         )
     )
-    # Lower tube (below split ring)
-    m.extend(tube(0, 0, TORSO_FLANGE_Z, split_lo, r_out, r_in, seg=72))
+    # Lower tube through the wheel-poke height (notched)
+    m.extend(
+        tube(0, 0, TORSO_FLANGE_Z, WHEEL_WELL_Z, r_out, r_in, seg=96, skip_wells=True)
+    )
+    # Lower tube above the wheels (full)
+    m.extend(tube(0, 0, WHEEL_WELL_Z, split_lo, r_out, r_in, seg=72))
     # Split bolt ring — 6× M3; halves clamp with M3×16 after bed-size split
     m.extend(
         flange_with_through_holes(

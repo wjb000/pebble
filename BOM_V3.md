@@ -27,11 +27,11 @@ Upstream: https://github.com/TheRobotStudio/SO-ARM100
 
 | # | Part | Qty | ~$ | Notes |
 |---|---|---:|---:|---|
-| B1 | `HouseHand_torso.stl` Ø180 / **6 mm wall** / flange Ø190 × 320 mm | 1 | filament | Seats on layer2; split ring if bed-limited |
+| B1 | `HouseHand_torso.stl` Ø180 / **6 mm wall** / flange Ø190 × 320 mm | 1 | filament | Seats on layer2; **wheel wells** over forward omnis; split ring if bed-limited |
 | B2 | `HouseHand_shoulder_deck.stl` (+ splice if L/R) | 1 | filament | Pads (−26, ±138); Ø36 cable hole |
 | B3 | `HouseHand_neck.stl` | 1 | filament | 4× M3 into deck boss |
 | B4 | `HouseHand_head_mount.stl` + `HouseHand_head_camera.stl` | 1 | filament | Head flange **prints** 4× M3 at r=28; clamp plate for 32×32 UVC |
-| B5 | M3 + M4 hardware pack | 1 | 12–18 | Flange 8×M3, rim 6×M3, split 6×M3, splice 8×M3, neck/head 8×M3, pads **8× M4×30** + wing nuts |
+| B5 | M3 + M4 hardware pack | 1 | 12–18 | Flange **6×M3**, rim 6×M3, split 6×M3, splice 8×M3, neck/head 8×M3, pads **8× M4×30** + wing nuts |
 | | **Structure subtotal** | | **~$25–45** | filament + fasteners |
 
 Generate: `python3 scripts/gen_structure_kit.py`

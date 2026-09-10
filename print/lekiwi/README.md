@@ -22,8 +22,8 @@ Print these, then buy **3× 4″ omni wheels**, **3× STS3215** drive servos, an
 - **6× hex standoffs** between layer1 ↔ layer2 — required, not printed.
 - Drive chain: `drive_motor_mount` → **STS3215** → `servo_wheel_hub` → **4″ omni**.
 - **3× omni at 120°** (LeKiwi kit layout: one aft, two forward-quarter). Do not rearrange for “symmetry” — mounts and wiring follow the kit.
-- Omni tops poke above layer2 outside ~r103 mm; torso flange **Ø190** keeps ≥8 mm gap.
-- Torso flange has **8× Ø3.4 through-holes** matching layer2’s 20 mm M3 grid — no freehand drill.
+- Omni tops poke above layer2; torso flange **Ø190** plus **wheel wells** over the two forward omnis so the 4″ tires can spin.
+- Torso flange has **6× Ø3.4 through-holes** matching layer2’s 20 mm M3 grid (`(40,±80)`, `(±80,±40)`) — no freehand drill. `(−40,±80)` sit in the wells.
 - STLs are Z-footed for the slicer (`python3 scripts/prep_print_stls.py`).
 - Archived junk (wrong mounts, wrist cam, Jetson holder): `print/_archive/lekiwi/`.
 

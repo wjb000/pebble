@@ -21,14 +21,14 @@ All kit STLs under `print/` are **footed to bed origin** (min-Z = 0). Hardware X
 
 ### Torso → layer2 bolts (critical)
 
-Flange has **8× Ø3.4 through-holes** on the LeKiwi layer2 **20 mm grid**:
-`(±40, ±80)` and `(±80, ±40)` mm. Use M3 through flange into those plate holes — not freehand drilling.
+Flange has **6× Ø3.4 through-holes** on the LeKiwi layer2 **20 mm grid**:
+`(40, ±80)` and `(±80, ±40)` mm. **Two forward-omni wells** (print ~90–144° and ~214–271°) cut the flange + lower 36 mm of tube so the 4″ wheels can spin — `(−40, ±80)` would sit in those arches and are omitted. Seat the wells over the two forward omnis (camera faces drive-forward). Use M3 through the remaining holes — not freehand drilling.
 
 ### Fastener map (printed structure)
 
 | Joint | Hardware | Pattern |
 |-------|----------|---------|
-| Torso flange → layer2 | **8× M3** | `(±40,±80)`, `(±80,±40)` |
+| Torso flange → layer2 | **6× M3** | `(40,±80)`, `(±80,±40)` — wells over forward omnis |
 | Torso split (if using halves) | **6× M3×16** + pins | r=88 mm, 0°/60°/… |
 | Deck → torso rim | **6× M3** | r=88 mm, 30°/90°/… |
 | Deck L/R splice | **8× M3** + `HouseHand_deck_splice.stl` | y=±8, x=±20/±60 |
@@ -45,7 +45,7 @@ Flange has **8× Ø3.4 through-holes** on the LeKiwi layer2 **20 mm grid**:
 | # | Module | Path | Qty | Notes |
 |---|--------|------|----:|-------|
 | **1** | Omni base | `print/lekiwi/` | 1 set | Plates, 3× `drive_motor_mount`, 3× `servo_wheel_hub`, battery, Pi case, controller mount |
-| **2** | Torso | `HouseHand_torso.stl` **or** `_bottom`+`_top` | 1 | Ø180 / **6 mm wall** / flange Ø190 → layer2. Skip `torso_shell.stl`. |
+| **2** | Torso | `HouseHand_torso.stl` **or** `_bottom`+`_top` | 1 | Ø180 / **6 mm wall** / flange Ø190 → layer2, **wheel wells** over the two forward omnis. Skip `torso_shell.stl`. |
 | **3** | Shoulder deck | `HouseHand_shoulder_deck.stl` **or** `_L`+`_R` + `_deck_splice` | 1 | Pads (−26, ±138); Ø36 cable hole |
 | **4** | Arms | `print/SO101/` | **2×** | Follower set twice — see folder README |
 | **5** | Wrist cams (opt.) | `SO101/Individual/Wrist_camera_mount_SO101.stl` | 0–2 | |
