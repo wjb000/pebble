@@ -384,8 +384,9 @@ export function WheeledChassis({
 }) {
   void showWipe
   const perf = useMemo(() => getPerfTier(), [])
-  const lekiwiLean = perf.leanMeshes ? LEKIWI_LEAN_MESH : undefined
-  const lekiwi = useUrdf(LEKIWI_URDF, LEKIWI_PATH, LEKIWI_SKIP_MESH, lekiwiLean)
+  // Always load the full LeKiwi drive chain (mount → servo → hub → wheel) and
+  // plate standoffs. Lean skipping those parts made the print twin look broken.
+  const lekiwi = useUrdf(LEKIWI_URDF, LEKIWI_PATH, LEKIWI_SKIP_MESH)
   // Separate URLs so each arm gets its own Object3D tree + cloned geometries.
   const so101L = useUrdf(`${SO101_URDF}?side=L`, SO101_PATH)
   const so101R = useUrdf(`${SO101_URDF}?side=R`, SO101_PATH)
