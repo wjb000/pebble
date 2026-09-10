@@ -1,57 +1,56 @@
-# HouseHand — Bill of Materials (v3.1)
+# HouseHand — Bill of Materials (v3.2)
 
-**Form:** NYRO-like silhouette · telescoping torso · omni base · dual SO-101 arms  
-**Rough total:** **~$450–700** DIY (print yourself; no kits markup)
+**Product of record:** LeKiwi **3-omni** base + printed **HouseHand** torso/deck/neck/head + **2× SO-101** followers.  
+**Rough total:** **~$500–750** DIY (print yourself). Street USD hobby prices, 2026 — verify before buy.
 
-Prices are typical US hobby sourcing (AliExpress / Amazon), 2026. Shipping/tax extra.
+Print list: `print/README.md`. Assembly: `docs/ASSEMBLY.md`. Twin: `/model`.
 
 ---
 
 ## A. Arms (2× SO-101 follower)
 
-| # | Part | Qty | ~$ ea | ~$ | Notes |
-|---|---|---:|---:|---:|---|
-| A1 | Feetech STS3215 7.4V 1/345 (C001) | 12 | 14 | 168 | 6 per arm |
-| A2 | Waveshare bus servo adapter | 2 | 11 | 22 | One bus per arm |
-| A3 | 5V ≥5A PSU (or 12V if using 12V STS) | 2 | 12 | 24 | Match motor voltage |
-| A4 | USB-C data cables | 2 | 4 | 8 | |
-| A5 | PLA+/PETG filament (both followers) | ~1 kg | 20 | 20 | Print from SO-ARM100 STLs |
-| A6 | USB wrist cameras (UVC) | 2 | 15 | 30 | |
-| A7 | Grip tape | 1 | 5 | 5 | |
-| | **Arms subtotal** | | | **~$277** | |
+| # | Part | Qty | ~$ | Notes |
+|---|---|---:|---:|---|
+| A1 | Feetech STS3215 (C001 / 7.4V or 12V match) | **12** | 168 | 6 per follower |
+| A2 | Waveshare bus servo adapter | 2 | 22 | One bus per arm |
+| A3 | 5V ≥5A (or 12V) rail for arms | 1–2 | 12–24 | Match motor voltage |
+| A4 | USB-C data cables | 2 | 8 | Bus → host |
+| A5 | PLA+/PETG filament (2× follower) | ~0.8 kg | 16 | `print/SO101/` |
+| A6 | Wrist UVC cams (optional) | 0–2 | 0–30 | + `Wrist_camera_mount_SO101.stl` ×2 |
+| | **Arms subtotal** | | **~$230–270** | |
 
 Upstream: https://github.com/TheRobotStudio/SO-ARM100
 
 ---
 
-## B. Telescoping torso + shoulder
+## B. HouseHand structure (printed)
 
 | # | Part | Qty | ~$ | Notes |
 |---|---|---:|---:|---|
-| B1 | Nested tube / telescoping column kit (or DIY nested 2040 + internal lead screw) | 1 | 40–80 | Column **grows/shrinks** — not an exposed rail carriage |
-| B2 | Lead screw T8 + nut **or** internal belt | 1 | 10–25 | Inside the torso |
-| B3 | Lift motor: STS3215 **or** 12V gearmotor / linear actuator | 1 | 15–40 | |
-| B4 | Printed shoulder crossbar (mounts 2× SO-101 bases) | 1 | 5–10 | Filament |
-| B5 | Column base plate → deck | 1 | 5–10 | Print or plate |
-| B6 | Limit switches (min/max height) | 2 | 3 | |
-| B7 | Head / torso USB camera | 1 | 15–30 | On shoulder or top tube |
-| | **Torso subtotal** | | **~$90–200** | |
+| B1 | `HouseHand_torso.stl` Ø180 / flange Ø190 × 320 mm | 1 | filament | Seats on LeKiwi **layer2** |
+| B2 | `HouseHand_shoulder_deck.stl` | 1 | filament | Pads (−26, ±138) mm |
+| B3 | `HouseHand_neck.stl` | 1 | filament | Deck center boss |
+| B4 | `HouseHand_head_mount.stl` + `HouseHand_head_camera.stl` | 1 | filament | Primary head cam path |
+| B5 | M3 hardware pack (flange, deck, neck, head) | 1 | 10–15 | Through flange drill guides |
+| | **Structure subtotal** | | **~$25–45** | filament + fasteners |
+
+Generate: `python3 scripts/gen_structure_kit.py`
 
 ---
 
-## C. Omnidirectional base
+## C. LeKiwi omni base
 
 | # | Part | Qty | ~$ | Notes |
 |---|---|---:|---:|---|
-| C1 | Chassis deck ~400×450 mm (plywood 18 mm or alu) | 1 | 15–25 | Low, stiff |
-| C2 | Omni wheels 4″ (kiwi) **or** mecanum set | 3–4 | 30–60 | 3-omni LeKiwi-style **or** 4 mecanum |
-| C3 | Drive motors: STS3215 12V ×3 **or** DC gearmotors + encoders | 3–4 | 45–80 | Match wheel count |
-| C4 | Motor driver(s): Waveshare bus **or** high-current H-bridges | 1–2 | 15–40 | |
-| C5 | Casters (only if using 2-drive + casters — skip for full omni) | 0 | 0 | Full omni: no casters |
-| C6 | Fasteners, standoffs, bumper foam | — | 10–15 | |
-| | **Base drive subtotal** | | **~$115–220** | |
+| C1 | Printed plates + mounts (`print/lekiwi/`) | 1 set | filament | layer1, layer2, 3× drive mount v11, 3× hub, battery, Pi case, controller mount |
+| C2 | **4″ omni wheels** (bought) | **3** | 35–50 | Not printed |
+| C3 | **STS3215 drive servos** | **3** | 42–50 | Bridge: mount → hub → wheel |
+| C4 | Waveshare bus (drive) | 1 | 11 | Or share a bus carefully |
+| C5 | **Hex standoffs** McMaster-class **`94868A713`** (M3 ♀ threaded, ~50 mm stack height per URDF) | **6** | 8–15 | **Required** between layer1 ↔ layer2 |
+| C6 | M3 screws for plates / mounts / standoffs | — | 8–12 | |
+| | **Base subtotal** | | **~$110–160** | |
 
-LeKiwi reference (omni): https://github.com/SIGRobotics-UIUC/LeKiwi
+Upstream: https://github.com/SIGRobotics-UIUC/LeKiwi
 
 ---
 
@@ -59,26 +58,15 @@ LeKiwi reference (omni): https://github.com/SIGRobotics-UIUC/LeKiwi
 
 | # | Part | Qty | ~$ | Notes |
 |---|---|---:|---:|---|
-| D1 | 12V battery pack + BMS **or** compact power station | 1 | 50–120 | Centered in base |
-| D2 | 5V buck converter | 1–2 | 5–10 | Logic / hub / cams |
-| D3 | Powered USB hub | 1 | 15 | Arms buses + 3 cams |
-| D4 | Laptop you own **or** Raspberry Pi 5 | 0–1 | 0–80 | Gamepad teleop host |
-| D5 | USB gamepad | 1 | 20 | |
-| D6 | E-stop (latching) | 1 | 8–12 | Cuts drive + arms + lift |
+| D1 | 12 V pack + BMS (centered in base bay) | 1 | 50–120 | Tip ballast |
+| D2 | 5 V buck | 1–2 | 5–10 | Logic / hub / cams |
+| D3 | Powered USB hub | 1 | 15 | Buses + cams |
+| D4 | Laptop you own **or** Pi 5 | 0–1 | 0–80 | |
+| D5 | USB gamepad | 1 | 20 | Teleop |
+| D6 | Latching e-stop | 1 | 8–12 | Cuts drive + arms |
 | D7 | Wire, XT60, fuses, switch | — | 15–25 | |
-| D8 | On-base bin / tote | 1 | 5–10 | Drops / laundry |
-| | **Power/compute subtotal** | | **~$120–290** | |
-
----
-
-## E. Optional later
-
-| Part | ~$ | Why |
-|---|---:|---|
-| Leader SO-101 set | +110–230 | Better LeRobot demos |
-| TPU soft fingers | 10 | Cloth grasp |
-| Spray bottle + trigger servo + rag | 15–30 | Counter wipe |
-| Second head depth cam | 50–220 | Nice-to-have, skip v1 |
+| D8 | Head UVC camera | 1 | 15–30 | On HouseHand head mount |
+| | **Power/compute subtotal** | | **~$130–280** | |
 
 ---
 
@@ -86,24 +74,24 @@ LeKiwi reference (omni): https://github.com/SIGRobotics-UIUC/LeKiwi
 
 | Block | Low | High |
 |---|---:|---:|
-| A Arms | 260 | 300 |
-| B Torso | 90 | 200 |
-| C Omni base | 115 | 220 |
-| D Power/compute | 120 | 210 |
-| **Total (no Pi, no leader)** | **~$485** | **~$730** |
-| Aim if careful / printed | | **~$450–650** |
+| A Arms | 230 | 270 |
+| B Structure (print) | 25 | 45 |
+| C Omni base | 110 | 160 |
+| D Power/compute | 130 | 220 |
+| **Total** | **~$495** | **~$695** |
 
 ---
 
 ## Buy order
-1. **A** — first 6× STS + one arm bring-up (floor grasp on bench)  
-2. Rest of **A** — second arm  
-3. **B** — telescoping torso + shoulder bar  
-4. **C+D** — omni base + battery (tip tests with arms mounted)
+1. **C2+C3+C5** — omni wheels, 3× drive STS3215, **6× standoffs** (base cannot assemble without these)
+2. **A1** — first 6× STS + one follower bring-up
+3. Rest of **A** — second arm
+4. Print **C1 + B** while hardware ships
+5. **D** — pack, e-stop, compute, head cam
 
 ## Do not buy
-RÅSKOG cart · ODrive/SteadyWin · Amazing Hand · exposed-rail-only lift · diff-only if you want true omni
+RÅSKOG cart · 4× mecanum deck (this twin is **3-omni**) · ODrive/SteadyWin · Amazing Hand · nested telescoping column kit · exposed-rail-only lift · leader SO-101 (unless you want teleop leader)
 
-## Sketch files
-- Concept: telescoping short/tall + omni (see chat images)
-- This BOM: `BOM_V3.md`
+## Sketch
+- Twin stack on `/model` matches `print/` STLs
+- This BOM: `BOM_V3.md` · UI: `/bom`

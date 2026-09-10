@@ -24,8 +24,8 @@ export function BomPage() {
       <header className="page-header">
         <h1>BOM / Specs</h1>
         <p className="lede">
-          HouseHand v3.1 — NYRO-like silhouette · telescoping torso · omni base · dual SO-101.
-          Base (deck + nested column + power) vs +1 arm vs <strong>+2× SO-101 (product)</strong>.
+          HouseHand — <strong>LeKiwi 3-omni</strong> + printed torso/deck + <strong>2× SO-101</strong>.
+          Base (plates + drives + power) vs +1 arm vs <strong>+2× SO-101 (product)</strong>.
           Aim <strong>{money(BOM_V3_RANGE_LO)}–{money(BOM_V3_RANGE_HI)}</strong> DIY if careful;
           itemized mid ~{money(dual)}. Round <strong>draft</strong> street USD — not for sale.
         </p>
@@ -53,11 +53,11 @@ export function BomPage() {
       <section className="section">
         <h2>Buy / print</h2>
         <ul className="doc-list">
-          <li><strong>Base</strong> — 400×450 mm deck + 4× 4″ mecanum (or 3-kiwi LeKiwi). No casters. Envelopes in the twin.</li>
-          <li><strong>Torso</strong> — nested tube kit + internal T8 + printed shoulder bar + column base plate. Column <em>grows/shrinks</em>.</li>
-          <li><strong>Head STLs</strong> — SO-ARM100 Overhead Cam (Apache-2.0) → <code>print/head/</code></li>
-          <li><strong>Arms</strong> — 2× SO-101 + STS3215×12 (Apache-2.0). Optional DIY prints → <code>print/SO101/</code></li>
-          <li><strong>{PRINT_UNIQUE_SKUS} structure SKUs</strong> + bought nested column / mecanum / 12V pack / e-stop / tote / gamepad</li>
+          <li><strong>Base</strong> — LeKiwi layer1+layer2, <strong>3× 4″ omni</strong>, 3× STS3215 drive, <strong>6× M3 hex standoffs</strong> (94868A713 class). No casters. No 4-mecanum deck.</li>
+          <li><strong>Torso</strong> — printed HouseHand Ø180 / flange Ø190 + shoulder deck + neck + head (<code>print/xlerobot/hardware/</code>). Not a nested-tube kit.</li>
+          <li><strong>Head STLs</strong> — <code>HouseHand_head_mount.stl</code> + <code>HouseHand_head_camera.stl</code> (matches twin). Optional SO-ARM overhead stack is archived.</li>
+          <li><strong>Arms</strong> — 2× SO-101 <em>follower</em> + STS3215×12 → <code>print/SO101/</code> (leader parts archived).</li>
+          <li><strong>{PRINT_UNIQUE_SKUS}+ print SKUs</strong> in <code>print/README.md</code> + bought omnis / standoffs / 12V pack / e-stop / gamepad</li>
           <li>{HEIGHT_NOTE}</li>
         </ul>
       </section>

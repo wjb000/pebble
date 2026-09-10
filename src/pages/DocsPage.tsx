@@ -22,8 +22,9 @@ export function DocsPage() {
           <li><code>HouseHand_neck.stl</code> + <code>HouseHand_head_mount.stl</code> + <code>HouseHand_head_camera.stl</code></li>
         </ul>
         <p className="muted">
-          Skip RÅSKOG cart STL, legacy <code>print/base/</code>, and the old fragmented
-          <code>XLeRobot_035_armbase_*.stl</code> files.
+          Skip anything under <code>print/_archive/</code> (leader SO-101 parts, wrong LeKiwi mounts,
+          optional overhead cam / 4040 lift). Buy list: <Link to="/bom">BOM</Link> — includes{' '}
+          <strong>6× plate standoffs</strong> and <strong>3× omni wheels</strong>.
         </p>
       </section>
 

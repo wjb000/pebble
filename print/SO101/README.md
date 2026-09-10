@@ -4,14 +4,36 @@ Upstream [TheRobotStudio/SO-ARM100](https://github.com/TheRobotStudio/SO-ARM100)
 
 HouseHand mounts **two** followers on `HouseHand_shoulder_deck` pads (−26, ±138) mm.
 
-## Per arm (×2)
+## Easiest path
 
-Print `Individual/*` follower parts **or** one `Follower/Prusa_Follower_SO101.stl` plate **twice**.
+Print `Follower/Prusa_Follower_SO101.stl` **twice** (one plate per arm).
 
-| Extra | Qty | Notes |
-|-------|----:|-------|
-| `Individual/Wrist_camera_mount_SO101.stl` | 2 | Optional wrist UVC |
+## Or print Individual (per arm, ×2)
 
-Skip leader-only parts (`Trigger`, leader `Wrist_Roll`) unless you build a leader.
+Follower-only parts in `Individual/` (leader parts live in `print/_archive/SO101/leader/`):
 
-Hardware: **12× STS3215** + 2× Waveshare bus. Filament ~300–400 g PLA per follower.
+| STL | Qty per arm |
+|-----|----:|
+| `Base_SO101.stl` | 1 |
+| `Base_motor_holder_SO101.stl` | 1 |
+| `Motor_holder_SO101_Base.stl` | 1 |
+| `Under_arm_SO101.stl` | 1 |
+| `Upper_arm_SO101.stl` | 1 |
+| `Rotation_Pitch_SO101.stl` | 1 |
+| `Wrist_Roll_Follower_SO101.stl` | 1 |
+| `Wrist_Roll_Pitch_SO101.stl` | 1 |
+| `Motor_holder_SO101_Wrist.stl` | 1 |
+| `Moving_Jaw_SO101.stl` | 1 |
+| `WaveShare_Mounting_Plate_SO101.stl` **or** `Seeedstudio_Mounting_Plate_SO101.stl` | 1 |
+
+| Optional | Qty |
+|----------|----:|
+| `Wrist_camera_mount_SO101.stl` | 0–1 per arm |
+
+**Do not print** (archived leader): `Trigger_SO101`, `Handle_SO101`, `Wrist_Roll_SO101`.
+
+## Buy
+
+**12× STS3215** + 2× Waveshare bus. Filament ~300–400 g PLA per follower.
+
+Master: `print/README.md` · Hardware BOM: `BOM_V3.md`
