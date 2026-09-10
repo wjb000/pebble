@@ -32,11 +32,12 @@ HARDWARE = [
     "HouseHand_neck.stl",
     "HouseHand_head_mount.stl",
     "HouseHand_head_camera.stl",
+    "HouseHand_deck_splice.stl",
     "torso_shell.stl",
 ]
 
 TORSO_SPLIT_Z = 160.0
-TORSO_WALL_MID_R = 87.5  # (90 + 85) / 2
+TORSO_WALL_MID_R = 87.0  # (90 + 84) / 2 with 6 mm wall
 REG_PIN_R = 3.0
 REG_PIN_H = 6.0
 REG_HOLE_R = 3.25

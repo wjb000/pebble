@@ -7,11 +7,11 @@
 // Flange bolts hit LeKiwi layer2 20 mm grid: (±40,±80) and (±80,±40).
 
 OD = 180;
-WALL = 5;
+WALL = 6;
 H = 320;
 FLANGE_OD = 190;
-FLANGE_Z = 8;
-RIM_Z = 4;
+FLANGE_Z = 10;
+RIM_Z = 6;
 HOLE_R = 1.7; // M3 clearance
 BOLTS = [
   [40, 80], [-40, 80], [40, -80], [-40, -80],

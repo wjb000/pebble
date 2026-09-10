@@ -28,14 +28,16 @@ from pathlib import Path
 
 # ---- locked interface ----
 TORSO_OD = 180.0
-TORSO_WALL = 5.0
+TORSO_WALL = 6.0  # 6 mm wall — dual SO-101 + head on a 320 mm tube
 TORSO_H = 320.0
 TORSO_FLANGE_OD = 190.0
-TORSO_FLANGE_Z = 8.0
-TORSO_RIM_Z = 4.0  # top lip the deck ring seats over
+TORSO_FLANGE_Z = 10.0
+TORSO_RIM_Z = 6.0  # top lip the deck ring seats over; 6× M3 through-bolts
+TORSO_SPLIT_Z = 160.0
+SPLIT_RING_HALF = 5.0  # ring spans 155–165 so each split half has a 5 mm bolt lip
 
 # LeKiwi layer2 is a 20 mm M3 grid. These 8 points sit in the flange
-# annulus (r≈89.4, between tube ID 85 and flange OD 95) and hit real plate holes.
+# annulus (r≈89.4, between tube ID 84 and flange OD 95) and hit real plate holes.
 FLANGE_BOLTS_XY = (
     (40.0, 80.0),
     (-40.0, 80.0),
@@ -57,29 +59,56 @@ PAD_X = -26.0
 PAD_HALF_Y = 138.0
 PAD_R = 48.0
 PAD_Z = 6.0
-PAD_HOLE_R = 1.7  # M3 clearance
-PAD_HOLE_PCD = 56.0  # 4× M3 on pad (drill-through after print if needed)
+PAD_HOLE_R = 2.15  # M4 clearance (SO-101 4040 mount uses M4/M5)
+PAD_HOLE_PCD = 56.0  # 4× on pad, 45° — through pad + plate
 
 TORSO_RING_W = 8.0
 TORSO_RING_Z = 4.0
 TORSO_RING_CLEAR = 0.6  # slip fit over torso OD
 
-# Mid-height registration for bed-size torso split (Z = TORSO_SPLIT_Z)
-TORSO_SPLIT_Z = 160.0
-REG_PIN_R = 3.0
-REG_PIN_H = 6.0
-REG_HOLE_R = 3.2  # clearance over pin
-REG_HOLE_DEPTH = 7.0
+M3_R = 1.7
 
 NECK_BOSS_R = 36.0
 NECK_BOSS_Z = 14.0
-NECK_HOLE_R = 18.0
+NECK_HOLE_R = 18.0  # cable pass-through (also punched through deck plate)
 
 NECK_OD = 70.0
 NECK_ID = 40.0
 NECK_H = 120.0
 NECK_BASE_R = 38.0  # seats on boss
 NECK_BASE_Z = 8.0
+NECK_BOLT_R = 28.0  # 4× M3 on boss / collar / head flange
+
+
+def polar_xy(n: int, radius: float, a0: float = 0.0) -> tuple[tuple[float, float], ...]:
+    return tuple(
+        (radius * math.cos(a0 + 2 * math.pi * i / n), radius * math.sin(a0 + 2 * math.pi * i / n))
+        for i in range(n)
+    )
+
+
+# Deck → torso top rim (r=88 sits in Ø180×6 mm wall, ID 84 / OD 90)
+DECK_TORSO_BOLTS = polar_xy(6, 88.0, math.pi / 6)
+# Torso split bolt ring (0°/60°…) vs registration pins at 45°+k·90°
+SPLIT_BOLTS = polar_xy(6, 88.0, 0.0)
+NECK_BOLTS = polar_xy(4, NECK_BOLT_R, math.pi / 4)
+
+
+def pad_bolts(cy: float) -> tuple[tuple[float, float], ...]:
+    r = PAD_HOLE_PCD / 2
+    return tuple(
+        (
+            PAD_X + r * math.cos(math.pi / 4 + i * math.pi / 2),
+            cy + r * math.sin(math.pi / 4 + i * math.pi / 2),
+        )
+        for i in range(4)
+    )
+
+
+# Deck L/R splice bar — 8× M3, 8 mm off the Y=0 cut so each half has complete holes
+SPLICE_BOLTS = tuple(
+    (x, y) for x in (-60.0, -20.0, 20.0, 60.0) for y in (-8.0, 8.0)
+)
 
 
 def v_sub(a, b):
@@ -169,19 +198,21 @@ def flange_with_through_holes(
     hole_r: float,
     n_ang: int = 288,
     n_rad: int = 8,
+    cx: float = 0.0,
+    cy: float = 0.0,
 ) -> Mesh:
-    """Flange annulus with real M3 through-holes (polar cells omit hole cores).
+    """Flange annulus with real through-holes (polar cells omit hole cores).
 
     Slicer unions overlapping cell solids. Hole walls are open cylinders so
-    the bore prints clean for layer2 grid bolts.
+    the bore prints clean for bolts.
     """
     assert r_out > r_in > 0
     m = Mesh()
 
     def pt(r: float, a: float, z: float):
-        return (r * math.cos(a), r * math.sin(a), z)
+        return (cx + r * math.cos(a), cy + r * math.sin(a), z)
 
-    margin = hole_r + 0.15
+    margin = hole_r + 0.5 * math.hypot(2 * math.pi * r_out / n_ang, (r_out - r_in) / n_rad) + 0.25
     for i in range(n_ang):
         a0 = 2 * math.pi * i / n_ang
         a1 = 2 * math.pi * (i + 1) / n_ang
@@ -190,8 +221,8 @@ def flange_with_through_holes(
             rb = r_in + (r_out - r_in) * (j + 1) / n_rad
             am = 0.5 * (a0 + a1)
             rm = 0.5 * (ra + rb)
-            cx, cy = rm * math.cos(am), rm * math.sin(am)
-            if any(math.hypot(cx - hx, cy - hy) < margin for hx, hy in holes):
+            px, py = cx + rm * math.cos(am), cy + rm * math.sin(am)
+            if any(math.hypot(px - hx, py - hy) < margin for hx, hy in holes):
                 continue
             p00, p10 = pt(ra, a0, z0), pt(rb, a0, z0)
             p11, p01 = pt(rb, a1, z0), pt(ra, a1, z0)
@@ -206,18 +237,73 @@ def flange_with_through_holes(
             m.add_quad(p00, q00, q10, p10)
             m.add_quad(p01, p11, q11, q01)
 
-    # Clean vertical bore walls
-    hseg = 20
+    m.extend(hole_walls(holes, hole_r, z0, z1, seg=20))
+    return m
+
+
+def hole_walls(holes: tuple[tuple[float, float], ...], hole_r: float, z0: float, z1: float, seg: int = 16) -> Mesh:
+    m = Mesh()
     for hx, hy in holes:
-        for i in range(hseg):
-            a0 = 2 * math.pi * i / hseg
-            a1 = 2 * math.pi * (i + 1) / hseg
+        for i in range(seg):
+            a0 = 2 * math.pi * i / seg
+            a1 = 2 * math.pi * (i + 1) / seg
             a = (hx + hole_r * math.cos(a0), hy + hole_r * math.sin(a0), z0)
             b = (hx + hole_r * math.cos(a1), hy + hole_r * math.sin(a1), z0)
             c = (hx + hole_r * math.cos(a1), hy + hole_r * math.sin(a1), z1)
             d = (hx + hole_r * math.cos(a0), hy + hole_r * math.sin(a0), z1)
             m.add_quad(a, d, c, b)
     return m
+
+
+def plate_with_z_holes(
+    x0: float,
+    x1: float,
+    y0: float,
+    y1: float,
+    z0: float,
+    z1: float,
+    holes: list[tuple[float, float, float]],
+    step: float = 3.0,
+) -> Mesh:
+    """Axis-aligned plate with real Z through-holes (grid cells omit hole cores)."""
+    m = Mesh()
+    x = x0
+    while x < x1 - 1e-9:
+        xe = min(x + step, x1)
+        y = y0
+        while y < y1 - 1e-9:
+            ye = min(y + step, y1)
+            cx, cy = 0.5 * (x + xe), 0.5 * (y + ye)
+            if any(math.hypot(cx - hx, cy - hy) < hr + step * 0.55 for hx, hy, hr in holes):
+                y = ye
+                continue
+            m.extend(box(x, xe, y, ye, z0, z1))
+            y = ye
+        x = xe
+    grouped: dict[float, list[tuple[float, float]]] = {}
+    for hx, hy, hr in holes:
+        grouped.setdefault(hr, []).append((hx, hy))
+    for hr, pts in grouped.items():
+        m.extend(hole_walls(tuple(pts), hr, z0, z1))
+    return m
+
+
+def disk_with_holes(
+    cx: float,
+    cy: float,
+    r_out: float,
+    z0: float,
+    z1: float,
+    holes: tuple[tuple[float, float], ...],
+    hole_r: float,
+    n_ang: int = 48,
+    n_rad: int = 8,
+) -> Mesh:
+    """Solid disk with through-holes (polar cells). Tiny inner r keeps the generator simple."""
+    return flange_with_through_holes(
+        r_out, 0.45, z0, z1, holes, hole_r, n_ang=n_ang, n_rad=n_rad, cx=cx, cy=cy
+    )
+
 
 
 def box(x0, x1, y0, y1, z0, z1) -> Mesh:
@@ -279,43 +365,76 @@ def write_stl(mesh: Mesh, path: Path, name: str):
 
 
 def build_torso() -> Mesh:
-    """Ø180 shell, Ø190 flange for LeKiwi layer2, top rim for deck ring."""
+    """Ø180 shell, Ø190 flange for LeKiwi layer2, split bolt-ring, top rim for deck."""
     m = Mesh()
     r_out = TORSO_OD / 2
     r_in = r_out - TORSO_WALL
     r_flange = TORSO_FLANGE_OD / 2
-    # Main tube
-    m.extend(tube(0, 0, TORSO_FLANGE_Z, TORSO_H - TORSO_RIM_Z, r_out, r_in, seg=72))
+    split_lo = TORSO_SPLIT_Z - SPLIT_RING_HALF
+    split_hi = TORSO_SPLIT_Z + SPLIT_RING_HALF
+    rim0 = TORSO_H - TORSO_RIM_Z
+
     # Bottom flange — through-holes on LeKiwi layer2 20 mm grid
     m.extend(
         flange_with_through_holes(
-            r_flange,
-            r_in,
-            0.0,
-            TORSO_FLANGE_Z,
-            FLANGE_BOLTS_XY,
-            FLANGE_HOLE_R,
+            r_flange, r_in, 0.0, TORSO_FLANGE_Z, FLANGE_BOLTS_XY, M3_R
         )
     )
-    # Top rim (deck registration lands on this)
-    m.extend(tube(0, 0, TORSO_H - TORSO_RIM_Z, TORSO_H, r_out + 2, r_in, seg=72))
+    # Lower tube (below split ring)
+    m.extend(tube(0, 0, TORSO_FLANGE_Z, split_lo, r_out, r_in, seg=72))
+    # Split bolt ring — 6× M3; halves clamp with M3×16 after bed-size split
+    m.extend(
+        flange_with_through_holes(
+            r_flange, r_in, split_lo, split_hi, SPLIT_BOLTS, M3_R, n_ang=192, n_rad=8
+        )
+    )
+    # Upper tube
+    m.extend(tube(0, 0, split_hi, rim0, r_out, r_in, seg=72))
+    # Top rim — 6× M3 into deck (same XY as deck plate)
+    m.extend(
+        flange_with_through_holes(
+            r_out + 2, r_in, rim0, TORSO_H, DECK_TORSO_BOLTS, M3_R, n_ang=192, n_rad=8
+        )
+    )
     return m
 
 
 def build_deck() -> Mesh:
     m = Mesh()
-    m.extend(rounded_plate(PLATE_X, PLATE_Y, 0.0, PLATE_Z, PLATE_CORNER_R))
+    hx, hy = PLATE_X / 2, PLATE_Y / 2
+    pad_holes = pad_bolts(-PAD_HALF_Y) + pad_bolts(PAD_HALF_Y)
+    # Through-holes: cable, neck bolts, deck→torso, pad M4, splice M3
+    z_holes: list[tuple[float, float, float]] = [
+        (0.0, 0.0, NECK_HOLE_R),
+        *[(x, y, M3_R) for x, y in NECK_BOLTS],
+        *[(x, y, M3_R) for x, y in DECK_TORSO_BOLTS],
+        *[(x, y, PAD_HOLE_R) for x, y in pad_holes],
+        *[(x, y, M3_R) for x, y in SPLICE_BOLTS],
+    ]
+    # Plate from Z=0 (ring hangs below; prep foots the whole mesh)
+    m.extend(plate_with_z_holes(-hx + 4, hx - 4, -hy + 4, hy - 4, 0.0, PLATE_Z, z_holes, step=3.0))
+    # Rounded corners (no holes in corners)
+    cr = PLATE_CORNER_R
+    for cx, cy in ((-hx + cr, -hy + cr), (-hx + cr, hy - cr), (hx - cr, -hy + cr), (hx - cr, hy - cr)):
+        m.extend(cylinder(cx, cy, 0.0, PLATE_Z, cr, seg=20))
+    # Edge strips outside the inset grid
+    m.extend(box(-hx + cr, hx - cr, -hy, -hy + 4, 0.0, PLATE_Z))
+    m.extend(box(-hx + cr, hx - cr, hy - 4, hy, 0.0, PLATE_Z))
+    m.extend(box(-hx, -hx + 4, -hy + cr, hy - cr, 0.0, PLATE_Z))
+    m.extend(box(hx - 4, hx, -hy + cr, hy - cr, 0.0, PLATE_Z))
 
     # Underside registration ring — slips over torso top rim
-    r_out = TORSO_OD / 2 + TORSO_RING_CLEAR + 3
-    r_in = TORSO_OD / 2 + TORSO_RING_CLEAR
-    m.extend(tube(0, 0, -TORSO_RING_Z, 0.0, r_out, r_in, seg=72))
+    r_ring_out = TORSO_OD / 2 + TORSO_RING_CLEAR + 3
+    r_ring_in = TORSO_OD / 2 + TORSO_RING_CLEAR
+    m.extend(tube(0, 0, -TORSO_RING_Z, 0.0, r_ring_out, r_ring_in, seg=72))
 
-    # Dual SO-101 pads + 4× M3 drill guides each
+    # Dual SO-101 pads with M4 through-holes (continue through the plate)
     for sign in (-1, 1):
         cy = sign * PAD_HALF_Y
-        m.extend(cylinder(PAD_X, cy, PLATE_Z, PLATE_Z + PAD_Z, PAD_R, seg=48))
-        # lip ring
+        bolts = pad_bolts(cy)
+        m.extend(
+            disk_with_holes(PAD_X, cy, PAD_R, PLATE_Z, PLATE_Z + PAD_Z, bolts, PAD_HOLE_R)
+        )
         m.extend(
             tube(
                 PAD_X, cy,
@@ -323,43 +442,45 @@ def build_deck() -> Mesh:
                 PAD_R, PAD_R - 3.5, seg=48,
             )
         )
-        for i in range(4):
-            a = 2 * math.pi * i / 4 + math.pi / 4
-            hx = PAD_X + (PAD_HOLE_PCD / 2) * math.cos(a)
-            hy = cy + (PAD_HOLE_PCD / 2) * math.sin(a)
-            m.extend(
-                tube(
-                    hx, hy,
-                    PLATE_Z + PAD_Z - 0.5, PLATE_Z + PAD_Z,
-                    2.2, PAD_HOLE_R, seg=12,
-                )
-            )
 
-    # Neck boss
-    m.extend(tube(0, 0, PLATE_Z, PLATE_Z + NECK_BOSS_Z, NECK_BOSS_R, NECK_HOLE_R, seg=48))
-
-    # Stiffening ribs (inside plate volume — visual + print strength)
-    m.extend(box(-5, 5, -PAD_HALF_Y + 20, PAD_HALF_Y - 20, 1.0, PLATE_Z - 1.0))
-    m.extend(box(PAD_X - 35, 40, -5, 5, 1.0, PLATE_Z - 1.0))
+    # Neck boss (cable hole already punched through plate)
+    m.extend(
+        flange_with_through_holes(
+            NECK_BOSS_R, NECK_HOLE_R, PLATE_Z, PLATE_Z + NECK_BOSS_Z,
+            NECK_BOLTS, M3_R, n_ang=96, n_rad=8,
+        )
+    )
     return m
 
 
 def build_neck() -> Mesh:
-    """Straight printable neck that seats on the deck boss."""
+    """Straight printable neck that seats on the deck boss and bolts to the head."""
     m = Mesh()
-    # Base collar over boss
-    m.extend(tube(0, 0, 0.0, NECK_BASE_Z, NECK_BASE_R, NECK_HOLE_R + 1, seg=48))
-    # Main tube
-    m.extend(tube(0, 0, NECK_BASE_Z, NECK_H, NECK_OD / 2, NECK_ID / 2, seg=48))
-    # Top cam flange
-    m.extend(tube(0, 0, NECK_H - 6, NECK_H, NECK_OD / 2 + 6, NECK_ID / 2, seg=48))
-    # 4× M3 drill guides on top flange
-    for i in range(4):
-        a = 2 * math.pi * i / 4 + math.pi / 4
-        hx = 28 * math.cos(a)
-        hy = 28 * math.sin(a)
-        m.extend(tube(hx, hy, NECK_H - 1.0, NECK_H, 2.2, PAD_HOLE_R, seg=12))
+    # Base collar over boss — 4× M3 into deck boss
+    m.extend(
+        flange_with_through_holes(
+            NECK_BASE_R, NECK_HOLE_R + 1, 0.0, NECK_BASE_Z,
+            NECK_BOLTS, M3_R, n_ang=96, n_rad=8,
+        )
+    )
+    m.extend(tube(0, 0, NECK_BASE_Z, NECK_H - 6, NECK_OD / 2, NECK_ID / 2, seg=48))
+    # Top cam flange — 4× M3 (drill head mount to match, or use existing holes)
+    m.extend(
+        flange_with_through_holes(
+            NECK_OD / 2 + 6, NECK_ID / 2, NECK_H - 6, NECK_H,
+            NECK_BOLTS, M3_R, n_ang=96, n_rad=8,
+        )
+    )
     return m
+
+
+def build_deck_splice() -> Mesh:
+    """Bar that bolts across the deck L/R seam (8× M3)."""
+    return plate_with_z_holes(
+        -90.0, 90.0, -12.0, 12.0, 0.0, 5.0,
+        [(x, y, M3_R) for x, y in SPLICE_BOLTS],
+        step=2.5,
+    )
 
 
 def emit(mesh: Mesh, root: Path, filename: str, name: str):
@@ -376,6 +497,7 @@ def main():
     emit(build_torso(), root, "HouseHand_torso.stl", "HouseHand_torso")
     emit(build_deck(), root, "HouseHand_shoulder_deck.stl", "HouseHand_shoulder_deck")
     emit(build_neck(), root, "HouseHand_neck.stl", "HouseHand_neck")
+    emit(build_deck_splice(), root, "HouseHand_deck_splice.stl", "HouseHand_deck_splice")
     # Keep legacy filename as copy of torso for old doc links
     src = root / "public/assets/xlerobot/hardware/HouseHand_torso.stl"
     for folder in (
