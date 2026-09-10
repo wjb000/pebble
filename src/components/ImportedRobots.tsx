@@ -33,8 +33,8 @@ const SO101_PATH = asset('assets/so101/')
 const TORSO_STL = asset('assets/xlerobot/hardware/HouseHand_torso.stl')
 const ARMBASE_STL = asset('assets/xlerobot/hardware/HouseHand_shoulder_deck.stl')
 const NECK_STL = asset('assets/xlerobot/hardware/HouseHand_neck.stl')
-const HEAD_MOUNT_STL = asset('assets/xlerobot/hardware/HouseHand_head_mount.stl')
-const HEAD_CAM_STL = asset('assets/xlerobot/hardware/HouseHand_head_camera.stl')
+const HEAD_MOUNT_STL = asset('assets/xlerobot/hardware/HouseHand_head_mount.stl?v=flange3')
+const HEAD_CAM_STL = asset('assets/xlerobot/hardware/HouseHand_head_camera.stl?v=foot2')
 
 /** LeKiwi: ROS Z-up → Three Y-up. */
 const ROS_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI]
@@ -60,9 +60,9 @@ const SHOULDER_PAD_TOP_MM = 22
 const ARM_FORWARD_YAW = Math.PI
 /** Undo PRINT_SCALE so meter-based SO-101 URDFs stay true-size inside the mm group. */
 const ARM_IN_PRINT = 1 / PRINT_SCALE
-/** Skip LeKiwi onboard arm + cam tower. Keep real omni wheels + full drive chain. */
+/** Skip LeKiwi onboard arm + cam tower + Pi case. Keep real omni wheels + full drive chain. */
 const LEKIWI_SKIP_MESH =
-  /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2/i
+  /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2|Bottom-V2/i
 /** Seat the torso on layer2 only — layer1 is the motor deck under the standoffs. */
 const KIWI_PLATE_LINKS = ['base_plate_layer2-v3']
 
@@ -111,9 +111,38 @@ function footGeometry(geom: BufferGeometry) {
   return g
 }
 
-function usePreparedStl(url: string) {
+/** Seat on the bottom-face centroid (neck flange), not the bbox center.
+ *  Head mount is asymmetric — bbox footing left the camera bracket ~13 mm off the neck. */
+function footOnBottomFlange(geom: BufferGeometry, zTol = 1.0) {
+  const g = geom.clone()
+  g.computeBoundingBox()
+  const pos = g.getAttribute('position')
+  if (!pos || !g.boundingBox) return footGeometry(geom)
+  const z0 = g.boundingBox.min.z
+  let sx = 0
+  let sy = 0
+  let n = 0
+  for (let i = 0; i < pos.count; i++) {
+    const z = pos.getZ(i)
+    if (z <= z0 + zTol) {
+      sx += pos.getX(i)
+      sy += pos.getY(i)
+      n++
+    }
+  }
+  if (n < 8) return footGeometry(geom)
+  g.translate(-sx / n, -sy / n, -z0)
+  g.computeBoundingBox()
+  g.computeVertexNormals()
+  return g
+}
+
+function usePreparedStl(url: string, mode: 'bbox' | 'flange' = 'bbox') {
   const raw = useLoader(STLLoader, url) as BufferGeometry
-  return useMemo(() => footGeometry(raw), [raw])
+  return useMemo(
+    () => (mode === 'flange' ? footOnBottomFlange(raw) : footGeometry(raw)),
+    [raw, mode],
+  )
 }
 
 function meshLabel(obj: Object3D) {
@@ -149,7 +178,21 @@ function isLeKiwiArmMesh(n: string) {
 }
 
 function isLeKiwiCamTower(n: string) {
-  return n.includes('camera-mount') || n.includes('camera-model') || n.includes('top-v2')
+  return (
+    n.includes('camera-mount') ||
+    n.includes('camera-model') ||
+    n.includes('top-v2') ||
+    n.includes('bottom-v2') // Pi case — not part of HouseHand print kit
+  )
+}
+
+/** Battery / bus-board holders on the LeKiwi plate — keep for sim option later; hide for clean print twin. */
+function isLeKiwiClutter(n: string) {
+  return (
+    n.includes('lipo_battery_mount') ||
+    n.includes('battery---battery') ||
+    n.includes('servo_controller_mount')
+  )
 }
 
 function applyLeKiwiVisibility(robot: URDFRobot) {
@@ -157,7 +200,7 @@ function applyLeKiwiVisibility(robot: URDFRobot) {
     const mesh = obj as Mesh
     if (!mesh.isMesh) return
     const n = meshLabel(obj)
-    if (isLeKiwiCamTower(n) || isLeKiwiArmMesh(n)) {
+    if (isLeKiwiCamTower(n) || isLeKiwiArmMesh(n) || isLeKiwiClutter(n)) {
       mesh.visible = false
       return
     }
@@ -388,7 +431,8 @@ export function WheeledChassis({
   const armbaseGeom = usePreparedStl(ARMBASE_STL)
   // Clean printable neck/head — origin-clean HouseHand meshes.
   const neckGeom = usePreparedStl(NECK_STL)
-  const headMountGeom = usePreparedStl(HEAD_MOUNT_STL)
+  // Head mount must seat on its neck flange, not bbox center (bracket overhang).
+  const headMountGeom = usePreparedStl(HEAD_MOUNT_STL, 'flange')
   const headCamGeom = usePreparedStl(HEAD_CAM_STL)
   const torsoMm = useMemo(() => cadHeightMm(torsoGeom), [torsoGeom])
   const armMm = useMemo(() => cadHeightMm(armbaseGeom), [armbaseGeom])
@@ -628,9 +672,10 @@ export function WheeledChassis({
               >
                 <meshStandardMaterial color={colour.primary} roughness={0.45} metalness={0.12} />
               </mesh>
+              {/* RealSense on the head bracket — coaxial with the neck (flange-footed mount). */}
               <mesh
                 geometry={headCamGeom}
-                position={[0, 25, camZ + 18]}
+                position={[0, 0, camZ + 4]}
                 rotation={[Math.PI / 2, 0, 0]}
                 castShadow={shadows}
                 receiveShadow={shadows}

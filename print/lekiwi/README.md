@@ -21,6 +21,7 @@ Print these, then buy **3× 4″ omni wheels**, **3× STS3215** drive servos, an
 - Motors + hubs on **layer1**; hubs clear **layer2** underside ~4–5 mm.
 - **6× hex standoffs** between layer1 ↔ layer2 — required, not printed.
 - Drive chain: `drive_motor_mount` → **STS3215** → `servo_wheel_hub` → **4″ omni**.
+- **3× omni at 120°** (LeKiwi kit layout: one aft, two forward-quarter). Do not rearrange for “symmetry” — mounts and wiring follow the kit.
 - Omni tops poke above layer2 outside ~r103 mm; torso flange **Ø190** keeps ≥8 mm gap.
 - Torso flange has **8× Ø3.4 through-holes** matching layer2’s 20 mm M3 grid — no freehand drill.
 - STLs are Z-footed for the slicer (`python3 scripts/prep_print_stls.py`).

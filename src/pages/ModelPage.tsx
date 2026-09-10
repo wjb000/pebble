@@ -30,7 +30,7 @@ export function ModelPage() {
         <Canvas
           shadows={perf.shadows}
           dpr={perf.dpr}
-          camera={{ position: [2.1, 1.05, 2.4], fov: 40, near: 0.02, far: 40 }}
+          camera={{ position: [2.35, 2.15, 0.35], fov: 36, near: 0.02, far: 40 }}
           gl={{
             antialias: perf.antialias,
             toneMappingExposure: 1.1,
@@ -71,7 +71,8 @@ export function ModelPage() {
             enableDamping
             minDistance={0.45}
             maxDistance={10}
-            maxPolarAngle={Math.PI * 0.49}
+            maxPolarAngle={Math.PI * 0.495}
+            minPolarAngle={0.15}
             dampingFactor={0.08}
             rotateSpeed={0.85}
             touches={{ ONE: 0, TWO: 2 }}
@@ -97,7 +98,8 @@ export function ModelPage() {
           <div className="model-caption">
             <div>{kitCaption(kit)}</div>
             <div className="model-caption-sub">
-              Q/E articulates arms · reach ~{CHORE_ENVELOPE.so101_reach_mm} mm · tip ≈{TIP_SUMMARY.margin}×
+              Q/E articulates arms · LeKiwi 3-omni @ 120° · reach ~{CHORE_ENVELOPE.so101_reach_mm}{' '}
+              mm · tip ≈{TIP_SUMMARY.margin}×
             </div>
           </div>
         </div>

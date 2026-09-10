@@ -248,8 +248,27 @@ def add_deck_registration(right, left):
     return right, left
 
 
+def foot_on_flange(tris, z_tol=1.0):
+    """Center XY on the bottom-face centroid (neck mating flange), then Z-foot."""
+    x0, x1, y0, y1, z0, _ = bbox(tris)
+    sx = sy = n = 0
+    for t in tris:
+        for v in t:
+            if v[2] <= z0 + z_tol:
+                sx += v[0]
+                sy += v[1]
+                n += 1
+    if n < 8:
+        return foot(tris)
+    return translate(tris, -sx / n, -sy / n, -z0)
+
+
 def emit_hardware(name: str, tris: list):
-    tris = foot(tris)
+    # Head mount is asymmetric — bbox footing leaves the neck flange ~13 mm off-axis.
+    if name == "HouseHand_head_mount.stl":
+        tris = foot_on_flange(tris)
+    else:
+        tris = foot(tris)
     x0, x1, y0, y1, z0, z1 = bbox(tris)
     for folder in OUT_DIRS:
         write_stl(folder / name, tris, name)
