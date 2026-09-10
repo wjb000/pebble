@@ -286,6 +286,24 @@ export function useTwinPlace() {
   }
 }
 
+function bumpAxis(id: PartId, axis: 'x' | 'y' | 'z', delta: number) {
+  const o = objects[id]
+  const cur = snapshot.nudges[id]
+  const next = { ...cur, [axis]: (o ? o.position[axis] : cur[axis]) + delta }
+  if (o) o.position[axis] = next[axis]
+  setNudge(id, next)
+}
+
+function bumpYaw(id: PartId, deltaRad: number) {
+  const o = objects[id]
+  if (o) {
+    o.rotateOnWorldAxis(_up, deltaRad)
+    commitObject(id)
+    return
+  }
+  setNudge(id, { ...snapshot.nudges[id], ry: snapshot.nudges[id].ry + deltaRad })
+}
+
 const _plane = new Plane()
 const _hit = new Vector3()
 const _world = new Vector3()
@@ -400,16 +418,11 @@ export function PlaceHud() {
   const bump = (axis: 'x' | 'y' | 'z', sign: number) => {
     if (!unlocked) return
     const step = (PART_META[unlocked].units === 'mm' ? 1 : 0.001) * sign * (snap ? 1 : 0.25)
-    const o = getPlaceObject(unlocked)
-    if (o) o.position[axis] += step
-    commitObject(unlocked)
+    bumpAxis(unlocked, axis, step)
   }
-  const bumpYaw = (sign: number) => {
+  const yaw = (sign: number) => {
     if (!unlocked) return
-    const step = ((snap ? 1 : 0.25) * Math.PI) / 180 * sign
-    const o = getPlaceObject(unlocked)
-    if (o) o.rotateOnWorldAxis(_up, step)
-    commitObject(unlocked)
+    bumpYaw(unlocked, ((snap ? 1 : 0.25) * Math.PI) / 180 * sign)
   }
 
   return (
@@ -443,26 +456,24 @@ export function PlaceHud() {
           Snap
         </button>
       </div>
-      {unlocked ? (
-        <div className="place-toolbar">
-          {(['x', 'y', 'z'] as const).map((axis) => (
-            <span key={axis} className="place-axis">
-              <button type="button" data-place-bump={`-${axis}`} onClick={() => bump(axis, -1)}>
-                −{axis.toUpperCase()}
-              </button>
-              <button type="button" data-place-bump={`+${axis}`} onClick={() => bump(axis, 1)}>
-                +{axis.toUpperCase()}
-              </button>
-            </span>
-          ))}
-          <button type="button" data-place-bump="-yaw" onClick={() => bumpYaw(-1)}>
-            −YAW
-          </button>
-          <button type="button" data-place-bump="+yaw" onClick={() => bumpYaw(1)}>
-            +YAW
-          </button>
-        </div>
-      ) : null}
+      <div className="place-toolbar place-nudge">
+        {(['x', 'y', 'z'] as const).map((axis) => (
+          <span key={axis} className="place-axis">
+            <button type="button" data-place-bump={`-${axis}`} disabled={!unlocked} onClick={() => bump(axis, -1)}>
+              −{axis.toUpperCase()}
+            </button>
+            <button type="button" data-place-bump={`+${axis}`} disabled={!unlocked} onClick={() => bump(axis, 1)}>
+              +{axis.toUpperCase()}
+            </button>
+          </span>
+        ))}
+        <button type="button" data-place-bump="-yaw" disabled={!unlocked} onClick={() => yaw(-1)}>
+          −YAW
+        </button>
+        <button type="button" data-place-bump="+yaw" disabled={!unlocked} onClick={() => yaw(1)}>
+          +YAW
+        </button>
+      </div>
       <ul className="place-list">
         {PART_IDS.map((id) => {
           const fmt = formatNudge(id, nudges[id])
