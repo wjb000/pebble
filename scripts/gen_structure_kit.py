@@ -2,10 +2,14 @@
 """Generate the HouseHand printable structure kit (manifold binary STLs).
 
 Geometry contract (mm, Z-up, print frame):
-  TORSO_OD          = 216   # matches LeKiwi plate width used by the twin
+  TORSO_OD          = 180   # clears 4″ omni tops that poke above LeKiwi layer2
+  TORSO_FLANGE_OD   = 200   # ≤200 keeps ≥3 mm to wheel mesh; plate max r≈108
   TORSO_H           = 320
   DECK pads         = (−26, ±138)  Ø96 raised pads for SO-101 bases
   NECK boss         = Ø72 with Ø36 cable hole on deck center
+
+  Seat flange on LeKiwi *layer2* (top plate). Motors/hubs live under layer2;
+  bought omni wheels extend above layer2 only outside r≈103.
 
 Outputs (public + print):
   HouseHand_torso.stl
@@ -20,11 +24,11 @@ import struct
 from pathlib import Path
 
 # ---- locked interface ----
-TORSO_OD = 216.0
+TORSO_OD = 180.0
 TORSO_WALL = 5.0
 TORSO_H = 320.0
-TORSO_FLANGE_OD = 236.0
-TORSO_FLANGE_Z = 6.0
+TORSO_FLANGE_OD = 200.0
+TORSO_FLANGE_Z = 8.0
 TORSO_RIM_Z = 4.0  # top lip the deck ring seats over
 
 PLATE_X = 200.0
@@ -191,23 +195,21 @@ def write_stl(mesh: Mesh, path: Path, name: str):
 
 
 def build_torso() -> Mesh:
-    """Ø216 shell, bottom flange for LeKiwi plate, top rim for deck ring."""
+    """Ø180 shell, Ø200 flange for LeKiwi layer2, top rim for deck ring."""
     m = Mesh()
     r_out = TORSO_OD / 2
     r_in = r_out - TORSO_WALL
+    r_flange = TORSO_FLANGE_OD / 2
     # Main tube
     m.extend(tube(0, 0, TORSO_FLANGE_Z, TORSO_H - TORSO_RIM_Z, r_out, r_in, seg=72))
-    # Bottom flange (bolt to LeKiwi top plate)
-    m.extend(tube(0, 0, 0.0, TORSO_FLANGE_Z, TORSO_FLANGE_OD / 2, r_in, seg=72))
-    # 6× M3 holes in flange (as thin vertical tubes cut visually by not filling —
-    # we punch by leaving cylinder voids: subtract via inner hole markers as empty tubes through flange)
+    # Bottom flange (bolt to LeKiwi layer2 / top plate)
+    m.extend(tube(0, 0, 0.0, TORSO_FLANGE_Z, r_flange, r_in, seg=72))
+    # 6× M3 drill guides on the lip between tube OD and flange OD
+    bolt_r = (r_out + r_flange) / 2
     for i in range(6):
         a = 2 * math.pi * i / 6
-        hx = (r_out + 6) * math.cos(a)
-        hy = (r_out + 6) * math.sin(a)
-        # hole wall = tiny tube from z=0..flange — represented as open cylinder through flange
-        # For FDM we emit a clearance cylinder *void* by not adding material; approximate with
-        # a ring marker on top of flange for drill guide:
+        hx = bolt_r * math.cos(a)
+        hy = bolt_r * math.sin(a)
         m.extend(tube(hx, hy, TORSO_FLANGE_Z - 0.6, TORSO_FLANGE_Z, 2.2, PAD_HOLE_R, seg=16))
     # Top rim (deck registration lands on this)
     m.extend(tube(0, 0, TORSO_H - TORSO_RIM_Z, TORSO_H, r_out + 2, r_in, seg=72))

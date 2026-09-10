@@ -11,7 +11,7 @@ pad_half_y = 138;
 pad_r = 48;
 pad_z = 6;
 
-torso_od = 216;
+torso_od = 180;
 ring_clear = 0.6;
 ring_z = 4;
 

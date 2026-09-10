@@ -3,15 +3,15 @@
 Twin: `RobotAssembly` → wheeled chassis (`/model` + `/sim`).  
 Print list: `print/README.md`. Generate structure: `python3 scripts/gen_structure_kit.py`.
 
-**Product:** LeKiwi 3-omni base + **HouseHand Ø216 torso** + shoulder deck + **2× SO-101** + neck + head cam.  
+**Product:** LeKiwi 3-omni base + **HouseHand Ø180 torso (flange Ø200)** + shoulder deck + **2× SO-101** + neck + head cam.  
 **Not** official Pollen / XLeRobot / LeKiwi. Draft — not for sale. **No RÅSKOG cart.**
 
 ---
 
 ## CAD mates (locked)
 
-1. **LeKiwi plates** = support polygon (3× omni).
-2. **HouseHand torso** Ø216 sits on LeKiwi plate (printed flange). Twin uses the same STL — **no fake XY scale**.
+1. **LeKiwi plates** = support polygon (3× bought 4″ omni). Motors/hubs on **layer1**; torso on **layer2**.
+2. **HouseHand torso** Ø180 / flange Ø200 sits on layer2. Twin uses the same STL — **no fake XY scale**. Flange must stay ≤Ø200 so front omnis (which poke above layer2) clear.
 3. **Shoulder deck** registration ring slips over torso top rim.
 4. **SO-101 L/R** on pads at **(−26, ±138) mm**, yawed forward with the head.
 5. **HouseHand neck** on deck center boss; **head mount + camera** on neck.
@@ -23,9 +23,9 @@ Print list: `print/README.md`. Generate structure: `python3 scripts/gen_structur
 
 | # | Module | Mate | Fasteners |
 |---|--------|------|-----------|
-| **1** | LeKiwi plates + 3× drive mounts + hubs | Wheels @ 120° | Motor screws |
+| **1** | LeKiwi plates + 3× drive mounts (v11) + hubs | Wheels @ 120°; hubs under layer2 | Motor screws |
 | **2** | Battery / Pi / controller mounts | Per LeKiwi | Straps / M3 |
-| **3** | HouseHand torso | Flange → plate center, plumb | M3 through flange guides |
+| **3** | HouseHand torso | Flange → **layer2** center, plumb | M3 through flange guides |
 | **4** | Shoulder deck | Ring → torso rim; pads forward | M3 into rim |
 | **5** | SO-101 L + R | `Base_SO101` on pad centers | Kit hardware |
 | **6** | Neck | Collar → deck boss | M3 |

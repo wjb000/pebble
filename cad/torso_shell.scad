@@ -1,12 +1,15 @@
-// HouseHand torso — mates LeKiwi plate (bottom) + shoulder deck (top).
+// HouseHand torso — mates LeKiwi layer2 (bottom) + shoulder deck (top).
 // Units: mm. Export STL → print/xlerobot/hardware/HouseHand_torso.stl
 // Prefer: python3 scripts/gen_structure_kit.py  (same geometry)
+//
+// Clearance: bought 4″ omnis poke above layer2 outside r≈103 mm.
+// Flange OD ≤200 keeps ≥3 mm; tube OD 180 keeps ~13 mm to wheel mesh.
 
-OD = 216;
+OD = 180;
 WALL = 5;
 H = 320;
-FLANGE_OD = 236;
-FLANGE_Z = 6;
+FLANGE_OD = 200;
+FLANGE_Z = 8;
 RIM_Z = 4;
 $fn = 72;
 
