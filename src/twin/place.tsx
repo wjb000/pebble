@@ -175,6 +175,18 @@ export function TwinPlaceProvider({ children }: { children: ReactNode }) {
 
   const setNudge = useCallback((id: PartId, n: Nudge) => {
     setNudges((prev) => {
+      const p = prev[id]
+      if (
+        p &&
+        Math.abs(p.x - n.x) < 1e-8 &&
+        Math.abs(p.y - n.y) < 1e-8 &&
+        Math.abs(p.z - n.z) < 1e-8 &&
+        Math.abs(p.rx - n.rx) < 1e-8 &&
+        Math.abs(p.ry - n.ry) < 1e-8 &&
+        Math.abs(p.rz - n.rz) < 1e-8
+      ) {
+        return prev
+      }
       const next = { ...prev, [id]: n }
       saveNudges(next)
       return next
@@ -282,16 +294,19 @@ export function Placeable({ id, children }: { id: PartId; children: ReactNode })
     o.rotation.set(rx, ry, rz)
   }, [px, py, pz, rx, ry, rz, unlocked, id])
 
+  const setRef = useCallback(
+    (node: Group | null) => {
+      ref.current = node
+      registerObject(id, node)
+    },
+    [id, registerObject],
+  )
+
   if (!enabled) return <>{children}</>
 
   return (
     <group
-      ref={(node) => {
-        ref.current = node
-        registerObject(id, node)
-      }}
-      position={[px, py, pz]}
-      rotation={[rx, ry, rz]}
+      ref={setRef}
       onClick={(e) => {
         e.stopPropagation()
         if (unlocked) setUnlocked(id)
