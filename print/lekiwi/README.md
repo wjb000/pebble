@@ -8,7 +8,7 @@ Print these, then buy **3× 4″ omni wheels**, **3× STS3215** drive servos, an
 | STL | Qty | Notes |
 |-----|----:|-------|
 | `base_plate_layer1.stl` | 1 | Bottom plate (URDF `base_plate_layer1-v5`) |
-| `base_plate_layer2.stl` | 1 | Top plate — **HouseHand torso flanges here** |
+| `base_plate_layer2.stl` | 1 | Top plate — torso bolts at `(±40,±80)` / `(±80,±40)` on the 20 mm grid |
 | `drive_motor_mount.stl` | 3 | URDF `drive_motor_mount-v11` |
 | `servo_wheel_hub.stl` | 3 | URDF `omni_wheel_mount-v5` — hub only; wheel bought |
 | `servo_controller_mount.stl` | 1 | |
@@ -22,6 +22,8 @@ Print these, then buy **3× 4″ omni wheels**, **3× STS3215** drive servos, an
 - **6× hex standoffs** between layer1 ↔ layer2 — required, not printed.
 - Drive chain: `drive_motor_mount` → **STS3215** → `servo_wheel_hub` → **4″ omni**.
 - Omni tops poke above layer2 outside ~r103 mm; torso flange **Ø190** keeps ≥8 mm gap.
+- Torso flange has **8× Ø3.4 through-holes** matching layer2’s 20 mm M3 grid — no freehand drill.
+- STLs are Z-footed for the slicer (`python3 scripts/prep_print_stls.py`).
 - Archived junk (wrong mounts, wrist cam, Jetson holder): `print/_archive/lekiwi/`.
 
 Next: `HouseHand_torso.stl` → deck → **2× SO-101**. Master: `print/README.md`. Buy: `BOM_V3.md`.

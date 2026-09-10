@@ -11,6 +11,9 @@ Geometry contract (mm, Z-up, print frame):
   Seat flange on LeKiwi *layer2* (top plate). Motors/hubs live under layer2;
   bought omni wheels extend above layer2 only outside r≈103.
 
+  Flange bolts land on the LeKiwi layer2 **20 mm hole grid** at
+  (±40,±80) and (±80,±40) — real Ø3.4 through-holes, not dimples.
+
 Outputs (public + print):
   HouseHand_torso.stl
   HouseHand_shoulder_deck.stl
@@ -31,6 +34,20 @@ TORSO_FLANGE_OD = 190.0
 TORSO_FLANGE_Z = 8.0
 TORSO_RIM_Z = 4.0  # top lip the deck ring seats over
 
+# LeKiwi layer2 is a 20 mm M3 grid. These 8 points sit in the flange
+# annulus (r≈89.4, between tube ID 85 and flange OD 95) and hit real plate holes.
+FLANGE_BOLTS_XY = (
+    (40.0, 80.0),
+    (-40.0, 80.0),
+    (40.0, -80.0),
+    (-40.0, -80.0),
+    (80.0, 40.0),
+    (-80.0, 40.0),
+    (80.0, -40.0),
+    (-80.0, -40.0),
+)
+FLANGE_HOLE_R = 1.7  # M3 clearance
+
 PLATE_X = 200.0
 PLATE_Y = 380.0
 PLATE_Z = 12.0
@@ -41,11 +58,18 @@ PAD_HALF_Y = 138.0
 PAD_R = 48.0
 PAD_Z = 6.0
 PAD_HOLE_R = 1.7  # M3 clearance
-PAD_HOLE_PCD = 56.0  # 4× M3 on pad
+PAD_HOLE_PCD = 56.0  # 4× M3 on pad (drill-through after print if needed)
 
 TORSO_RING_W = 8.0
 TORSO_RING_Z = 4.0
 TORSO_RING_CLEAR = 0.6  # slip fit over torso OD
+
+# Mid-height registration for bed-size torso split (Z = TORSO_SPLIT_Z)
+TORSO_SPLIT_Z = 160.0
+REG_PIN_R = 3.0
+REG_PIN_H = 6.0
+REG_HOLE_R = 3.2  # clearance over pin
+REG_HOLE_DEPTH = 7.0
 
 NECK_BOSS_R = 36.0
 NECK_BOSS_Z = 14.0
@@ -136,6 +160,66 @@ def tube(cx, cy, z0, z1, r_out, r_in, seg=64) -> Mesh:
     return m
 
 
+def flange_with_through_holes(
+    r_out: float,
+    r_in: float,
+    z0: float,
+    z1: float,
+    holes: tuple[tuple[float, float], ...],
+    hole_r: float,
+    n_ang: int = 288,
+    n_rad: int = 8,
+) -> Mesh:
+    """Flange annulus with real M3 through-holes (polar cells omit hole cores).
+
+    Slicer unions overlapping cell solids. Hole walls are open cylinders so
+    the bore prints clean for layer2 grid bolts.
+    """
+    assert r_out > r_in > 0
+    m = Mesh()
+
+    def pt(r: float, a: float, z: float):
+        return (r * math.cos(a), r * math.sin(a), z)
+
+    margin = hole_r + 0.15
+    for i in range(n_ang):
+        a0 = 2 * math.pi * i / n_ang
+        a1 = 2 * math.pi * (i + 1) / n_ang
+        for j in range(n_rad):
+            ra = r_in + (r_out - r_in) * j / n_rad
+            rb = r_in + (r_out - r_in) * (j + 1) / n_rad
+            am = 0.5 * (a0 + a1)
+            rm = 0.5 * (ra + rb)
+            cx, cy = rm * math.cos(am), rm * math.sin(am)
+            if any(math.hypot(cx - hx, cy - hy) < margin for hx, hy in holes):
+                continue
+            p00, p10 = pt(ra, a0, z0), pt(rb, a0, z0)
+            p11, p01 = pt(rb, a1, z0), pt(ra, a1, z0)
+            q00, q10 = pt(ra, a0, z1), pt(rb, a0, z1)
+            q11, q01 = pt(rb, a1, z1), pt(ra, a1, z1)
+            m.add_quad(p00, p10, p11, p01)
+            m.add_quad(q00, q01, q11, q10)
+            if j == 0:
+                m.add_quad(p00, p01, q01, q00)
+            if j == n_rad - 1:
+                m.add_quad(p10, q10, q11, p11)
+            m.add_quad(p00, q00, q10, p10)
+            m.add_quad(p01, p11, q11, q01)
+
+    # Clean vertical bore walls
+    hseg = 20
+    for hx, hy in holes:
+        for i in range(hseg):
+            a0 = 2 * math.pi * i / hseg
+            a1 = 2 * math.pi * (i + 1) / hseg
+            a = (hx + hole_r * math.cos(a0), hy + hole_r * math.sin(a0), z0)
+            b = (hx + hole_r * math.cos(a1), hy + hole_r * math.sin(a1), z0)
+            c = (hx + hole_r * math.cos(a1), hy + hole_r * math.sin(a1), z1)
+            d = (hx + hole_r * math.cos(a0), hy + hole_r * math.sin(a0), z1)
+            m.add_quad(a, d, c, b)
+    return m
+
+
 def box(x0, x1, y0, y1, z0, z1) -> Mesh:
     m = Mesh()
     p000, p001 = (x0, y0, z0), (x0, y0, z1)
@@ -202,15 +286,17 @@ def build_torso() -> Mesh:
     r_flange = TORSO_FLANGE_OD / 2
     # Main tube
     m.extend(tube(0, 0, TORSO_FLANGE_Z, TORSO_H - TORSO_RIM_Z, r_out, r_in, seg=72))
-    # Bottom flange (bolt to LeKiwi layer2 / top plate)
-    m.extend(tube(0, 0, 0.0, TORSO_FLANGE_Z, r_flange, r_in, seg=72))
-    # 6× M3 drill guides on the lip between tube OD and flange OD
-    bolt_r = (r_out + r_flange) / 2
-    for i in range(6):
-        a = 2 * math.pi * i / 6
-        hx = bolt_r * math.cos(a)
-        hy = bolt_r * math.sin(a)
-        m.extend(tube(hx, hy, TORSO_FLANGE_Z - 0.6, TORSO_FLANGE_Z, 2.2, PAD_HOLE_R, seg=16))
+    # Bottom flange — through-holes on LeKiwi layer2 20 mm grid
+    m.extend(
+        flange_with_through_holes(
+            r_flange,
+            r_in,
+            0.0,
+            TORSO_FLANGE_Z,
+            FLANGE_BOLTS_XY,
+            FLANGE_HOLE_R,
+        )
+    )
     # Top rim (deck registration lands on this)
     m.extend(tube(0, 0, TORSO_H - TORSO_RIM_Z, TORSO_H, r_out + 2, r_in, seg=72))
     return m

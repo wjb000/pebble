@@ -11,7 +11,8 @@ Plate is **~243×205×87 mm** — needs a **≥250 mm** bed. On ≤220 mm beds, 
 
 ## Individual (fits ≤220 mm beds) — per arm, ×2
 
-Follower-only parts in `Individual/` (leader parts are in `print/_archive/SO101/leader/`):
+Follower-only parts in `Individual/` (leader parts are in `print/_archive/SO101/leader/`).  
+Individual STLs are **Z-footed** for the slicer (XY kept for assembly frames).
 
 | STL | Qty per arm |
 |-----|----:|

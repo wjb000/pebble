@@ -12,12 +12,17 @@ Do **not** print `print/_archive/` (legacy, leader-only, optional extras).
 
 | Part | Full size | Fits typical bed? | Split STLs (≤220 mm) |
 |------|-----------|-------------------|----------------------|
-| Torso | **190×190×320** | Needs **Z ≥ 320** | `HouseHand_torso_bottom.stl` + `_top.stl` (**160 mm** tall each) — glue/bolt at seam |
-| Shoulder deck | **200×380×30** | Needs **one axis ≥ 380** | `HouseHand_shoulder_deck_L.stl` + `_R.stl` (**200×190**) — bolt across seam |
+| Torso | **190×190×320** | Needs **Z ≥ 320** | `HouseHand_torso_bottom.stl` + `_top.stl` (~160 mm + **4 registration pins**) — glue/bolt at seam |
+| Shoulder deck | **200×380×30** | Needs **one axis ≥ 380** | `HouseHand_shoulder_deck_L.stl` + `_R.stl` (**200×190** + **pins on cut**) — bolt across seam |
 | SO-101 Prusa plate | **~243×205×87** | Needs **≥250 mm** bed | Else print `SO101/Individual/` ×2 |
 | Everything else | ≤200 mm | Fine on 220³ | — |
 
-All hardware STLs are **footed to bed origin** (min-Z = 0, XY centered). Regenerate splits with `python3 scripts/prep_print_stls.py`.
+All kit STLs under `print/` are **footed to bed origin** (min-Z = 0). Hardware XY is centered; LeKiwi / SO-101 keep assembly XY. Regenerate with `python3 scripts/prep_print_stls.py`.
+
+### Torso → layer2 bolts (critical)
+
+Flange has **8× Ø3.4 through-holes** on the LeKiwi layer2 **20 mm grid**:
+`(±40, ±80)` and `(±80, ±40)` mm. Use M3 through flange into those plate holes — not freehand drilling.
 
 ---
 
@@ -26,7 +31,7 @@ All hardware STLs are **footed to bed origin** (min-Z = 0, XY centered). Regener
 | # | Module | Path | Qty | Notes |
 |---|--------|------|----:|-------|
 | **1** | Omni base | `print/lekiwi/` | 1 set | Plates, 3× `drive_motor_mount`, 3× `servo_wheel_hub`, battery, Pi case, controller mount |
-| **2** | Torso | `HouseHand_torso.stl` **or** `_bottom`+`_top` | 1 | Ø180 / flange Ø190 → LeKiwi **layer2** |
+| **2** | Torso | `HouseHand_torso.stl` **or** `_bottom`+`_top` | 1 | Ø180 / flange Ø190 → layer2 grid holes (see above). Skip `torso_shell.stl` (alias). |
 | **3** | Shoulder deck | `HouseHand_shoulder_deck.stl` **or** `_L`+`_R` | 1 | Pads (−26, ±138) mm |
 | **4** | Arms | `print/SO101/` | **2×** | Follower set twice — see folder README |
 | **5** | Wrist cams (opt.) | `SO101/Individual/Wrist_camera_mount_SO101.stl` | 0–2 | |
@@ -51,7 +56,7 @@ Full buy list: `BOM_V3.md` · Assembly: `docs/ASSEMBLY.md`
 
 ```bash
 python3 scripts/gen_structure_kit.py
-python3 scripts/prep_print_stls.py   # foot origins + bed splits
+python3 scripts/prep_print_stls.py   # foot origins + bed splits + registration pins
 ```
 
 ---

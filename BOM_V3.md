@@ -31,7 +31,7 @@ Upstream: https://github.com/TheRobotStudio/SO-ARM100
 | B2 | `HouseHand_shoulder_deck.stl` | 1 | filament | Pads (−26, ±138) mm |
 | B3 | `HouseHand_neck.stl` | 1 | filament | Deck center boss |
 | B4 | `HouseHand_head_mount.stl` + `HouseHand_head_camera.stl` | 1 | filament | Primary head cam path |
-| B5 | M3 hardware pack (flange, deck, neck, head) | 1 | 10–15 | Through flange drill guides |
+| B5 | M3 hardware pack (flange, deck, neck, head) | 1 | 10–15 | **8× M3** flange → layer2 grid `(±40,±80)`/`(±80,±40)` |
 | | **Structure subtotal** | | **~$25–45** | filament + fasteners |
 
 Generate: `python3 scripts/gen_structure_kit.py`

@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""Prep HouseHand STLs for printing: foot to bed origin + bed-size splits.
+"""Prep kit STLs for printing: foot to bed origin + bed-size splits + registration.
 
 Run after scripts/gen_structure_kit.py (or anytime hardware STLs change).
 
-- Foots every hardware STL so min-Z = 0 and XY is centered (twin already does
-  this at runtime via footGeometry — files stay slicer-friendly).
-- Plane-clips oversized parts for common ~220 mm beds:
-    HouseHand_torso_{bottom,top}.stl        cut Z=160 → 190×190×160 each
-    HouseHand_shoulder_deck_{L,R}.stl       cut Y=0   → 200×190×30 each
+1. Foots HouseHand hardware STLs (min-Z = 0, XY centered). Twin already foots
+   at runtime via footGeometry — files stay slicer-friendly.
+2. Plane-clips oversized parts for common ~220 mm beds and adds registration
+   pins/holes on the cut faces:
+     HouseHand_torso_{bottom,top}.stl     cut Z=160 → ~190×190×160 + pins
+     HouseHand_shoulder_deck_{L,R}.stl    cut Y=0   → ~200×190×30 + pins
+3. Foots print/lekiwi/*.stl and print/SO101/Individual/*.stl in Z only
+   (does NOT touch public/ URDF meshes — twin poses depend on those frames).
 
-Writes identical bytes to public/assets + print/xlerobot/hardware.
+Writes identical HouseHand bytes to public/assets + print/xlerobot/hardware.
 """
 
 from __future__ import annotations
@@ -31,6 +34,14 @@ HARDWARE = [
     "HouseHand_head_camera.stl",
     "torso_shell.stl",
 ]
+
+TORSO_SPLIT_Z = 160.0
+TORSO_WALL_MID_R = 87.5  # (90 + 85) / 2
+REG_PIN_R = 3.0
+REG_PIN_H = 6.0
+REG_HOLE_R = 3.25
+REG_HOLE_DEPTH = 7.0
+DECK_REG_X = (-60.0, -20.0, 20.0, 60.0)
 
 
 def load_stl(path: Path):
@@ -81,8 +92,18 @@ def foot(tris):
     return translate(tris, -(x0 + x1) * 0.5, -(y0 + y1) * 0.5, -z0)
 
 
+def foot_z_only(tris):
+    """Drop to Z=0 without recentering XY (preserve bolt/assembly frames)."""
+    *_, z0, _ = bbox(tris)
+    return translate(tris, 0.0, 0.0, -z0)
+
+
 def lerp(a, b, t):
-    return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t)
+    return (
+        a[0] + (b[0] - a[0]) * t,
+        a[1] + (b[1] - a[1]) * t,
+        a[2] + (b[2] - a[2]) * t,
+    )
 
 
 def clip_tri(tri, axis: int, cut: float, keep_low: bool):
@@ -118,7 +139,116 @@ def split_mesh(tris, axis: int, cut: float):
     return lo, hi
 
 
-def emit(name: str, tris: list):
+def cylinder_tris(cx, cy, cz0, cz1, r, seg=16):
+    tris = []
+    ring0, ring1 = [], []
+    for i in range(seg):
+        a = 2 * math.pi * i / seg
+        x, y = cx + r * math.cos(a), cy + r * math.sin(a)
+        ring0.append((x, y, cz0))
+        ring1.append((x, y, cz1))
+    for i in range(seg):
+        j = (i + 1) % seg
+        tris.append([ring0[i], ring0[j], ring1[j]])
+        tris.append([ring0[i], ring1[j], ring1[i]])
+    c0, c1 = (cx, cy, cz0), (cx, cy, cz1)
+    for i in range(seg):
+        tris.append([c0, ring0[(i + 1) % seg], ring0[i]])
+        tris.append([c1, ring1[i], ring1[(i + 1) % seg]])
+    return tris
+
+
+def hole_wall_tris(cx, cy, cz0, cz1, r, seg=16):
+    tris = []
+    for i in range(seg):
+        a0 = 2 * math.pi * i / seg
+        a1 = 2 * math.pi * (i + 1) / seg
+        a = (cx + r * math.cos(a0), cy + r * math.sin(a0), cz0)
+        b = (cx + r * math.cos(a1), cy + r * math.sin(a1), cz0)
+        c = (cx + r * math.cos(a1), cy + r * math.sin(a1), cz1)
+        d = (cx + r * math.cos(a0), cy + r * math.sin(a0), cz1)
+        tris.append([a, d, c])
+        tris.append([a, c, b])
+    return tris
+
+
+def torso_reg_xy():
+    pts = []
+    for i in range(4):
+        a = math.pi / 4 + i * math.pi / 2
+        pts.append(
+            (TORSO_WALL_MID_R * math.cos(a), TORSO_WALL_MID_R * math.sin(a))
+        )
+    return pts
+
+
+def add_torso_registration(bot, top):
+    bot = list(bot)
+    top = list(top)
+    for hx, hy in torso_reg_xy():
+        bot.extend(
+            cylinder_tris(
+                hx, hy, TORSO_SPLIT_Z, TORSO_SPLIT_Z + REG_PIN_H, REG_PIN_R
+            )
+        )
+        top.extend(
+            hole_wall_tris(
+                hx,
+                hy,
+                TORSO_SPLIT_Z,
+                TORSO_SPLIT_Z + REG_HOLE_DEPTH,
+                REG_HOLE_R,
+            )
+        )
+    return bot, top
+
+
+def y_cylinder(x, y0, length, z, r, seg=12):
+    tris = []
+    ring0, ring1 = [], []
+    for i in range(seg):
+        a = 2 * math.pi * i / seg
+        dz, dx = r * math.cos(a), r * math.sin(a)
+        ring0.append((x + dx, y0, z + dz))
+        ring1.append((x + dx, y0 + length, z + dz))
+    for i in range(seg):
+        j = (i + 1) % seg
+        tris.append([ring0[i], ring0[j], ring1[j]])
+        tris.append([ring0[i], ring1[j], ring1[i]])
+    c0, c1 = (x, y0, z), (x, y0 + length, z)
+    for i in range(seg):
+        tris.append([c0, ring0[(i + 1) % seg], ring0[i]])
+        tris.append([c1, ring1[i], ring1[(i + 1) % seg]])
+    return tris
+
+
+def y_hole_wall(x, y0, depth, z, r, seg=12):
+    tris = []
+    for i in range(seg):
+        a0 = 2 * math.pi * i / seg
+        a1 = 2 * math.pi * (i + 1) / seg
+        dx0, dz0 = r * math.sin(a0), r * math.cos(a0)
+        dx1, dz1 = r * math.sin(a1), r * math.cos(a1)
+        a = (x + dx0, y0, z + dz0)
+        b = (x + dx1, y0, z + dz1)
+        c = (x + dx1, y0 + depth, z + dz1)
+        d = (x + dx0, y0 + depth, z + dz0)
+        tris.append([a, d, c])
+        tris.append([a, c, b])
+    return tris
+
+
+def add_deck_registration(right, left):
+    right = list(right)
+    left = list(left)
+    zr = 6.0  # mid plate thickness
+    for x in DECK_REG_X:
+        right.extend(y_cylinder(x, 0.0, REG_PIN_H, zr, REG_PIN_R))
+        left.extend(y_hole_wall(x, 0.0, REG_HOLE_DEPTH, zr, REG_HOLE_R))
+    return right, left
+
+
+def emit_hardware(name: str, tris: list):
     tris = foot(tris)
     x0, x1, y0, y1, z0, z1 = bbox(tris)
     for folder in OUT_DIRS:
@@ -127,6 +257,26 @@ def emit(name: str, tris: list):
         f"  {name:40s} {x1 - x0:.0f}×{y1 - y0:.0f}×{z1 - z0:.0f} mm  "
         f"Z[{z0:.1f},{z1:.1f}]  tris={len(tris)}"
     )
+
+
+def foot_print_tree(folder: Path):
+    files = sorted(folder.glob("*.stl"))
+    if not files:
+        print(f"  (no STLs in {folder})")
+        return
+    for path in files:
+        tris = load_stl(path)
+        before = bbox(tris)
+        if abs(before[4]) < 0.05 and before[4] >= -0.01:
+            print(f"  {path.relative_to(ROOT)} already Z-footed")
+            continue
+        tris = foot_z_only(tris)
+        write_stl(path, tris, path.name)
+        after = bbox(tris)
+        print(
+            f"  {path.relative_to(ROOT)}  "
+            f"Z[{before[4]:.1f}→{after[4]:.1f}]  kept XY"
+        )
 
 
 def main():
@@ -141,22 +291,36 @@ def main():
         before = bbox(load_stl(path))
         tris = foot(load_stl(path))
         foote[name] = tris
-        emit(name, tris)
+        emit_hardware(name, tris)
         if abs(before[4]) > 1 or abs((before[0] + before[1]) / 2) > 20:
             print(
                 f"    recentered (was Z[{before[4]:.1f},{before[5]:.1f}] "
-                f"ctr≈{(before[0] + before[1]) / 2:.0f},{(before[4] + before[5]) / 2:.0f})"
+                f"ctr≈{(before[0] + before[1]) / 2:.0f},"
+                f"{(before[2] + before[3]) / 2:.0f})"
             )
 
-    print("Plane-clipped bed-size splits…")
+    print("Plane-clipped bed-size splits + registration…")
     if "HouseHand_torso.stl" in foote:
-        bot, top = split_mesh(foote["HouseHand_torso.stl"], axis=2, cut=160.0)
-        emit("HouseHand_torso_bottom.stl", bot)
-        emit("HouseHand_torso_top.stl", top)
+        bot, top = split_mesh(
+            foote["HouseHand_torso.stl"], axis=2, cut=TORSO_SPLIT_Z
+        )
+        bot, top = add_torso_registration(bot, top)
+        emit_hardware("HouseHand_torso_bottom.stl", bot)
+        emit_hardware("HouseHand_torso_top.stl", top)
     if "HouseHand_shoulder_deck.stl" in foote:
-        right, left = split_mesh(foote["HouseHand_shoulder_deck.stl"], axis=1, cut=0.0)
-        emit("HouseHand_shoulder_deck_R.stl", right)
-        emit("HouseHand_shoulder_deck_L.stl", left)
+        right, left = split_mesh(
+            foote["HouseHand_shoulder_deck.stl"], axis=1, cut=0.0
+        )
+        right, left = add_deck_registration(right, left)
+        emit_hardware("HouseHand_shoulder_deck_R.stl", right)
+        emit_hardware("HouseHand_shoulder_deck_L.stl", left)
+
+    print("Footing LeKiwi print STLs (Z only)…")
+    foot_print_tree(ROOT / "print/lekiwi")
+
+    print("Footing SO-101 Individual print STLs (Z only)…")
+    foot_print_tree(ROOT / "print/SO101/Individual")
+
     print("done.")
 
 

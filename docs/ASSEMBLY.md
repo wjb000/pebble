@@ -12,7 +12,7 @@ Generate structure: `python3 scripts/gen_structure_kit.py`.
 
 1. **LeKiwi layer1** = motor deck (3× drive mount v11 + hubs + bought STS3215 + 3× 4″ omni).
 2. **6× M3 hex standoffs** (`94868A713` class) space **layer1 → layer2**.
-3. **HouseHand torso** Ø180 / flange Ø190 bolts to **layer2**. Twin uses the same STL — **no fake XY scale**. Flange ≤Ø190 so front omnis that poke above layer2 clear.
+3. **HouseHand torso** Ø180 / flange Ø190 bolts to **layer2** through **8× M3** at `(±40,±80)` / `(±80,±40)` (layer2 20 mm grid). Twin uses the same STL — **no fake XY scale**. Flange ≤Ø190 so front omnis that poke above layer2 clear.
 4. **Shoulder deck** registration ring slips over torso top rim. Pads at **(−26, ±138) mm**.
 5. **SO-101 L/R** on those pads, yawed forward with the head.
 6. **Neck** on deck center boss; **head mount + camera** on neck.
@@ -28,7 +28,7 @@ Generate structure: `python3 scripts/gen_structure_kit.py`.
 | **2** | Battery / Pi / controller mounts | On layer1 per LeKiwi | Straps / M3 |
 | **3** | **6× hex standoffs** | Layer1 top → layer2 bottom | M3 into standoffs |
 | **4** | `base_plate_layer2` | On standoffs | M3 |
-| **5** | HouseHand torso (full **or** `_bottom`+`_top` glued/bolted) | Flange → **layer2** center, plumb | M3 through flange guides |
+| **5** | HouseHand torso (full **or** `_bottom`+`_top` with registration pins, glued/bolted) | Flange → **layer2** center, plumb | **8× M3** through flange into layer2 grid |
 | **6** | Shoulder deck (full **or** `_L`+`_R` bolted on centerline) | Ring → torso rim; pads forward | M3 into rim |
 | **7** | SO-101 L + R | Base on pad centers | Kit hardware |
 | **8** | Neck | Collar → deck boss | M3 |
