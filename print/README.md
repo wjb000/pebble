@@ -32,9 +32,10 @@ Flange has **8× Ø3.4 through-holes** on the LeKiwi layer2 **20 mm grid**:
 | Torso split (if using halves) | **6× M3×16** + pins | r=88 mm, 0°/60°/… |
 | Deck → torso rim | **6× M3** | r=88 mm, 30°/90°/… |
 | Deck L/R splice | **8× M3** + `HouseHand_deck_splice.stl` | y=±8, x=±20/±60 |
-| SO-101 pads | **4× M4 per arm** | 56 mm PCD @ 45° through pad+plate |
+| SO-101 pads | **4× M4 per arm** (Ø5) | 48×46.5 mm rectangle (SO-ARM100 4040 pattern) through pad+plate |
 | Neck → deck boss | **4× M3** | r=28 mm @ 45° |
-| Head → neck flange | **4× M3** | same r=28 (drill head to match) |
+| Head → neck flange | **4× M3** | **printed** in `HouseHand_head_mount.stl` — same r=28 |
+| Head cam module | **4× M2** | 28 mm square on the bulkhead (32×32 UVC) + `HouseHand_head_camera.stl` clamp |
 | Cable | — | Ø36 through deck + hollow torso |
 
 ---
@@ -49,7 +50,7 @@ Flange has **8× Ø3.4 through-holes** on the LeKiwi layer2 **20 mm grid**:
 | **4** | Arms | `print/SO101/` | **2×** | Follower set twice — see folder README |
 | **5** | Wrist cams (opt.) | `SO101/Individual/Wrist_camera_mount_SO101.stl` | 0–2 | |
 | **6** | Neck | `HouseHand_neck.stl` | 1 | Deck center boss |
-| **7** | Head | `HouseHand_head_mount.stl` + `HouseHand_head_camera.stl` | 1 | Print-origin clean; matches twin |
+| **7** | Head | `HouseHand_head_mount.stl` + `HouseHand_head_camera.stl` | 1 | Head **bolts** to neck (4× M3 at r=28). Clamp plate sandwiches a bought 32×32 UVC |
 
 Structure files live under `print/xlerobot/hardware/`.
 
@@ -70,6 +71,7 @@ Full buy list: `BOM_V3.md` · Assembly: `docs/ASSEMBLY.md`
 ```bash
 python3 scripts/gen_structure_kit.py
 python3 scripts/prep_print_stls.py   # foot origins + bed splits + registration pins
+python3 scripts/verify_structure_kit.py
 ```
 
 ---

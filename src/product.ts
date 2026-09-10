@@ -140,13 +140,13 @@ export const BOM: BomRow[] = [
   },
   {
     category: 'B · HouseHand structure',
-    part: 'M3 hardware (flange, deck, neck, head)',
+    part: 'M3 + M4 hardware (flange, deck, neck, head, pads)',
     qty: 1,
     usd_base: 12,
     usd_arm: 12,
     usd_dual: 12,
     vendor: 'Amazon / McMaster',
-    notes: 'Through flange drill guides.',
+    notes: 'M3 through-holes printed; 8× M4×30 + wing nuts for SO-101 pads.',
   },
   {
     category: 'B · HouseHand structure',
@@ -156,7 +156,7 @@ export const BOM: BomRow[] = [
     usd_arm: 20,
     usd_dual: 20,
     vendor: 'Amazon UVC',
-    notes: 'Mounts on HouseHand_head_mount.',
+    notes: '32×32 module on head bulkhead + HouseHand_head_camera.stl clamp.',
   },
   {
     category: 'C · LeKiwi 3-omni base',

@@ -3,6 +3,7 @@
 Upstream [TheRobotStudio/SO-ARM100](https://github.com/TheRobotStudio/SO-ARM100) (Apache-2.0).
 
 HouseHand mounts **two** followers on `HouseHand_shoulder_deck` pads (−26, ±138) mm.
+Each pad has **4× Ø5** holes on the SO-ARM100 4040 pattern — bolt with **M4×30** from below and wing nuts inside the base.
 
 ## Easiest path (large bed)
 

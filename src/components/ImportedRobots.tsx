@@ -33,8 +33,7 @@ const SO101_PATH = asset('assets/so101/')
 const TORSO_STL = asset('assets/xlerobot/hardware/HouseHand_torso.stl')
 const ARMBASE_STL = asset('assets/xlerobot/hardware/HouseHand_shoulder_deck.stl')
 const NECK_STL = asset('assets/xlerobot/hardware/HouseHand_neck.stl')
-const HEAD_MOUNT_STL = asset('assets/xlerobot/hardware/HouseHand_head_mount.stl?v=flange3')
-const HEAD_CAM_STL = asset('assets/xlerobot/hardware/HouseHand_head_camera.stl?v=foot2')
+const HEAD_MOUNT_STL = asset('assets/xlerobot/hardware/HouseHand_head_mount.stl?v=bolt1')
 
 /** LeKiwi: ROS Z-up → Three Y-up. */
 const ROS_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI]
@@ -431,13 +430,11 @@ export function WheeledChassis({
   const armbaseGeom = usePreparedStl(ARMBASE_STL)
   // Clean printable neck/head — origin-clean HouseHand meshes.
   const neckGeom = usePreparedStl(NECK_STL)
-  // Head mount must seat on its neck flange, not bbox center (bracket overhang).
+  // Head mount must seat on its neck flange, not bbox center (camera bulkhead overhang).
   const headMountGeom = usePreparedStl(HEAD_MOUNT_STL, 'flange')
-  const headCamGeom = usePreparedStl(HEAD_CAM_STL)
   const torsoMm = useMemo(() => cadHeightMm(torsoGeom), [torsoGeom])
   const armMm = useMemo(() => cadHeightMm(armbaseGeom), [armbaseGeom])
   const neckMm = useMemo(() => cadHeightMm(neckGeom), [neckGeom])
-  const headMountMm = useMemo(() => cadHeightMm(headMountGeom), [headMountGeom])
 
   const rootRef = useRef<Group>(null)
   const kiwiRef = useRef<Group>(null)
@@ -604,7 +601,6 @@ export function WheeledChassis({
   const shadows = !perf.leanMeshes
   const neckSeatZ = neckZ || torsoMm + armMm
   const headZ = neckSeatZ + neckMm
-  const camZ = headZ + headMountMm
 
   return (
     <group>
@@ -671,16 +667,6 @@ export function WheeledChassis({
                 receiveShadow={shadows}
               >
                 <meshStandardMaterial color={colour.primary} roughness={0.45} metalness={0.12} />
-              </mesh>
-              {/* RealSense on the head bracket — coaxial with the neck (flange-footed mount). */}
-              <mesh
-                geometry={headCamGeom}
-                position={[0, 0, camZ + 4]}
-                rotation={[Math.PI / 2, 0, 0]}
-                castShadow={shadows}
-                receiveShadow={shadows}
-              >
-                <meshStandardMaterial color={colour.primary} roughness={0.4} metalness={0.15} />
               </mesh>
 
               <group

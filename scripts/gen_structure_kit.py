@@ -5,8 +5,10 @@ Geometry contract (mm, Z-up, print frame):
   TORSO_OD          = 180   # clears 4″ omni tops that poke above LeKiwi layer2
   TORSO_FLANGE_OD   = 190   # ≤190 keeps ≥8 mm to wheel mesh; plate max r≈108
   TORSO_H           = 320
-  DECK pads         = (−26, ±138)  Ø96 raised pads for SO-101 bases
+  DECK pads         = (−26, ±138)  Ø116 raised pads for SO-101 bases
+  PAD bolts         = 4× Ø5 (M4/M5) on the SO-ARM100 4040 pattern
   NECK boss         = Ø72 with Ø36 cable hole on deck center
+  HEAD              = neck-matching flange (4× M3 at r=28) + forward cam hood
 
   Seat flange on LeKiwi *layer2* (top plate). Motors/hubs live under layer2;
   bought omni wheels extend above layer2 only outside r≈103.
@@ -18,6 +20,9 @@ Outputs (public + print):
   HouseHand_torso.stl
   HouseHand_shoulder_deck.stl
   HouseHand_neck.stl
+  HouseHand_head_mount.stl
+  HouseHand_head_camera.stl
+  HouseHand_deck_splice.stl
 """
 
 from __future__ import annotations
@@ -57,10 +62,19 @@ PLATE_CORNER_R = 28.0
 
 PAD_X = -26.0
 PAD_HALF_Y = 138.0
-PAD_R = 48.0
+PAD_R = 52.0  # plate Y ±190: 138+52=190; holes still through the plate
 PAD_Z = 6.0
-PAD_HOLE_R = 2.15  # M4 clearance (SO-101 4040 mount uses M4/M5)
-PAD_HOLE_PCD = 56.0  # 4× on pad, 45° — through pad + plate
+PAD_HOLE_R = 2.5  # Ø5 — SO-ARM100 4040 mount (M4 or M5)
+# SO-101 sits with URDF origin (shoulder pan) on the pad center, yaw=π.
+# Official 4040 adapter uses a 48×46.5 mm Ø5 rectangle centered on the base
+# footprint. Pan axis is ~21 mm toward the shoulder from that centroid; after
+# yaw=π the four holes land in pad-local XY as:
+SO101_PAD_HOLES_LOCAL = (
+    (2.0, 24.0),
+    (2.0, -24.0),
+    (-44.0, 24.0),
+    (-44.0, -24.0),
+)
 
 TORSO_RING_W = 8.0
 TORSO_RING_Z = 4.0
@@ -79,6 +93,23 @@ NECK_BASE_R = 38.0  # seats on boss
 NECK_BASE_Z = 8.0
 NECK_BOLT_R = 28.0  # 4× M3 on boss / collar / head flange
 
+# Head — same bolt circle as neck top flange (r=28 @ 45°). Do not drill.
+HEAD_FLANGE_Z = 8.0
+HEAD_FLANGE_R = NECK_OD / 2 + 6.0  # 41 mm, matches neck top
+HEAD_POST_H = 14.0
+HEAD_CAM_X0 = -44.0
+HEAD_CAM_X1 = -34.0  # 10 mm vertical bulkhead (printable wall)
+HEAD_CAM_HALF_Y = 24.0
+HEAD_CAM_Z1 = 46.0
+HEAD_LENS_Z = 28.0
+HEAD_LENS_R = 8.0
+# 32×32 UVC module: 28 mm M2 spacing, centered on the lens.
+CAM_M2_R = 1.1
+CAM_BODY_X = 36.0
+CAM_BODY_Y = 36.0
+CAM_BODY_Z = 24.0
+CAM_LENS_L = 12.0
+
 
 def polar_xy(n: int, radius: float, a0: float = 0.0) -> tuple[tuple[float, float], ...]:
     return tuple(
@@ -92,17 +123,17 @@ DECK_TORSO_BOLTS = polar_xy(6, 88.0, math.pi / 6)
 # Torso split bolt ring (0°/60°…) vs registration pins at 45°+k·90°
 SPLIT_BOLTS = polar_xy(6, 88.0, 0.0)
 NECK_BOLTS = polar_xy(4, NECK_BOLT_R, math.pi / 4)
+# Bulkhead M2 (YZ, y and z) around the lens for a 32×32 UVC module
+HEAD_CAM_BOLTS_YZ = (
+    (14.0, HEAD_LENS_Z + 14.0),
+    (14.0, HEAD_LENS_Z - 14.0),
+    (-14.0, HEAD_LENS_Z + 14.0),
+    (-14.0, HEAD_LENS_Z - 14.0),
+)
 
 
 def pad_bolts(cy: float) -> tuple[tuple[float, float], ...]:
-    r = PAD_HOLE_PCD / 2
-    return tuple(
-        (
-            PAD_X + r * math.cos(math.pi / 4 + i * math.pi / 2),
-            cy + r * math.sin(math.pi / 4 + i * math.pi / 2),
-        )
-        for i in range(4)
-    )
+    return tuple((PAD_X + lx, cy + ly) for lx, ly in SO101_PAD_HOLES_LOCAL)
 
 
 # Deck L/R splice bar — 8× M3, 8 mm off the Y=0 cut so each half has complete holes
@@ -288,6 +319,75 @@ def plate_with_z_holes(
     return m
 
 
+def cylinder_x(x0, x1, cy, cz, r, seg=24, caps=True) -> Mesh:
+    """Cylinder along +X (camera lens / bulkhead bores)."""
+    m = Mesh()
+    ring0, ring1 = [], []
+    for i in range(seg):
+        a = 2 * math.pi * i / seg
+        y = cy + r * math.cos(a)
+        z = cz + r * math.sin(a)
+        ring0.append((x0, y, z))
+        ring1.append((x1, y, z))
+    for i in range(seg):
+        j = (i + 1) % seg
+        m.add_quad(ring0[i], ring0[j], ring1[j], ring1[i])
+    if caps:
+        c0, c1 = (x0, cy, cz), (x1, cy, cz)
+        for i in range(seg):
+            j = (i + 1) % seg
+            m.add_tri(c0, ring0[j], ring0[i])
+            m.add_tri(c1, ring1[i], ring1[j])
+    return m
+
+
+def hole_walls_x(holes_yz, hole_r, x0, x1, seg=16) -> Mesh:
+    m = Mesh()
+    for hy, hz in holes_yz:
+        for i in range(seg):
+            a0 = 2 * math.pi * i / seg
+            a1 = 2 * math.pi * (i + 1) / seg
+            a = (x0, hy + hole_r * math.cos(a0), hz + hole_r * math.sin(a0))
+            b = (x0, hy + hole_r * math.cos(a1), hz + hole_r * math.sin(a1))
+            c = (x1, hy + hole_r * math.cos(a1), hz + hole_r * math.sin(a1))
+            d = (x1, hy + hole_r * math.cos(a0), hz + hole_r * math.sin(a0))
+            m.add_quad(a, d, c, b)
+    return m
+
+
+def plate_with_x_holes(
+    x0: float,
+    x1: float,
+    y0: float,
+    y1: float,
+    z0: float,
+    z1: float,
+    holes: list[tuple[float, float, float]],
+    step: float = 3.0,
+) -> Mesh:
+    """Plate whose thickness is along X, with through-holes in YZ."""
+    m = Mesh()
+    y = y0
+    while y < y1 - 1e-9:
+        ye = min(y + step, y1)
+        z = z0
+        while z < z1 - 1e-9:
+            ze = min(z + step, z1)
+            cy, cz = 0.5 * (y + ye), 0.5 * (z + ze)
+            if any(math.hypot(cy - hy, cz - hz) < hr + step * 0.55 for hy, hz, hr in holes):
+                z = ze
+                continue
+            m.extend(box(x0, x1, y, ye, z, ze))
+            z = ze
+        y = ye
+    grouped: dict[float, list[tuple[float, float]]] = {}
+    for hy, hz, hr in holes:
+        grouped.setdefault(hr, []).append((hy, hz))
+    for hr, pts in grouped.items():
+        m.extend(hole_walls_x(tuple(pts), hr, x0, x1))
+    return m
+
+
 def disk_with_holes(
     cx: float,
     cy: float,
@@ -464,13 +564,108 @@ def build_neck() -> Mesh:
         )
     )
     m.extend(tube(0, 0, NECK_BASE_Z, NECK_H - 6, NECK_OD / 2, NECK_ID / 2, seg=48))
-    # Top cam flange — 4× M3 (drill head mount to match, or use existing holes)
+    # Top cam flange — 4× M3, same circle as the generated head mount
     m.extend(
         flange_with_through_holes(
             NECK_OD / 2 + 6, NECK_ID / 2, NECK_H - 6, NECK_H,
             NECK_BOLTS, M3_R, n_ang=96, n_rad=8,
         )
     )
+    return m
+
+
+def build_head() -> Mesh:
+    """Printable head: neck-matching flange + forward camera bulkhead.
+
+    Flange is coaxial with the neck (4× M3 at r=28). The camera wall stands
+    on the −X side (rover-forward with the SO-101 pads) so it prints as a
+    vertical wall with the flange on the bed.
+    """
+    m = Mesh()
+    post_top = HEAD_FLANGE_Z + HEAD_POST_H
+    # Mating flange — identical bolt circle / OD as neck top
+    m.extend(
+        flange_with_through_holes(
+            HEAD_FLANGE_R, NECK_HOLE_R + 1, 0.0, HEAD_FLANGE_Z,
+            NECK_BOLTS, M3_R, n_ang=96, n_rad=8,
+        )
+    )
+    m.extend(
+        tube(0, 0, HEAD_FLANGE_Z, post_top, NECK_OD / 2, NECK_ID / 2, seg=48)
+    )
+    # Top cap (cable still open)
+    m.extend(
+        flange_with_through_holes(
+            NECK_OD / 2, NECK_HOLE_R + 1, post_top, post_top + 6.0,
+            NECK_BOLTS, M3_R, n_ang=64, n_rad=6,
+        )
+    )
+    # Side ribs from post to bulkhead (printable walls in XZ)
+    rib_y = 8.0
+    rib_z0, rib_z1 = HEAD_FLANGE_Z + 2.0, min(HEAD_CAM_Z1 - 4.0, post_top + 18.0)
+    for sign in (-1.0, 1.0):
+        m.extend(
+            box(
+                HEAD_CAM_X1, -NECK_OD / 2 + 2,
+                sign * rib_y - 2.5, sign * rib_y + 2.5,
+                rib_z0, rib_z1,
+            )
+        )
+    # Forward camera bulkhead — lens bore + 4× M2 for a 32×32 UVC
+    cam_holes: list[tuple[float, float, float]] = [
+        (0.0, HEAD_LENS_Z, HEAD_LENS_R),
+        *[(y, z, CAM_M2_R) for y, z in HEAD_CAM_BOLTS_YZ],
+    ]
+    m.extend(
+        plate_with_x_holes(
+            HEAD_CAM_X0, HEAD_CAM_X1,
+            -HEAD_CAM_HALF_Y, HEAD_CAM_HALF_Y,
+            HEAD_FLANGE_Z, HEAD_CAM_Z1,
+            cam_holes,
+            step=2.5,
+        )
+    )
+    # Dummy camera body + lens in front of the bulkhead (bought UVC replaces this
+    # visually; the printed clamp plate sandwiches the real module).
+    m.extend(
+        box(
+            HEAD_CAM_X0 - 22.0, HEAD_CAM_X0,
+            -18.0, 18.0,
+            HEAD_LENS_Z - 14.0, HEAD_LENS_Z + 14.0,
+        )
+    )
+    m.extend(
+        cylinder_x(
+            HEAD_CAM_X0 - 32.0, HEAD_CAM_X0 - 22.0,
+            0.0, HEAD_LENS_Z, HEAD_LENS_R - 0.5, seg=24,
+        )
+    )
+    return m
+
+
+def build_head_camera() -> Mesh:
+    """32×32 UVC sandwich plate + dummy lens. Screws to the head bulkhead (4× M2).
+
+    Print flat (Z-up). Real camera module is bought; this plate clamps it
+    and gives the twin a camera body.
+    """
+    m = Mesh()
+    hz = CAM_BODY_Z
+    hy = CAM_BODY_Y / 2
+    hx = CAM_BODY_X / 2
+    # Body with M2 through-holes matching the bulkhead (mapped into XY for
+    # this flat print: bulkhead Y → print X, bulkhead Z-lens → print Y).
+    # 28 mm square around origin.
+    cam_xy = ((14.0, 14.0), (14.0, -14.0), (-14.0, 14.0), (-14.0, -14.0))
+    m.extend(
+        plate_with_z_holes(
+            -hx, hx, -hy, hy, 0.0, hz,
+            [(x, y, CAM_M2_R) for x, y in cam_xy] + [(0.0, 0.0, HEAD_LENS_R)],
+            step=2.5,
+        )
+    )
+    # Dummy lens along −X so the twin can stand the plate up without a 90° hack
+    m.extend(cylinder_x(-hx - CAM_LENS_L, -hx, 0.0, hz * 0.5, HEAD_LENS_R - 0.5, seg=24))
     return m
 
 
@@ -497,6 +692,8 @@ def main():
     emit(build_torso(), root, "HouseHand_torso.stl", "HouseHand_torso")
     emit(build_deck(), root, "HouseHand_shoulder_deck.stl", "HouseHand_shoulder_deck")
     emit(build_neck(), root, "HouseHand_neck.stl", "HouseHand_neck")
+    emit(build_head(), root, "HouseHand_head_mount.stl", "HouseHand_head_mount")
+    emit(build_head_camera(), root, "HouseHand_head_camera.stl", "HouseHand_head_camera")
     emit(build_deck_splice(), root, "HouseHand_deck_splice.stl", "HouseHand_deck_splice")
     # Keep legacy filename as copy of torso for old doc links
     src = root / "public/assets/xlerobot/hardware/HouseHand_torso.stl"

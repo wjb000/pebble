@@ -8,8 +8,9 @@ corner_r = 28;
 
 pad_x = -26;
 pad_half_y = 138;
-pad_r = 48;
+pad_r = 52;
 pad_z = 6;
+// 4× Ø5 on SO-ARM100 4040 pattern (see scripts/gen_structure_kit.py)
 
 torso_od = 180;
 ring_clear = 0.6;
