@@ -30,7 +30,8 @@ const LEKIWI_PATH = asset('assets/lekiwi/')
 const SO101_URDF = asset('assets/so101/so101_new_calib.urdf')
 const SO101_PATH = asset('assets/so101/')
 const TORSO_STL = asset('assets/xlerobot/hardware/torso_shell.stl')
-const ARMBASE_STL = asset('assets/xlerobot/hardware/XLeRobot_035_armbase_deck.stl')
+/** Solid printable HouseHand shoulder deck (replaces fragmented XLe 035 deck). */
+const ARMBASE_STL = asset('assets/xlerobot/hardware/HouseHand_shoulder_deck.stl')
 const NECK_STL = asset('assets/xlerobot/hardware/XLeRobot040_neck_refined.stl')
 const HEAD_MOUNT_STL = asset('assets/xlerobot/xlerobot/meshes/xlerobot/assets/tophead1.stl')
 const HEAD_CAM_STL = asset('assets/xlerobot/xlerobot/meshes/xlerobot/assets/XLeRobot_camera1.stl')
@@ -42,11 +43,16 @@ const STACK_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI / 2]
 const SIT_EPS = 0.0005
 const PRINT_SCALE = 0.001
 /**
- * Circular side-pad centers on the recentered armbase deck (mm, print frame).
- * Measured from the deck STL annulus (not wing tips / not neck).
+ * Circular SO-101 pad centers on HouseHand_shoulder_deck (mm, print frame).
+ * Generator: scripts/gen_shoulder_deck.py · cad/shoulder_deck.scad
  */
 const MOUNT_PAD_X_MM = -26
 const MOUNT_HALF_MM = 138
+/**
+ * Pad top Z after footGeometry (ring underside → Z=0).
+ * ring 4 + plate 12 + pad 6 = 22 mm (lip sits 1.2 mm above — arms clear it).
+ */
+const SHOULDER_PAD_TOP_MM = 22
 /**
  * Yaw both arms in the print frame so the shared SO-101 pose faces rover-forward.
  * Side-view checks showed yaw 0 aimed aft; π aims grippers with the head/camera.
@@ -512,7 +518,8 @@ export function WheeledChassis({
   const so101R = useUrdf(`${SO101_URDF}?side=R`, SO101_PATH)
 
   const torsoGeom = usePreparedStl(TORSO_STL)
-  const armbaseGeom = usePreparedStl(ARMBASE_STL, { trimThinShelf: true })
+  // Solid printable deck — do not trimThinShelf (that shredded the old XLe mesh).
+  const armbaseGeom = usePreparedStl(ARMBASE_STL)
   const neckGeom = usePreparedStl(NECK_STL, { collapseGaps: true })
   const headMountGeom = usePreparedStl(HEAD_MOUNT_STL, { collapseGaps: true })
   const headCamGeom = usePreparedStl(HEAD_CAM_STL)
@@ -589,8 +596,8 @@ export function WheeledChassis({
       }
       if (stack) stack.position.set(nextStack.x, nextStack.y, nextStack.z)
 
-      // Arms in the same mm print frame as the armbase → sit on the circular side pads.
-      const padZ = torsoMm + armMm + 2
+      // Arms in the same mm print frame as the shoulder deck → sit on pad tops.
+      const padZ = torsoMm + SHOULDER_PAD_TOP_MM
       const nextArmL = { x: MOUNT_PAD_X_MM, y: -MOUNT_HALF_MM, z: padZ }
       const nextArmR = { x: MOUNT_PAD_X_MM, y: MOUNT_HALF_MM, z: padZ }
       if (armL) {
@@ -631,11 +638,11 @@ export function WheeledChassis({
           if (Math.abs(gap) < 1e-4) break
           nextNeckZ -= gap / PRINT_SCALE
         }
-        // Extra sink: lowest verts are sparse; the visible lattice foot sits higher.
-        nextNeckZ -= 45
+        // Light sink so the open lattice foot reads seated on the neck boss.
+        nextNeckZ -= 8
         neckMesh.position.set(0, 0, nextNeckZ)
       } else {
-        nextNeckZ = torsoMm + armMm - 45
+        nextNeckZ = torsoMm + armMm - 8
       }
 
       if (lekiwi.robot) colorizeRoot(lekiwi.robot, colour)
@@ -783,9 +790,9 @@ export function WheeledChassis({
 export function meshAttribution(kit: KitBuild) {
   return (
     `${kitCaption(kit)}. ` +
-    `LeKiwi kit mobile base (SIGRobotics-UIUC) · printable torso · XLe arm-base + neck · ` +
+    `LeKiwi kit mobile base (SIGRobotics-UIUC) · printable torso · HouseHand shoulder deck · XLe neck · ` +
     `2× SO-101 + OG RealSense cam head (TheRobotStudio / Vector-Wangel), Apache-2.0. ` +
-    `Stack: LeKiwi plate → torso → arm-base → SO-101s → neck → cam head. ` +
+    `Stack: LeKiwi plate → torso → HouseHand_shoulder_deck → SO-101s → neck → cam head. ` +
     `No IKEA RÅSKOG cart/wheels. Overall BOM stack ~${OVERALL_HEIGHT_MM} mm optional.`
   )
 }

@@ -12,16 +12,19 @@ export function DocsPage() {
         <h2>1. Print kit</h2>
         <p>
           Master checklist: <code>print/README.md</code>. Stack: LeKiwi base → torso shell →
-          arm-base deck → <strong>2× SO-101</strong> → neck → cam.
+          <strong>HouseHand shoulder deck</strong> → <strong>2× SO-101</strong> → neck → cam.
         </p>
         <ul>
           <li><code>print/lekiwi/</code> — omni base plates & mounts</li>
           <li><code>print/xlerobot/hardware/torso_shell.stl</code></li>
-          <li><code>print/xlerobot/hardware/XLeRobot_035_armbase_deck.stl</code></li>
+          <li><code>print/xlerobot/hardware/HouseHand_shoulder_deck.stl</code> — solid dual-pad deck</li>
           <li><code>print/SO101/</code> — print follower set <strong>twice</strong></li>
           <li><code>print/xlerobot/hardware/XLeRobot040_neck_refined.stl</code> + gimbal or <code>print/head/</code></li>
         </ul>
-        <p className="muted">Skip RÅSKOG cart STL and legacy <code>print/base/</code>.</p>
+        <p className="muted">
+          Skip RÅSKOG cart STL, legacy <code>print/base/</code>, and the old fragmented
+          <code>XLeRobot_035_armbase_*.stl</code> files.
+        </p>
       </section>
 
       <section>

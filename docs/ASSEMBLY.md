@@ -12,9 +12,9 @@ Print list: `print/README.md`. BOM: `BOM_V3.md`.
 
 1. **LeKiwi plates** are the support polygon (3× omni). No casters.
 2. **Torso shell** sits centered on the LeKiwi plate (widened in twin to ~216 mm plate).
-3. **Arm-base deck** (`XLeRobot_035_armbase_deck.stl`) on torso top.
+3. **HouseHand shoulder deck** (`HouseHand_shoulder_deck.stl`) on torso top — solid printable plate with dual pads.
 4. **SO-101 L/R** seat on circular pads at **(−26, ±138) mm** in the deck print frame, yawed forward with the head.
-5. **Neck** on deck center; cam / gimbal on neck.
+5. **Neck** on deck center boss; cam / gimbal on neck.
 6. **12V pack** centered in the base bay; hardware e-stop cuts drive + arms.
 
 ---
@@ -26,13 +26,13 @@ Print list: `print/README.md`. BOM: `BOM_V3.md`.
 | **1** | LeKiwi plates + 3× drive mounts + hubs | Wheels at 120° | Motor screws |
 | **2** | Battery / Pi / controller mounts | Per LeKiwi Assembly | Straps / M3 |
 | **3** | Torso shell | Shell → plate center, plumb | M3 / clamps |
-| **4** | Arm-base deck | Deck → torso top | M3 |
-| **5** | SO-101 L + R kits | `Base_SO101` on pad centers | Kit hardware |
-| **6** | Neck | Neck → deck center | M3 |
+| **4** | **Shoulder deck** (print) | Deck → torso top; pads face forward | M3 into torso rim |
+| **5** | SO-101 L + R kits | `Base_SO101` on pad centers (−26, ±138) | Kit hardware |
+| **6** | Neck | Neck → deck center boss | M3 |
 | **7** | Cam / gimbal | On neck | M3 |
 | **8** | Wire + e-stop | Pack centered; e-stop reachable | XT60 / panel nut |
 
-**Exploded:** 1 base → 2 power/compute → 3 torso → 4 deck → 5 arms → 6 neck → 7 cam → wire.
+**Exploded:** 1 base → 2 power/compute → 3 torso → **4 shoulder deck** → 5 arms → 6 neck → 7 cam → wire.
 
 ---
 
