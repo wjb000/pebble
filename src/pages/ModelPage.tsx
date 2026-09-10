@@ -10,7 +10,7 @@ import { COLOURWAYS } from '../product'
 import { CHORE_ENVELOPE, TELESCOPE } from '../robot/dims'
 import { TIP_SUMMARY } from '../robot/stability'
 import { RobotAssembly } from '../components/RobotAssembly'
-import { kitCaption, kitLookHeightM } from '../kit/catalog'
+import { kitCaption } from '../kit/catalog'
 import { useKit } from '../kit/KitContext'
 import { getPerfTier } from '../kit/perf'
 
@@ -30,7 +30,7 @@ export function ModelPage() {
         <Canvas
           shadows={perf.shadows}
           dpr={perf.dpr}
-          camera={{ position: [2.35, 2.15, 0.35], fov: 36, near: 0.02, far: 40 }}
+          camera={{ position: [0.95, 0.38, 0.72], fov: 36, near: 0.02, far: 40 }}
           gl={{
             antialias: perf.antialias,
             toneMappingExposure: 1.1,
@@ -66,13 +66,13 @@ export function ModelPage() {
           ) : null}
           <OrbitControls
             makeDefault
-            target={[0, kitLookHeightM(kit), 0]}
+            target={[0, 0.18, 0]}
             enablePan
             enableDamping
-            minDistance={0.45}
+            minDistance={0.12}
             maxDistance={10}
-            maxPolarAngle={Math.PI * 0.495}
-            minPolarAngle={0.15}
+            maxPolarAngle={Math.PI * 0.72}
+            minPolarAngle={0.08}
             dampingFactor={0.08}
             rotateSpeed={0.85}
             touches={{ ONE: 0, TWO: 2 }}
