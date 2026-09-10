@@ -136,7 +136,6 @@ type PlaceApi = {
   markSeated: () => void
   registerObject: (id: PartId, obj: Group | null) => void
   getObject: (id: PartId) => Group | null
-  gizmoTick: number
   setUnlocked: (id: PartId | null) => void
   setSelected: (id: PartId | null) => void
   setNudge: (id: PartId, n: Nudge) => void
@@ -156,7 +155,6 @@ export function TwinPlaceProvider({ children }: { children: ReactNode }) {
   const [nudges, setNudges] = useState<NudgeMap>(loadNudges)
   const [mode, setMode] = useState<'translate' | 'rotate'>('translate')
   const [snap, setSnap] = useState(true)
-  const [gizmoTick, setGizmoTick] = useState(0)
   const objects = useRef<Partial<Record<PartId, Group>>>({})
 
   const markSeated = useCallback(() => setSeated(true), [])
@@ -167,11 +165,8 @@ export function TwinPlaceProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const registerObject = useCallback((id: PartId, obj: Group | null) => {
-    const prev = objects.current[id] ?? null
-    if (prev === obj) return
     if (obj) objects.current[id] = obj
     else delete objects.current[id]
-    setGizmoTick((t) => t + 1)
   }, [])
 
   const getObject = useCallback((id: PartId) => objects.current[id] ?? null, [])
@@ -223,7 +218,6 @@ export function TwinPlaceProvider({ children }: { children: ReactNode }) {
       markSeated,
       registerObject,
       getObject,
-      gizmoTick,
       setUnlocked,
       setSelected,
       setNudge,
@@ -239,7 +233,6 @@ export function TwinPlaceProvider({ children }: { children: ReactNode }) {
       nudges,
       mode,
       snap,
-      gizmoTick,
       markSeated,
       registerObject,
       getObject,
@@ -273,7 +266,6 @@ const DISABLED: PlaceApi = {
   markSeated: () => undefined,
   registerObject: () => undefined,
   getObject: () => null,
-  gizmoTick: 0,
   setUnlocked: () => undefined,
   setSelected: () => undefined,
   setNudge: () => undefined,
