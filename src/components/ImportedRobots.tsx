@@ -60,16 +60,9 @@ const SHOULDER_PAD_TOP_MM = 22
 const ARM_FORWARD_YAW = Math.PI
 /** Undo PRINT_SCALE so meter-based SO-101 URDFs stay true-size inside the mm group. */
 const ARM_IN_PRINT = 1 / PRINT_SCALE
-/** Skip LeKiwi onboard arm + cam tower. Keep real omni wheels. */
+/** Skip LeKiwi onboard arm + cam tower. Keep real omni wheels + full drive chain. */
 const LEKIWI_SKIP_MESH =
   /Base_08|SO_ARM|Rotation_Pitch_08|Moving_Jaw|Passive_Horn|STS3215_03a|WaveShare_Mounting|Camera-Mount|Camera-Model|Top-V2/i
-/**
- * Extra skips on mobile / lean tier.
- * NEVER skip drive servos (ST3215) or plate standoffs (94868A713) — they are the
- * visual bridge from plate → mount → servo → hub → wheel and layer1 → layer2.
- * Hiding them makes wheels look detached and the torso look like it floats.
- */
-const LEKIWI_LEAN_MESH = /Battery---|lipo_battery|servo_controller|Bottom-V2/i
 /** Seat the torso on layer2 only — layer1 is the motor deck under the standoffs. */
 const KIWI_PLATE_LINKS = ['base_plate_layer2-v3']
 
