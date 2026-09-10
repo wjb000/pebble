@@ -6,6 +6,7 @@ import { ControlsHelp } from '../ui/ControlsHelp'
 import { HUD } from '../ui/HUD'
 import { SimChrome } from '../ui/SimChrome'
 import { TouchControls } from '../ui/TouchControls'
+import { TrainPanel } from '../ui/TrainPanel'
 
 export function SimPage() {
   const [colourId, setColourId] = useState(COLOURWAYS[0].id)
@@ -28,6 +29,7 @@ export function SimPage() {
             <>
               <HUD />
               <SimChrome colourId={colourId} onColour={setColourId} />
+              <TrainPanel />
               <ControlsHelp />
               <TouchControls />
             </>
@@ -37,11 +39,11 @@ export function SimPage() {
               <div className="splash-inner">
                 <div className="splash-brand">PEBBLE</div>
                 <p className="splash-sub">
-                  W/S drive · A/D strafe · ←/→ turn · Q/E lift · F pick · Space e-stop/reset
+                  Teleop to record · Train BC · Test AI · W/S drive · Space e-stop
                 </p>
                 <div className="splash-cta">DRIVE</div>
                 <div className="splash-keys">
-                  LeKiwi omni + 2× SO-101 + gimbal
+                  LeKiwi omni + 2× SO-101 · print kit in Docs
                 </div>
               </div>
             </button>

@@ -1,0 +1,52 @@
+// HouseHand shoulder deck — dual SO-101 pads + neck boss.
+// Units: mm. Flat on bed. Prefer: python3 scripts/gen_structure_kit.py
+
+plate_x = 200;
+plate_y = 380;
+plate_z = 12;
+corner_r = 28;
+
+pad_x = -26;
+pad_half_y = 138;
+pad_r = 52;
+pad_z = 6;
+// 4× Ø5 on SO-ARM100 4040 pattern (see scripts/gen_structure_kit.py)
+
+torso_od = 180;
+ring_clear = 0.6;
+ring_z = 4;
+
+neck_boss_r = 36;
+neck_boss_z = 14;
+neck_hole_r = 18;
+
+module rounded_plate(wx, wy, hz, r) {
+  hull() for (sx = [-1, 1], sy = [-1, 1])
+    translate([sx * (wx/2 - r), sy * (wy/2 - r), 0])
+      cylinder(h = hz, r = r, $fn = 48);
+}
+
+difference() {
+  union() {
+    rounded_plate(plate_x, plate_y, plate_z, corner_r);
+    // registration ring (underside)
+    translate([0, 0, -ring_z])
+      difference() {
+        cylinder(h = ring_z, r = torso_od/2 + ring_clear + 3, $fn = 96);
+        translate([0, 0, -0.1])
+          cylinder(h = ring_z + 0.2, r = torso_od/2 + ring_clear, $fn = 96);
+      }
+    // SO-101 pads
+    for (sy = [-1, 1]) {
+      translate([pad_x, sy * pad_half_y, plate_z])
+        cylinder(h = pad_z, r = pad_r, $fn = 64);
+    }
+    // neck boss
+    translate([0, 0, plate_z])
+      difference() {
+        cylinder(h = neck_boss_z, r = neck_boss_r, $fn = 64);
+        translate([0, 0, -0.1])
+          cylinder(h = neck_boss_z + 0.2, r = neck_hole_r, $fn = 48);
+      }
+  }
+}

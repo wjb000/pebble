@@ -32,3 +32,4 @@ print/SO101/Follower/Ender_Follower_SO101.stl
 
 # Quarantined legacy assets (not shipped in Pages twin)
 # refs/quarantine/ is kept in git for attribution history
+scripts/__pycache__/
