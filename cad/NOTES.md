@@ -5,7 +5,7 @@ HouseHand printable structure is generated from one geometry contract:
 | Constant | Value | Role |
 |----------|------:|------|
 | `TORSO_OD` | 180 mm | Clears 4″ omni tops above LeKiwi layer2 |
-| `TORSO_FLANGE_OD` | 200 mm | Bolts to layer2; ≥3 mm to wheel mesh; plate max r≈108 |
+| `TORSO_FLANGE_OD` | 190 mm | Bolts to layer2; ≥8 mm to wheel mesh; plate max r≈108 |
 | Pad centers | (−26, ±138) mm | SO-101 L/R |
 | Neck boss | Ø72 / Ø36 hole | `HouseHand_neck` seats here |
 
@@ -30,8 +30,9 @@ No `TORSO_XY_WIDEN`, no shelf-trim / Z-gap hacks. Torso sits on **layer2** top.
 ## Wheel / base fit
 
 - Print kit motor mounts = URDF `drive_motor_mount-v11` (×3).
-- Print kit hubs = URDF `omni_wheel_mount-v5` (×3); wheels are bought.
-- Flange OD must stay ≤200 mm or front omnis collide above layer2.
+- Print kit hubs = URDF `omni_wheel_mount-v5` (×3); wheels + drive servos are bought.
+- Hex standoffs between layer1 and layer2 are bought (LeKiwi BOM) — required, not printed.
+- Flange OD must stay ≤190 mm or front omnis crowd the flange above layer2.
 
 ## Not part of the kit
 

@@ -2,7 +2,7 @@
 
 Send these folders to the slicer. The twin on `/model` loads the **same** STLs.
 
-**Stack:** LeKiwi omni base → **HouseHand torso Ø180 / flange Ø200** → **shoulder deck** → **2× SO-101** → **neck** → **head + cam**
+**Stack:** LeKiwi omni base → **HouseHand torso Ø180 / flange Ø190** → **shoulder deck** → **2× SO-101** → **neck** → **head + cam**
 
 Do **not** print anything under `print/_archive/` (legacy / wrong product).
 
@@ -13,7 +13,7 @@ Do **not** print anything under `print/_archive/` (legacy / wrong product).
 | # | Module | Path | Qty | Notes |
 |---|--------|------|----:|-------|
 | **1** | Omni base | `print/lekiwi/` | 1 set | plates, 3× `drive_motor_mount` (v11), hubs, battery, Pi case, controller mount |
-| **2** | Torso | `print/xlerobot/hardware/HouseHand_torso.stl` | 1 | **Ø180 × 320 mm**, flange Ø200 → LeKiwi **layer2** |
+| **2** | Torso | `print/xlerobot/hardware/HouseHand_torso.stl` | 1 | **Ø180 × 320 mm**, flange Ø190 → LeKiwi **layer2** |
 | **3** | Shoulder deck | `print/xlerobot/hardware/HouseHand_shoulder_deck.stl` | 1 | Pads at (−26, ±138) mm for SO-101; neck boss center |
 | **4** | Arms | `print/SO101/Individual/` **or** 2× `Follower/Prusa_Follower_SO101.stl` | **2×** | Full follower set twice |
 | **5** | Wrist cams (opt.) | `print/SO101/Individual/Wrist_camera_mount_SO101.stl` | 2 | If using wrist UVC |
@@ -32,7 +32,7 @@ Do **not** print anything under `print/_archive/` (legacy / wrong product).
 python3 scripts/gen_structure_kit.py
 ```
 
-Source: `cad/torso_shell.scad`, `cad/shoulder_deck.scad` (params locked to Ø180 / flange Ø200 / pads −26±138).
+Source: `cad/torso_shell.scad`, `cad/shoulder_deck.scad` (params locked to Ø180 / flange Ø190 / pads −26±138).
 
 ---
 

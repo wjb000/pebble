@@ -19,9 +19,11 @@ Print these, then buy **3× 4″ omni wheels** + STS3215 drive servos (LeKiwi BO
 ## Clearance (verified against twin / URDF meshes)
 
 - Motors + hubs sit on **layer1**; hubs clear **layer2** underside by ~4–5 mm.
+- **Buy hex standoffs** (LeKiwi BOM / McMaster `94868A713` class) between layer1 and layer2 — they are not printed. Without them the torso looks like it floats above the motor deck.
+- Drive chain per corner: `drive_motor_mount` → **STS3215 servo** (bought) → `servo_wheel_hub` → **4″ omni** (bought). The servo is the bridge; the hub alone will not reach the plate.
 - Bought omni wheels hang below the plate and also poke **above layer2** outside ~r103 mm.
-- HouseHand torso **Ø180 / flange Ø200** seats on layer2 with ≥3 mm radial gap to those wheel tops.
-- Do **not** use a flange larger than Ø200 — it will hit the front wheels.
+- HouseHand torso **Ø180 / flange Ø190** seats on **layer2** with ≥8 mm radial gap to those wheel tops.
+- Do **not** use a flange larger than Ø190 — it will crowd the front wheels.
 
 Archived wrong mounts (`drive_motor_mount_v2`, B/C): `print/_archive/lekiwi/`.  
 `wrist_camera_mount.stl` is LeKiwi-arm specific — use `print/SO101/.../Wrist_camera_mount_SO101.stl`.

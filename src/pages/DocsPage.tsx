@@ -16,7 +16,7 @@ export function DocsPage() {
         </p>
         <ul>
           <li><code>print/lekiwi/</code> — omni base plates & mounts</li>
-          <li><code>print/xlerobot/hardware/HouseHand_torso.stl</code> — Ø180 / flange Ø200</li>
+          <li><code>print/xlerobot/hardware/HouseHand_torso.stl</code> — Ø180 / flange Ø190</li>
           <li><code>print/xlerobot/hardware/HouseHand_shoulder_deck.stl</code> — dual SO-101 pads</li>
           <li><code>print/SO101/</code> — follower set <strong>×2</strong></li>
           <li><code>HouseHand_neck.stl</code> + <code>HouseHand_head_mount.stl</code> + <code>HouseHand_head_camera.stl</code></li>

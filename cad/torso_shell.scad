@@ -3,12 +3,12 @@
 // Prefer: python3 scripts/gen_structure_kit.py  (same geometry)
 //
 // Clearance: bought 4″ omnis poke above layer2 outside r≈103 mm.
-// Flange OD ≤200 keeps ≥3 mm; tube OD 180 keeps ~13 mm to wheel mesh.
+// Flange OD ≤190 keeps ≥8 mm; tube OD 180 keeps ~13 mm to wheel mesh.
 
 OD = 180;
 WALL = 5;
 H = 320;
-FLANGE_OD = 200;
+FLANGE_OD = 190;
 FLANGE_Z = 8;
 RIM_Z = 4;
 $fn = 72;

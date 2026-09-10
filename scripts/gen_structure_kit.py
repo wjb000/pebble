@@ -3,7 +3,7 @@
 
 Geometry contract (mm, Z-up, print frame):
   TORSO_OD          = 180   # clears 4″ omni tops that poke above LeKiwi layer2
-  TORSO_FLANGE_OD   = 200   # ≤200 keeps ≥3 mm to wheel mesh; plate max r≈108
+  TORSO_FLANGE_OD   = 190   # ≤190 keeps ≥8 mm to wheel mesh; plate max r≈108
   TORSO_H           = 320
   DECK pads         = (−26, ±138)  Ø96 raised pads for SO-101 bases
   NECK boss         = Ø72 with Ø36 cable hole on deck center
@@ -27,7 +27,7 @@ from pathlib import Path
 TORSO_OD = 180.0
 TORSO_WALL = 5.0
 TORSO_H = 320.0
-TORSO_FLANGE_OD = 200.0
+TORSO_FLANGE_OD = 190.0
 TORSO_FLANGE_Z = 8.0
 TORSO_RIM_Z = 4.0  # top lip the deck ring seats over
 
@@ -195,7 +195,7 @@ def write_stl(mesh: Mesh, path: Path, name: str):
 
 
 def build_torso() -> Mesh:
-    """Ø180 shell, Ø200 flange for LeKiwi layer2, top rim for deck ring."""
+    """Ø180 shell, Ø190 flange for LeKiwi layer2, top rim for deck ring."""
     m = Mesh()
     r_out = TORSO_OD / 2
     r_in = r_out - TORSO_WALL

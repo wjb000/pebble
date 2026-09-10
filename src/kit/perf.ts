@@ -15,12 +15,13 @@ let cached: PerfTier | null = null
 
 export function getPerfTier(): PerfTier {
   if (cached) return cached
+  // Only treat real phones / narrow viewports as mobile.
+  // Do NOT key off hardwareConcurrency — many desktops report 4 cores and that
+  // was stripping LeKiwi drive servos + plate standoffs (wheels looked detached).
   const mobile =
     typeof navigator !== 'undefined' &&
     (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-      (typeof window !== 'undefined' && window.matchMedia('(max-width: 700px)').matches) ||
-      (typeof navigator !== 'undefined' && (navigator as Navigator & { hardwareConcurrency?: number }).hardwareConcurrency !== undefined &&
-        (navigator.hardwareConcurrency ?? 8) <= 4))
+      (typeof window !== 'undefined' && window.matchMedia('(max-width: 700px)').matches))
 
   cached = mobile
     ? {

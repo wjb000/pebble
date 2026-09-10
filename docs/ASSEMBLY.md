@@ -3,15 +3,15 @@
 Twin: `RobotAssembly` → wheeled chassis (`/model` + `/sim`).  
 Print list: `print/README.md`. Generate structure: `python3 scripts/gen_structure_kit.py`.
 
-**Product:** LeKiwi 3-omni base + **HouseHand Ø180 torso (flange Ø200)** + shoulder deck + **2× SO-101** + neck + head cam.  
+**Product:** LeKiwi 3-omni base + **HouseHand Ø180 torso (flange Ø190)** + shoulder deck + **2× SO-101** + neck + head cam.  
 **Not** official Pollen / XLeRobot / LeKiwi. Draft — not for sale. **No RÅSKOG cart.**
 
 ---
 
 ## CAD mates (locked)
 
-1. **LeKiwi plates** = support polygon (3× bought 4″ omni). Motors/hubs on **layer1**; torso on **layer2**.
-2. **HouseHand torso** Ø180 / flange Ø200 sits on layer2. Twin uses the same STL — **no fake XY scale**. Flange must stay ≤Ø200 so front omnis (which poke above layer2) clear.
+1. **LeKiwi plates** = support polygon (3× bought 4″ omni). Motors/hubs on **layer1**; hex standoffs; torso on **layer2**.
+2. **HouseHand torso** Ø180 / flange Ø190 sits on layer2. Twin uses the same STL — **no fake XY scale**. Flange must stay ≤Ø190 so front omnis (which poke above layer2) clear. Drive servo bridges mount → hub.
 3. **Shoulder deck** registration ring slips over torso top rim.
 4. **SO-101 L/R** on pads at **(−26, ±138) mm**, yawed forward with the head.
 5. **HouseHand neck** on deck center boss; **head mount + camera** on neck.
