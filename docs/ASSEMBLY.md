@@ -28,8 +28,8 @@ Generate structure: `python3 scripts/gen_structure_kit.py`.
 | **2** | Battery / Pi / controller mounts | On layer1 per LeKiwi | Straps / M3 |
 | **3** | **6× hex standoffs** | Layer1 top → layer2 bottom | M3 into standoffs |
 | **4** | `base_plate_layer2` | On standoffs | M3 |
-| **5** | HouseHand torso | Flange → **layer2** center, plumb | M3 through flange guides |
-| **6** | Shoulder deck | Ring → torso rim; pads forward | M3 into rim |
+| **5** | HouseHand torso (full **or** `_bottom`+`_top` glued/bolted) | Flange → **layer2** center, plumb | M3 through flange guides |
+| **6** | Shoulder deck (full **or** `_L`+`_R` bolted on centerline) | Ring → torso rim; pads forward | M3 into rim |
 | **7** | SO-101 L + R | Base on pad centers | Kit hardware |
 | **8** | Neck | Collar → deck boss | M3 |
 | **9** | Head mount + camera | On neck flange | M3 |

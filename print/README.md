@@ -8,17 +8,32 @@ Do **not** print `print/_archive/` (legacy, leader-only, optional extras).
 
 ---
 
+## Bed size (read this first)
+
+| Part | Full size | Fits typical bed? | Split STLs (≤220 mm) |
+|------|-----------|-------------------|----------------------|
+| Torso | **190×190×320** | Needs **Z ≥ 320** | `HouseHand_torso_bottom.stl` + `_top.stl` (**160 mm** tall each) — glue/bolt at seam |
+| Shoulder deck | **200×380×30** | Needs **one axis ≥ 380** | `HouseHand_shoulder_deck_L.stl` + `_R.stl` (**200×190**) — bolt across seam |
+| SO-101 Prusa plate | **~243×205×87** | Needs **≥250 mm** bed | Else print `SO101/Individual/` ×2 |
+| Everything else | ≤200 mm | Fine on 220³ | — |
+
+All hardware STLs are **footed to bed origin** (min-Z = 0, XY centered). Regenerate splits with `python3 scripts/prep_print_stls.py`.
+
+---
+
 ## Master checklist
 
 | # | Module | Path | Qty | Notes |
 |---|--------|------|----:|-------|
-| **1** | Omni base | `print/lekiwi/` | 1 set | See folder README — plates, 3× `drive_motor_mount`, 3× `servo_wheel_hub`, battery, Pi case, controller mount |
-| **2** | Torso | `print/xlerobot/hardware/HouseHand_torso.stl` | 1 | Ø180 × 320 mm, flange Ø190 → LeKiwi **layer2** |
-| **3** | Shoulder deck | `print/xlerobot/hardware/HouseHand_shoulder_deck.stl` | 1 | Pads (−26, ±138) mm |
-| **4** | Arms | `print/SO101/` | **2×** | Follower set twice — see `print/SO101/README.md` |
-| **5** | Wrist cams (opt.) | `print/SO101/Individual/Wrist_camera_mount_SO101.stl` | 0–2 | |
-| **6** | Neck | `print/xlerobot/hardware/HouseHand_neck.stl` | 1 | Deck center boss |
-| **7** | Head | `print/xlerobot/hardware/HouseHand_head_mount.stl` + `HouseHand_head_camera.stl` | 1 | Matches twin |
+| **1** | Omni base | `print/lekiwi/` | 1 set | Plates, 3× `drive_motor_mount`, 3× `servo_wheel_hub`, battery, Pi case, controller mount |
+| **2** | Torso | `HouseHand_torso.stl` **or** `_bottom`+`_top` | 1 | Ø180 / flange Ø190 → LeKiwi **layer2** |
+| **3** | Shoulder deck | `HouseHand_shoulder_deck.stl` **or** `_L`+`_R` | 1 | Pads (−26, ±138) mm |
+| **4** | Arms | `print/SO101/` | **2×** | Follower set twice — see folder README |
+| **5** | Wrist cams (opt.) | `SO101/Individual/Wrist_camera_mount_SO101.stl` | 0–2 | |
+| **6** | Neck | `HouseHand_neck.stl` | 1 | Deck center boss |
+| **7** | Head | `HouseHand_head_mount.stl` + `HouseHand_head_camera.stl` | 1 | Print-origin clean; matches twin |
+
+Structure files live under `print/xlerobot/hardware/`.
 
 ### Must **buy** (not printed)
 
@@ -26,7 +41,7 @@ Do **not** print `print/_archive/` (legacy, leader-only, optional extras).
 |------|----:|-----|
 | 4″ omni wheels | **3** | Drive |
 | STS3215 drive servos | **3** | Mount → hub bridge |
-| Hex standoffs M3 (~`94868A713` class) | **6** | Layer1 ↔ layer2 spacing |
+| Hex standoffs M3 (`94868A713` class) | **6** | Layer1 ↔ layer2 |
 | STS3215 arm servos | **12** | 2× SO-101 |
 | 12 V pack, e-stop, Pi/laptop, head cam | 1 | Power / safety / compute |
 
@@ -36,6 +51,7 @@ Full buy list: `BOM_V3.md` · Assembly: `docs/ASSEMBLY.md`
 
 ```bash
 python3 scripts/gen_structure_kit.py
+python3 scripts/prep_print_stls.py   # foot origins + bed splits
 ```
 
 ---

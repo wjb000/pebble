@@ -4,13 +4,14 @@ Upstream [TheRobotStudio/SO-ARM100](https://github.com/TheRobotStudio/SO-ARM100)
 
 HouseHand mounts **two** followers on `HouseHand_shoulder_deck` pads (−26, ±138) mm.
 
-## Easiest path
+## Easiest path (large bed)
 
-Print `Follower/Prusa_Follower_SO101.stl` **twice** (one plate per arm).
+Print `Follower/Prusa_Follower_SO101.stl` **twice** (one plate per arm).  
+Plate is **~243×205×87 mm** — needs a **≥250 mm** bed. On ≤220 mm beds, use Individual below.
 
-## Or print Individual (per arm, ×2)
+## Individual (fits ≤220 mm beds) — per arm, ×2
 
-Follower-only parts in `Individual/` (leader parts live in `print/_archive/SO101/leader/`):
+Follower-only parts in `Individual/` (leader parts are in `print/_archive/SO101/leader/`):
 
 | STL | Qty per arm |
 |-----|----:|
