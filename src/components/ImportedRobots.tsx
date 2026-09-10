@@ -22,7 +22,7 @@ import type { Colourway } from '../product'
 import { TELESCOPE } from '../robot/dims'
 import { kitCaption, type KitBuild } from '../kit/catalog'
 import { getPerfTier } from '../kit/perf'
-import { Placeable, PlaceGizmo, useTwinPlace } from '../twin/place'
+import { Placeable, PlaceGizmo, usePlaceStatic } from '../twin/place'
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
 
@@ -429,8 +429,7 @@ export function WheeledChassis({
 }) {
   void showWipe
   const perf = useMemo(() => getPerfTier(), [])
-  const place = useTwinPlace()
-  const placing = place.enabled
+  const { enabled: placing, markSeated } = usePlaceStatic()
   const seatedRef = useRef(false)
   // Always load the full LeKiwi drive chain (mount → servo → hub → wheel) and
   // plate standoffs. Lean skipping those parts made the print twin look broken.
@@ -577,7 +576,7 @@ export function WheeledChassis({
       setRevealed(true)
       if (lekiwi.robot && so101L.robot && so101R.robot) {
         seatedRef.current = true
-        place.markSeated()
+        markSeated()
       }
     })
   }, [
@@ -595,7 +594,7 @@ export function WheeledChassis({
     armElbowRad,
     colour,
     placing,
-    place,
+    markSeated,
   ])
 
   useEffect(() => {

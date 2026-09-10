@@ -147,6 +147,7 @@ type PlaceApi = {
 }
 
 const PlaceContext = createContext<PlaceApi | null>(null)
+const PlaceStaticContext = createContext<{ enabled: boolean; markSeated: () => void } | null>(null)
 
 export function TwinPlaceProvider({ children }: { children: ReactNode }) {
   const [seated, setSeated] = useState(false)
@@ -157,6 +158,8 @@ export function TwinPlaceProvider({ children }: { children: ReactNode }) {
   const [snap, setSnap] = useState(true)
   const [gizmoTick, setGizmoTick] = useState(0)
   const objects = useRef<Partial<Record<PartId, Group>>>({})
+
+  const markSeated = useCallback(() => setSeated(true), [])
 
   const setUnlocked = useCallback((id: PartId | null) => {
     setUnlockedState(id)
@@ -217,7 +220,7 @@ export function TwinPlaceProvider({ children }: { children: ReactNode }) {
       nudges,
       mode,
       snap,
-      markSeated: () => setSeated(true),
+      markSeated,
       registerObject,
       getObject,
       gizmoTick,
@@ -237,6 +240,7 @@ export function TwinPlaceProvider({ children }: { children: ReactNode }) {
       mode,
       snap,
       gizmoTick,
+      markSeated,
       registerObject,
       getObject,
       setUnlocked,
@@ -246,7 +250,16 @@ export function TwinPlaceProvider({ children }: { children: ReactNode }) {
     ],
   )
 
-  return <PlaceContext.Provider value={api}>{children}</PlaceContext.Provider>
+  const staticApi = useMemo(
+    () => ({ enabled: true as const, markSeated }),
+    [markSeated],
+  )
+
+  return (
+    <PlaceStaticContext.Provider value={staticApi}>
+      <PlaceContext.Provider value={api}>{children}</PlaceContext.Provider>
+    </PlaceStaticContext.Provider>
+  )
 }
 
 const DISABLED: PlaceApi = {
@@ -272,6 +285,10 @@ const DISABLED: PlaceApi = {
 
 export function useTwinPlace() {
   return useContext(PlaceContext) ?? DISABLED
+}
+
+export function usePlaceStatic() {
+  return useContext(PlaceStaticContext) ?? { enabled: false, markSeated: () => undefined }
 }
 
 /** Wrapper whose local transform is the user nudge. */
@@ -335,7 +352,7 @@ export function PlaceGizmo() {
       size={0.85}
       translationSnap={snap ? 0.001 : undefined}
       rotationSnap={snap ? Math.PI / 180 : undefined}
-      onObjectChange={() => {
+      onMouseUp={() => {
         setNudge(unlocked, {
           x: obj.position.x,
           y: obj.position.y,
