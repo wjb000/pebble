@@ -35,7 +35,7 @@ Flange has **6× Ø3.4 through-holes** on the LeKiwi layer2 **20 mm grid**:
 | SO-101 pads | **4× M4 per arm** (Ø5) | 48×46.5 mm rectangle (SO-ARM100 4040 pattern) through pad+plate |
 | Neck → deck boss | **4× M3** | r=28 mm @ 45° |
 | Head → neck flange | **4× M3** | **printed** in `HouseHand_head_mount.stl` — same r=28 |
-| Head cam module | **4× M2** | 28 mm square on the bulkhead (32×32 UVC) + `HouseHand_head_camera.stl` clamp |
+| Head cam module | **4× M2** | 28 mm square in the visor (32×32 UVC) + `HouseHand_head_camera.stl` clamp |
 | Cable | — | Ø36 through deck + hollow torso |
 
 ---
@@ -50,7 +50,7 @@ Flange has **6× Ø3.4 through-holes** on the LeKiwi layer2 **20 mm grid**:
 | **4** | Arms | `print/SO101/` | **2×** | Follower set twice — see folder README |
 | **5** | Wrist cams (opt.) | `SO101/Individual/Wrist_camera_mount_SO101.stl` | 0–2 | |
 | **6** | Neck | `HouseHand_neck.stl` | 1 | Deck center boss |
-| **7** | Head | `HouseHand_head_mount.stl` + `HouseHand_head_camera.stl` | 1 | Head **bolts** to neck (4× M3 at r=28). Clamp plate sandwiches a bought 32×32 UVC |
+| **7** | Head | `HouseHand_head_mount.stl` + `HouseHand_head_camera.stl` | 1 | Visor helmet **bolts** to neck (4× M3 at r=28). Clamp plate sandwiches a bought 32×32 UVC |
 
 Structure files live under `print/xlerobot/hardware/`.
 

@@ -156,7 +156,7 @@ export const BOM: BomRow[] = [
     usd_arm: 20,
     usd_dual: 20,
     vendor: 'Amazon UVC',
-    notes: '32×32 module on head bulkhead + HouseHand_head_camera.stl clamp.',
+    notes: '32×32 module in the visor + HouseHand_head_camera.stl clamp.',
   },
   {
     category: 'C · LeKiwi 3-omni base',

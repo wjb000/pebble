@@ -34,7 +34,7 @@ const SO101_PATH = asset('assets/so101/')
 const TORSO_STL = asset('assets/xlerobot/hardware/HouseHand_torso.stl?v=wells1')
 const ARMBASE_STL = asset('assets/xlerobot/hardware/HouseHand_shoulder_deck.stl')
 const NECK_STL = asset('assets/xlerobot/hardware/HouseHand_neck.stl')
-const HEAD_MOUNT_STL = asset('assets/xlerobot/hardware/HouseHand_head_mount.stl?v=bolt1')
+const HEAD_MOUNT_STL = asset('assets/xlerobot/hardware/HouseHand_head_mount.stl?v=visor1')
 
 /** LeKiwi: ROS Z-up → Three Y-up. */
 const ROS_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI]
@@ -679,7 +679,20 @@ export function WheeledChassis({
                       castShadow={shadows}
                       receiveShadow={shadows}
                     >
-                      <meshStandardMaterial color={colour.primary} roughness={0.45} metalness={0.12} />
+                      <meshStandardMaterial color={colour.primary} roughness={0.42} metalness={0.1} />
+                    </mesh>
+                    {/* Dark visor glass + lens — visual only; printed shell has the bore. mm print frame. */}
+                    <mesh position={[-46, 0, 42]} rotation={[0, Math.PI / 2, 0]}>
+                      <cylinderGeometry args={[18, 18, 4, 24]} />
+                      <meshStandardMaterial
+                        color={colour.face}
+                        roughness={0.18}
+                        metalness={0.35}
+                      />
+                    </mesh>
+                    <mesh position={[-56, 0, 42]} rotation={[0, Math.PI / 2, 0]}>
+                      <cylinderGeometry args={[8, 8.5, 12, 20]} />
+                      <meshStandardMaterial color="#0b0e14" roughness={0.1} metalness={0.55} />
                     </mesh>
                   </Placeable>
                 </group>

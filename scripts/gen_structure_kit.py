@@ -8,7 +8,7 @@ Geometry contract (mm, Z-up, print frame):
   DECK pads         = (−26, ±138)  Ø104 raised pads for SO-101 bases
   PAD bolts         = 4× Ø5 (M4/M5) on the SO-ARM100 4040 pattern
   NECK boss         = Ø72 with Ø36 cable hole on deck center
-  HEAD              = neck-matching flange (4× M3 at r=28) + forward cam hood
+  HEAD              = visor helmet (4× M3 at r=28) + forward 32×32 UVC (4× M2)
 
   Seat flange on LeKiwi *layer2* (top plate). Motors/hubs live under layer2.
   Twin / IRL pose yaws the print so camera (−X) faces drive-forward (plate +Y):
@@ -104,22 +104,23 @@ NECK_BASE_R = 38.0  # seats on boss
 NECK_BASE_Z = 8.0
 NECK_BOLT_R = 28.0  # 4× M3 on boss / collar / head flange
 
-# Head — same bolt circle as neck top flange (r=28 @ 45°). Do not drill.
+# Head — visor helmet. Same bolt circle as neck top flange (r=28 @ 45°).
 HEAD_FLANGE_Z = 8.0
 HEAD_FLANGE_R = NECK_OD / 2 + 6.0  # 41 mm, matches neck top
-HEAD_POST_H = 14.0
-HEAD_CAM_X0 = -44.0
-HEAD_CAM_X1 = -34.0  # 10 mm vertical bulkhead (printable wall)
-HEAD_CAM_HALF_Y = 24.0
-HEAD_CAM_Z1 = 46.0
-HEAD_LENS_Z = 28.0
-HEAD_LENS_R = 8.0
+# Visor (YZ face) sits on the −X front of the skull. 32×32 UVC, 28 mm M2.
+HEAD_CAM_X0 = -52.0
+HEAD_CAM_X1 = -40.0  # 12 mm visor wall
+HEAD_CAM_HALF_Y = 34.0
+HEAD_CAM_Z0 = 18.0
+HEAD_CAM_Z1 = 64.0
+HEAD_LENS_Z = 42.0
+HEAD_LENS_R = 9.0
 # 32×32 UVC module: 28 mm M2 spacing, centered on the lens.
 CAM_M2_R = 1.1
-CAM_BODY_X = 36.0
-CAM_BODY_Y = 36.0
-CAM_BODY_Z = 24.0
-CAM_LENS_L = 12.0
+CAM_BODY_X = 40.0
+CAM_BODY_Y = 40.0
+CAM_BODY_Z = 8.0
+CAM_LENS_L = 10.0
 
 
 def polar_xy(n: int, radius: float, a0: float = 0.0) -> tuple[tuple[float, float], ...]:
@@ -434,6 +435,39 @@ def plate_with_x_holes(
     return m
 
 
+def translated(src: Mesh, dx: float, dy: float, dz: float) -> Mesh:
+    m = Mesh()
+    for a, b, c in src.tris:
+        m.add_tri(
+            (a[0] + dx, a[1] + dy, a[2] + dz),
+            (b[0] + dx, b[1] + dy, b[2] + dz),
+            (c[0] + dx, c[1] + dy, c[2] + dz),
+        )
+    return m
+
+
+def cylinder_y(y0, y1, cx, cz, r, seg=20, caps=True) -> Mesh:
+    """Cylinder along +Y (ears)."""
+    m = Mesh()
+    ring0, ring1 = [], []
+    for i in range(seg):
+        a = 2 * math.pi * i / seg
+        x = cx + r * math.cos(a)
+        z = cz + r * math.sin(a)
+        ring0.append((x, y0, z))
+        ring1.append((x, y1, z))
+    for i in range(seg):
+        j = (i + 1) % seg
+        m.add_quad(ring0[i], ring0[j], ring1[j], ring1[i])
+    if caps:
+        c0, c1 = (cx, y0, cz), (cx, y1, cz)
+        for i in range(seg):
+            j = (i + 1) % seg
+            m.add_tri(c0, ring0[j], ring0[i])
+            m.add_tri(c1, ring1[i], ring1[j])
+    return m
+
+
 def disk_with_holes(
     cx: float,
     cy: float,
@@ -626,14 +660,13 @@ def build_neck() -> Mesh:
 
 
 def build_head() -> Mesh:
-    """Printable head: neck-matching flange + forward camera bulkhead.
+    """Printable visor helmet that bolts onto the neck.
 
-    Flange is coaxial with the neck (4× M3 at r=28). The camera wall stands
-    on the −X side (rover-forward with the SO-101 pads) so it prints as a
-    vertical wall with the flange on the bed.
+    Flange is coaxial with the neck (4× M3 at r=28). Skull is a rounded
+    helmet with a forward visor (−X, rover-forward) that takes a 32×32 UVC.
+    Prints flange-down; overlapping solids are fine for FDM.
     """
     m = Mesh()
-    post_top = HEAD_FLANGE_Z + HEAD_POST_H
     # Mating flange — identical bolt circle / OD as neck top
     m.extend(
         flange_with_through_holes(
@@ -641,28 +674,36 @@ def build_head() -> Mesh:
             NECK_BOLTS, M3_R, n_ang=96, n_rad=8,
         )
     )
-    m.extend(
-        tube(0, 0, HEAD_FLANGE_Z, post_top, NECK_OD / 2, NECK_ID / 2, seg=48)
-    )
-    # Top cap (cable still open)
-    m.extend(
-        flange_with_through_holes(
-            NECK_OD / 2, NECK_HOLE_R + 1, post_top, post_top + 6.0,
-            NECK_BOLTS, M3_R, n_ang=64, n_rad=6,
-        )
-    )
-    # Side ribs from post to bulkhead (printable walls in XZ)
-    rib_y = 8.0
-    rib_z0, rib_z1 = HEAD_FLANGE_Z + 2.0, min(HEAD_CAM_Z1 - 4.0, post_top + 18.0)
+    # Collar into the skull; cable still open through NECK_ID
+    m.extend(tube(0, 0, HEAD_FLANGE_Z, 20.0, NECK_OD / 2 + 5, NECK_ID / 2, seg=48))
+
+    # Rounded skull slabs (XY rounded rects, stacked in Z, shifted −X toward visor)
+    # (z0, z1, wx, wy, cx, corner_r)
+    for z0, z1, wx, wy, cx, cr in (
+        (8.0, 24.0, 74.0, 88.0, -8.0, 16.0),   # jaw
+        (20.0, 58.0, 90.0, 98.0, -10.0, 22.0),  # cranium
+        (52.0, 70.0, 82.0, 92.0, -8.0, 20.0),   # brow
+        (66.0, 80.0, 64.0, 74.0, -6.0, 18.0),   # crown
+    ):
+        m.extend(translated(rounded_plate(wx, wy, z0, z1, cr, seg=16), cx, 0.0, 0.0))
+    m.extend(cylinder(-6.0, 0.0, 74.0, 86.0, 26.0, seg=28))  # dome cap
+
+    # Cheeks
     for sign in (-1.0, 1.0):
-        m.extend(
-            box(
-                HEAD_CAM_X1, -NECK_OD / 2 + 2,
-                sign * rib_y - 2.5, sign * rib_y + 2.5,
-                rib_z0, rib_z1,
-            )
-        )
-    # Forward camera bulkhead — lens bore + 4× M2 for a 32×32 UVC
+        m.extend(cylinder(-10.0, sign * 40.0, 22.0, 58.0, 17.0, seg=20))
+
+    # Ears
+    for sign in (-1.0, 1.0):
+        y0, y1 = (sign * 44.0, sign * 55.0) if sign > 0 else (sign * 55.0, sign * 44.0)
+        m.extend(cylinder_y(y0, y1, -6.0, 46.0, 11.0, seg=16))
+        nub0, nub1 = (sign * 53.0, sign * 58.0) if sign > 0 else (sign * 58.0, sign * 53.0)
+        m.extend(cylinder_y(nub0, nub1, -6.0, 46.0, 7.0, seg=14))
+
+    # Chin + cap brim
+    m.extend(translated(rounded_plate(40.0, 58.0, 8.0, 22.0, 12.0, seg=12), -30.0, 0.0, 0.0))
+    m.extend(translated(rounded_plate(30.0, 76.0, 52.0, 64.0, 12.0, seg=12), -42.0, 0.0, 0.0))
+
+    # Visor face — lens bore + 4× M2 for a 32×32 UVC
     cam_holes: list[tuple[float, float, float]] = [
         (0.0, HEAD_LENS_Z, HEAD_LENS_R),
         *[(y, z, CAM_M2_R) for y, z in HEAD_CAM_BOLTS_YZ],
@@ -671,52 +712,39 @@ def build_head() -> Mesh:
         plate_with_x_holes(
             HEAD_CAM_X0, HEAD_CAM_X1,
             -HEAD_CAM_HALF_Y, HEAD_CAM_HALF_Y,
-            HEAD_FLANGE_Z, HEAD_CAM_Z1,
+            HEAD_CAM_Z0, HEAD_CAM_Z1,
             cam_holes,
             step=2.5,
         )
     )
-    # Dummy camera body + lens in front of the bulkhead (bought UVC replaces this
-    # visually; the printed clamp plate sandwiches the real module).
+    # Eye bezel + dummy lens (bought UVC replaces the dummy; clamp plate sandwiches it)
     m.extend(
-        box(
-            HEAD_CAM_X0 - 22.0, HEAD_CAM_X0,
-            -18.0, 18.0,
-            HEAD_LENS_Z - 14.0, HEAD_LENS_Z + 14.0,
-        )
+        cylinder_x(HEAD_CAM_X0 - 5.0, HEAD_CAM_X0, 0.0, HEAD_LENS_Z, HEAD_LENS_R + 5.0, seg=24)
     )
     m.extend(
-        cylinder_x(
-            HEAD_CAM_X0 - 32.0, HEAD_CAM_X0 - 22.0,
-            0.0, HEAD_LENS_Z, HEAD_LENS_R - 0.5, seg=24,
-        )
+        cylinder_x(HEAD_CAM_X0 - 16.0, HEAD_CAM_X0 - 5.0, 0.0, HEAD_LENS_Z, HEAD_LENS_R - 1.0, seg=24)
     )
     return m
 
 
 def build_head_camera() -> Mesh:
-    """32×32 UVC sandwich plate + dummy lens. Screws to the head bulkhead (4× M2).
+    """Thin rounded clamp that sandwiches a 32×32 UVC onto the visor (4× M2).
 
-    Print flat (Z-up). Real camera module is bought; this plate clamps it
-    and gives the twin a camera body.
+    Print flat (Z-up). Real camera module is bought.
     """
     m = Mesh()
     hz = CAM_BODY_Z
-    hy = CAM_BODY_Y / 2
-    hx = CAM_BODY_X / 2
-    # Body with M2 through-holes matching the bulkhead (mapped into XY for
-    # this flat print: bulkhead Y → print X, bulkhead Z-lens → print Y).
-    # 28 mm square around origin.
     cam_xy = ((14.0, 14.0), (14.0, -14.0), (-14.0, 14.0), (-14.0, -14.0))
+    m.extend(rounded_plate(CAM_BODY_X, CAM_BODY_Y, 0.0, hz, 8.0, seg=16))
     m.extend(
         plate_with_z_holes(
-            -hx, hx, -hy, hy, 0.0, hz,
+            -16.0, 16.0, -16.0, 16.0, 0.0, hz,
             [(x, y, CAM_M2_R) for x, y in cam_xy] + [(0.0, 0.0, HEAD_LENS_R)],
             step=2.5,
         )
     )
-    # Dummy lens along −X so the twin can stand the plate up without a 90° hack
-    m.extend(cylinder_x(-hx - CAM_LENS_L, -hx, 0.0, hz * 0.5, HEAD_LENS_R - 0.5, seg=24))
+    m.extend(cylinder(0.0, 0.0, hz, hz + 2.5, HEAD_LENS_R + 3.5, seg=24))
+    m.extend(cylinder_x(-CAM_BODY_X / 2 - CAM_LENS_L, -CAM_BODY_X / 2, 0.0, hz * 0.5, HEAD_LENS_R - 1.0, seg=24))
     return m
 
 

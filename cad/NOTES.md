@@ -13,7 +13,7 @@ HouseHand printable structure is generated from one geometry contract:
 | Pad centers | (−26, ±138) mm | SO-101 L/R; **4× Ø5** on SO-ARM100 4040 48×46.5 mm rectangle |
 | Cable | Ø36 through deck | Into hollow torso |
 | Neck boss / bolts | Ø72 / Ø36; r=28 4× M3 | Collar and **generated head** share this circle |
-| Head | flange Ø82, 4× M3 r=28 | Forward bulkhead + 32×32 UVC (4× M2, 28 mm) |
+| Head | visor helmet, flange Ø82, 4× M3 r=28 | Forward visor + 32×32 UVC (4× M2, 28 mm) |
 | Deck splice | 180×24×5, 8× M3 | L/R seam bar |
 
 ## Generate

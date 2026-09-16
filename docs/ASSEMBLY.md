@@ -15,7 +15,7 @@ Generate structure: `python3 scripts/gen_structure_kit.py`.
 3. **HouseHand torso** Ø180 / flange Ø190 bolts to **layer2** through **6× M3** at `(40,±80)` / `(±80,±40)` (layer2 20 mm grid). **Seat the two wheel wells over the forward omnis** so the 4″ tires can spin (camera faces drive-forward). `(−40, ±80)` sit in those wells — no bolts there. Twin uses the same STL — **no fake XY scale**.
 4. **Shoulder deck** registration ring slips over torso top rim; **6× M3** at r=88 (30°/90°/…). Pads at **(−26, ±138) mm** with **4× Ø5 (M4/M5)** through-holes each on the SO-ARM100 **4040 48×46.5 mm** pattern. **Ø36 cable hole** through the plate into the hollow torso.
 5. **SO-101 L/R** on those pads, yawed forward with the head. M4×30 from below through pad into the base openings; wing nuts inside the base (same hardware as the official 4040 adapter — you do **not** need 4040 extrusion).
-6. **Neck** on deck boss, **4× M3** at r=28; **head mount** on neck with the **same printed bolt circle**. Bought 32×32 UVC on the bulkhead with the clamp plate (**4× M2**).
+6. **Neck** on deck boss, **4× M3** at r=28; **visor head** on neck with the **same printed bolt circle**. Bought 32×32 UVC in the visor with the clamp plate (**4× M2**).
 7. **12 V pack** centered in base bay; hardware e-stop cuts drive + arms.
 
 ---
@@ -32,7 +32,7 @@ Generate structure: `python3 scripts/gen_structure_kit.py`.
 | **6** | Shoulder deck (full **or** `_L`+`_R` + `HouseHand_deck_splice`) | Ring → torso rim; pads forward | **6× M3** rim; **8× M3** splice |
 | **7** | SO-101 L + R | Base on pad centers | **4× M4×30** per arm through pad (Ø5) + wing nuts inside base |
 | **8** | Neck | Collar → deck boss | **4× M3** |
-| **9** | Head mount + UVC | Flange → neck (printed holes); cam on bulkhead | **4× M3** head; **4× M2** + clamp plate |
+| **9** | Visor head + UVC | Flange → neck (printed holes); cam in visor | **4× M3** head; **4× M2** + clamp plate |
 | **10** | Wire + e-stop | Pack centered | XT60 / panel |
 
 **Exploded:** layer1 + drives → power mounts → **standoffs** → layer2 → torso → deck → arms → neck → head → wire.
@@ -48,7 +48,7 @@ Generate structure: `python3 scripts/gen_structure_kit.py`.
 5. [ ] Deck ring seated; **6× rim M3**; splice bar if L/R; Ø36 cable hole clear
 6. [ ] Both SO-101 bases on pads, **4× M4×30** each through the 4040-pattern holes, facing forward
 7. [ ] Torque **one** arm fully before the other
-8. [ ] Neck **4× M3** on boss; head **4× M3** on printed r=28; UVC on bulkhead with clamp plate
+8. [ ] Neck **4× M3** on boss; visor head **4× M3** on printed r=28; UVC in visor with clamp plate
 9. [ ] Hardware e-stop cuts drive + arms
 10. [ ] L/R bus labels → bring-up
 

@@ -55,7 +55,7 @@ export function BomPage() {
         <ul className="doc-list">
           <li><strong>Base</strong> — LeKiwi layer1+layer2, <strong>3× 4″ omni</strong>, 3× STS3215 drive, <strong>6× M3 hex standoffs</strong> (94868A713 class). No casters. No 4-mecanum deck.</li>
           <li><strong>Torso</strong> — printed HouseHand Ø180 / flange Ø190 + shoulder deck + neck + head (<code>print/xlerobot/hardware/</code>). Not a nested-tube kit.</li>
-          <li><strong>Head STLs</strong> — <code>HouseHand_head_mount.stl</code> + <code>HouseHand_head_camera.stl</code> (matches twin). Optional SO-ARM overhead stack is archived.</li>
+          <li><strong>Head STLs</strong> — visor helmet <code>HouseHand_head_mount.stl</code> + clamp <code>HouseHand_head_camera.stl</code>. Optional SO-ARM overhead stack is archived.</li>
           <li><strong>Arms</strong> — 2× SO-101 <em>follower</em> + STS3215×12 → <code>print/SO101/</code> (leader parts archived).</li>
           <li><strong>{PRINT_UNIQUE_SKUS}+ print SKUs</strong> in <code>print/README.md</code> + bought omnis / standoffs / 12V pack / e-stop / gamepad</li>
           <li>{HEIGHT_NOTE}</li>
