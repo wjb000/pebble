@@ -15,7 +15,7 @@ export function SimChrome({ colourId, onColour }: Props) {
     <>
       <div className="hud-box hud-nav-back">
         <div className="hud-label">NAV</div>
-        <Link className="hud-back" to="/">← BACK</Link>
+        <Link className="hud-back" to="/model">← MODEL</Link>
       </div>
       <div className="hud-box hud-shop">
         <div className="hud-label">SITE</div>
@@ -41,6 +41,7 @@ export function SimChrome({ colourId, onColour }: Props) {
         <div className="mode-toggle">
           <span className={mode === 'AUTO' ? 'mode-on' : 'mode-off'}>AUTO</span>
           <span className={mode === 'TELEOP' ? 'mode-on' : 'mode-off'}>TELEOP</span>
+          <span className={mode === 'POLICY' ? 'mode-on' : 'mode-off'}>AI</span>
         </div>
         <div className="hud-label" style={{ marginTop: '0.4rem' }}>LIFT</div>
         <div>

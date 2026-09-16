@@ -1,7 +1,7 @@
 import type { GaitPose } from '../gait'
 import type { Steering } from '../steering'
 
-export type ControlMode = 'auto' | 'teleop'
+export type ControlMode = 'auto' | 'teleop' | 'policy'
 
 /** Scripted chore demo phases (G to start/stop). */
 export type DemoPhase =
@@ -72,9 +72,9 @@ export const ARENA_HALF = 2.2
 export const DT = 0.02
 export const CONTROL_HZ = 1 / DT
 export const START_X = 0
-export const START_Y = -1.2
-/** Facing +Y physics (= body +Z at spawn) */
-export const START_THETA = Math.PI / 2
+export const START_Y = 0
+/** Face default +X body forward in the empty arena. */
+export const START_THETA = 0
 export const BEACON_X = 1.2
 export const BEACON_Y = 1.3
 export const BOX_START_X = 0.95

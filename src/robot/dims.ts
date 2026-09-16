@@ -1,11 +1,8 @@
 /**
- * HouseHand v3 dimensions — NYRO-like silhouette.
- * Omni deck + nested telescoping column + dual SO-101.
+ * HouseHand dimensions — twin + print kit (LeKiwi 3-omni + printed torso + 2× SO-101).
  * Arms: TheRobotStudio/SO-ARM100 / LeRobot SO-101 (Apache-2.0)
- * Head cam bracket: SO-ARM100 Optional Overhead Cam (Apache-2.0)
- * Base/torso = BOM envelopes (plywood deck, mecanum, nested tubes) — not perceptron / not exposed-rail.
- *
- * Height is chore-driven: counters ~900, washer rim ~850–950, floor pick via hanging SO-101.
+ * Base: SIGRobotics-UIUC/LeKiwi. Torso: printed HouseHand Ø180 / flange Ø190 on layer2.
+ * Tip/envelope numbers remain conservative chore bounds; orbit /model for exact stack height.
  */
 
 export const MM = 1
@@ -19,7 +16,7 @@ export const mToMm = (m: number) => m * 1000
 export const OVERALL_HEIGHT_MM = 1100
 
 export const HEIGHT_NOTE =
-  'Extended 1100 mm (~3′7″) = deck 82 + nested column 380 + travel 560 + head 78. Collapsed ~540 mm. Column grows/shrinks — not an exposed rail carriage.'
+  'Stack height ≈ LeKiwi plates + HouseHand Ø180×320 mm torso + shoulder deck + neck/head (orbit /model). Torso is a printed tube on layer2 — not a nested telescoping column kit.'
 
 /** Honest chore envelope (mm AGL / world). */
 export const CHORE_ENVELOPE = {
@@ -30,28 +27,28 @@ export const CHORE_ENVELOPE = {
   table_wipe_mm: 750,
   so101_reach_mm: 500,
   note:
-    'Shoulder travel 462→1022 AGL + SO-101 ~500 mm reach covers floor clothes, baskets, counters, sink rim, open washer drum. NOT: folding, detergent, closed-door cycles, hot water, waterproofing.',
+    'SO-101 ~500 mm reach from deck pads covers floor clothes, baskets, counters, sink rim, open washer drum. NOT: folding, detergent, closed-door cycles, hot water, waterproofing.',
 } as const
 
-/** 400×450 mm omni deck — 4× 4″ mecanum. No casters. No outriggers. */
+/** LeKiwi-class omni base — 3× 4″ omni. No casters. No outriggers. */
 export const BASE = {
-  footprint_mm: 400,
-  width_mm: 400,
-  depth_mm: 450,
+  footprint_mm: 220,
+  width_mm: 220,
+  depth_mm: 220,
   height_mm: 82,
   deck_t_mm: 18,
   diameter_mm: 400,
   wheel_diameter_mm: 102,
   wheel_width_mm: 42,
-  wheel_count: 4,
+  wheel_count: 3,
   wheel_inset_mm: 28,
-  drive: 'mecanum' as const,
+  drive: 'omni' as const,
   track_mm: 344,
   wheelbase_mm: 394,
   caster_diameter_mm: 0,
   axle_height_mm: 51,
-  upstream: 'DIY 400×450 deck + 4× 4″ mecanum (LeKiwi-class omni; no casters)',
-  note: 'Full omni — no casters, no RÅSKOG, no diff-only. Battery centered in bay; tote on rear deck.',
+  upstream: 'SIGRobotics-UIUC/LeKiwi — 3× 4″ omni + printed HouseHand torso on layer2',
+  note: 'Full 3-omni — no casters, no RÅSKOG, no 4-mecanum deck. Battery centered; 6× M3 standoffs between plates.',
 } as const
 
 /**
@@ -233,7 +230,7 @@ export const XL330 = {
 } as const
 
 /** Printed structure SKUs: shoulder bar, column base plate, 4040 adapters, cam nest. */
-export const PRINT_UNIQUE_SKUS = 6
+export const PRINT_UNIQUE_SKUS = 28
 export const PLA_GREY = '#9aa3ad'
 
 /** Legacy aliases — v3 has no exposed extrusion / MGN / outriggers. */

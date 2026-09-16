@@ -13,7 +13,10 @@ export function HUD() {
     <div className="osd" aria-hidden>
       <div className="hud-box hud-tl">
         <div className="hud-label">NAV</div>
-        <div className="hud-row">{state.mode.toUpperCase()}</div>
+        <div className="hud-row">
+          {state.mode.toUpperCase()}
+          {state.mode === 'policy' ? ' · BC' : ''}
+        </div>
         <div className="hud-row">CAM {state.chaseCam ? 'CHASE' : 'ORBIT'}</div>
         <div className="hud-row">FPS {Math.round(state.fps)}</div>
         {state.liftAtLimit && <div className="hud-row hud-limit">LIFT LIMIT</div>}
@@ -21,7 +24,6 @@ export function HUD() {
         {state.demoActive && (
           <div className="hud-row hud-demo">DEMO {state.demoPhase.replace(/_/g, ' ').toUpperCase()}</div>
         )}
-        {state.wipeContact && <div className="hud-row hud-demo">WIPE CONTACT</div>}
       </div>
       <div className="hud-box hud-tipphys">
         <div className="hud-label">TIP MARGIN</div>
@@ -36,7 +38,7 @@ export function HUD() {
       <div className="hud-tele">
         <div>{fmt(Math.abs(state.v))} M/S</div>
         <div>FWD {fmt(state.steering.forward)} · STR {fmt(state.steering.strafe ?? 0)} · YAW {fmt(state.steering.yawRate)}</div>
-        <div className="hud-estop-hint">SPACE = E-STOP · G = chore demo · A/D strafe</div>
+        <div className="hud-estop-hint">SPACE e-stop · TAB mode · Train panel = BC AI</div>
       </div>
     </div>
   )
