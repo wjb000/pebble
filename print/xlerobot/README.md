@@ -16,7 +16,7 @@ python3 scripts/prep_print_stls.py   # required: bed origin + splits
 | `hardware/HouseHand_shoulder_deck_L.stl` | 1 | 200×190×30 | Bolt to R across center |
 | `hardware/HouseHand_shoulder_deck_R.stl` | 1 | 200×190×30 | |
 | `hardware/HouseHand_neck.stl` | 1 | 82×82×120 | 4× M3 at r=28 both ends |
-| `hardware/HouseHand_head_mount.stl` | 1 | **109×116×86** | Visor helmet, neck bolt circle, 32×32 UVC visor |
+| `hardware/HouseHand_head_mount.stl` | 1 | **116×148×106** | Visor helmet, neck bolt circle, 32×32 UVC visor |
 | `hardware/HouseHand_head_camera.stl` | 1 | ~40×40×10 | Clamp plate sandwiches the UVC (4× M2) |
 
 `torso_shell.stl` aliases `HouseHand_torso.stl`.

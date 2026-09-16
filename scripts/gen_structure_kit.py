@@ -108,13 +108,13 @@ NECK_BOLT_R = 28.0  # 4× M3 on boss / collar / head flange
 HEAD_FLANGE_Z = 8.0
 HEAD_FLANGE_R = NECK_OD / 2 + 6.0  # 41 mm, matches neck top
 # Visor (YZ face) sits on the −X front of the skull. 32×32 UVC, 28 mm M2.
-HEAD_CAM_X0 = -52.0
-HEAD_CAM_X1 = -40.0  # 12 mm visor wall
-HEAD_CAM_HALF_Y = 34.0
-HEAD_CAM_Z0 = 18.0
-HEAD_CAM_Z1 = 64.0
-HEAD_LENS_Z = 42.0
-HEAD_LENS_R = 9.0
+HEAD_CAM_X0 = -58.0
+HEAD_CAM_X1 = -44.0  # 14 mm visor wall
+HEAD_CAM_HALF_Y = 38.0
+HEAD_CAM_Z0 = 22.0
+HEAD_CAM_Z1 = 78.0
+HEAD_LENS_Z = 50.0
+HEAD_LENS_R = 10.0
 # 32×32 UVC module: 28 mm M2 spacing, centered on the lens.
 CAM_M2_R = 1.1
 CAM_BODY_X = 40.0
@@ -680,28 +680,28 @@ def build_head() -> Mesh:
     # Rounded skull slabs (XY rounded rects, stacked in Z, shifted −X toward visor)
     # (z0, z1, wx, wy, cx, corner_r)
     for z0, z1, wx, wy, cx, cr in (
-        (8.0, 24.0, 74.0, 88.0, -8.0, 16.0),   # jaw
-        (20.0, 58.0, 90.0, 98.0, -10.0, 22.0),  # cranium
-        (52.0, 70.0, 82.0, 92.0, -8.0, 20.0),   # brow
-        (66.0, 80.0, 64.0, 74.0, -6.0, 18.0),   # crown
+        (8.0, 26.0, 86.0, 108.0, -10.0, 20.0),   # jaw
+        (22.0, 72.0, 108.0, 124.0, -12.0, 26.0),  # cranium
+        (64.0, 86.0, 96.0, 114.0, -10.0, 24.0),   # brow
+        (80.0, 98.0, 76.0, 90.0, -8.0, 22.0),     # crown
     ):
         m.extend(translated(rounded_plate(wx, wy, z0, z1, cr, seg=16), cx, 0.0, 0.0))
-    m.extend(cylinder(-6.0, 0.0, 74.0, 86.0, 26.0, seg=28))  # dome cap
+    m.extend(cylinder(-8.0, 0.0, 90.0, 106.0, 32.0, seg=28))  # dome cap
 
     # Cheeks
     for sign in (-1.0, 1.0):
-        m.extend(cylinder(-10.0, sign * 40.0, 22.0, 58.0, 17.0, seg=20))
+        m.extend(cylinder(-12.0, sign * 52.0, 24.0, 72.0, 20.0, seg=20))
 
     # Ears
     for sign in (-1.0, 1.0):
-        y0, y1 = (sign * 44.0, sign * 55.0) if sign > 0 else (sign * 55.0, sign * 44.0)
-        m.extend(cylinder_y(y0, y1, -6.0, 46.0, 11.0, seg=16))
-        nub0, nub1 = (sign * 53.0, sign * 58.0) if sign > 0 else (sign * 58.0, sign * 53.0)
-        m.extend(cylinder_y(nub0, nub1, -6.0, 46.0, 7.0, seg=14))
+        y0, y1 = (sign * 56.0, sign * 70.0) if sign > 0 else (sign * 70.0, sign * 56.0)
+        m.extend(cylinder_y(y0, y1, -8.0, 56.0, 13.0, seg=16))
+        nub0, nub1 = (sign * 68.0, sign * 74.0) if sign > 0 else (sign * 74.0, sign * 68.0)
+        m.extend(cylinder_y(nub0, nub1, -8.0, 56.0, 8.0, seg=14))
 
     # Chin + cap brim
-    m.extend(translated(rounded_plate(40.0, 58.0, 8.0, 22.0, 12.0, seg=12), -30.0, 0.0, 0.0))
-    m.extend(translated(rounded_plate(30.0, 76.0, 52.0, 64.0, 12.0, seg=12), -42.0, 0.0, 0.0))
+    m.extend(translated(rounded_plate(48.0, 72.0, 8.0, 26.0, 14.0, seg=12), -34.0, 0.0, 0.0))
+    m.extend(translated(rounded_plate(36.0, 92.0, 64.0, 80.0, 14.0, seg=12), -48.0, 0.0, 0.0))
 
     # Visor face — lens bore + 4× M2 for a 32×32 UVC
     cam_holes: list[tuple[float, float, float]] = [

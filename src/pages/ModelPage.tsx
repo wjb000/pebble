@@ -48,7 +48,7 @@ export function ModelPage() {
         <Canvas
           shadows={perf.shadows}
           dpr={perf.dpr}
-          camera={{ position: [0.95, 0.38, 0.72], fov: 36, near: 0.02, far: 40 }}
+          camera={{ position: [1.32, 0.52, 1.02], fov: 34, near: 0.02, far: 40 }}
           gl={{
             antialias: perf.antialias,
             toneMappingExposure: 1.1,
@@ -84,7 +84,7 @@ export function ModelPage() {
           ) : null}
           <OrbitControls
             makeDefault
-            target={[0, 0.18, 0]}
+            target={[0, 0.30, 0]}
             enablePan
             enableDamping
             minDistance={0.12}

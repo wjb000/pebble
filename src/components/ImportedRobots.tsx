@@ -34,7 +34,7 @@ const SO101_PATH = asset('assets/so101/')
 const TORSO_STL = asset('assets/xlerobot/hardware/HouseHand_torso.stl?v=wells1')
 const ARMBASE_STL = asset('assets/xlerobot/hardware/HouseHand_shoulder_deck.stl')
 const NECK_STL = asset('assets/xlerobot/hardware/HouseHand_neck.stl')
-const HEAD_MOUNT_STL = asset('assets/xlerobot/hardware/HouseHand_head_mount.stl?v=visor1')
+const HEAD_MOUNT_STL = asset('assets/xlerobot/hardware/HouseHand_head_mount.stl?v=visor2')
 
 /** LeKiwi: ROS Z-up → Three Y-up. */
 const ROS_TO_THREE: [number, number, number] = [-Math.PI / 2, 0, Math.PI]
@@ -681,18 +681,18 @@ export function WheeledChassis({
                     >
                       <meshStandardMaterial color={colour.primary} roughness={0.42} metalness={0.1} />
                     </mesh>
-                    {/* Dark visor glass + lens — visual only; printed shell has the bore. mm print frame. */}
-                    <mesh position={[-46, 0, 42]} rotation={[0, Math.PI / 2, 0]}>
-                      <cylinderGeometry args={[18, 18, 4, 24]} />
+                    {/* Dark visor face + lens. mm print frame; printed shell has the bore. */}
+                    <mesh position={[-51, 0, 52]}>
+                      <boxGeometry args={[6, 72, 46]} />
                       <meshStandardMaterial
                         color={colour.face}
-                        roughness={0.18}
-                        metalness={0.35}
+                        roughness={0.16}
+                        metalness={0.38}
                       />
                     </mesh>
-                    <mesh position={[-56, 0, 42]} rotation={[0, Math.PI / 2, 0]}>
-                      <cylinderGeometry args={[8, 8.5, 12, 20]} />
-                      <meshStandardMaterial color="#0b0e14" roughness={0.1} metalness={0.55} />
+                    <mesh position={[-62, 0, 50]} rotation={[0, Math.PI / 2, 0]}>
+                      <cylinderGeometry args={[10, 10.5, 14, 24]} />
+                      <meshStandardMaterial color="#07090e" roughness={0.08} metalness={0.6} />
                     </mesh>
                   </Placeable>
                 </group>
